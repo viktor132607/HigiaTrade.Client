@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ChartBarSquareIcon, CubeIcon, QueueListIcon, Squares2X2Icon, UsersIcon } from "@heroicons/react/24/outline";
 import { Navigate, NavLink, Outlet } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -11,7 +12,11 @@ const navigation = [
   { to: "/admin/users", label: "Customers", icon: UsersIcon },
 ];
 
-const AdminPanel = () => {
+type AdminPanelProps = {
+  children?: ReactNode;
+};
+
+const AdminPanel = ({ children }: AdminPanelProps) => {
   const { user } = useSelector((state: RootState) => state.auth);
 
   if (user?.role !== "Admin") {
@@ -52,7 +57,7 @@ const AdminPanel = () => {
         </aside>
 
         <main className="px-4 py-6 sm:px-6 lg:px-8">
-          <Outlet />
+          {children ?? <Outlet />}
         </main>
       </div>
     </div>
