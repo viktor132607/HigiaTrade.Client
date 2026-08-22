@@ -990,14 +990,18 @@ const AdminProducts = () => {
                     editingProduct?.wholesalePriceInclVat ??
                     editingProduct?.wholesalePrice
                   }
-                  onImageUploaded={(url) => {
+                  currentMainImageUrl={formData.mainImageUrl}
+                  currentSecondaryImages={formData.secondaryImages}
+                  onImagesChange={(mainImageUrl, secondaryImages) => {
                     setFormData((previous) => ({
                       ...previous,
-                      mainImageUrl: url,
+                      mainImageUrl,
+                      secondaryImages,
                     }));
                     setValidationErrors((previous) => ({
                       ...previous,
                       mainImageUrl: undefined,
+                      secondaryImages: undefined,
                     }));
                   }}
                 />
