@@ -103,32 +103,19 @@ const Navbar = () => {
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categories, setCategories] = useState<NavCategory[]>([]);
 
   const { isAuthenticated, token, user } = useSelector(
     (state: RootState) => state.auth
   );
-
   const wishlistCount = useSelector(
     (state: RootState) => state.user.wishlist?.length ?? 0
   );
-
   const cartCount = useSelector((state: RootState) =>
-    state.cart.items.reduce(
-      (total, item) => total + item.quantity,
-      0
-    )
+    state.cart.items.reduce((total, item) => total + item.quantity, 0)
   );
 
-  const {
-    language,
-    theme,
-    t,
-    toggleLanguage,
-    toggleTheme,
-  } = useLanguageTheme();
-
-  const [categories, setCategories] = useState<NavCategory[]>([]);
-
+  const { language, theme, t, toggleLanguage, toggleTheme } = useLanguageTheme();
   const compareCount = 0;
   const isBg = language === "bg";
 
@@ -144,8 +131,7 @@ const Navbar = () => {
           return;
         }
 
-        const data = await response.json();
-        setCategories(normalizeCategories(data));
+        setCategories(normalizeCategories(await response.json()));
       } catch {
         setCategories([]);
       }
@@ -154,9 +140,12 @@ const Navbar = () => {
     void fetchCategories();
   }, []);
 
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname, location.search]);
+
   const isAdmin = useMemo(() => {
     const decodedToken = decodeJWT(token);
-
     return (
       decodedToken?.[
         "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
@@ -166,15 +155,12 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/Auth/logout`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Auth/logout`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
     } catch (error) {
       console.error("Logout request failed:", error);
     } finally {
@@ -183,13 +169,9 @@ const Navbar = () => {
     }
   };
 
-  const handleSearchSubmit = (
-    event: FormEvent<HTMLFormElement>
-  ) => {
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     const trimmedQuery = searchQuery.trim();
-
     const params = trimmedQuery
       ? `?search=${encodeURIComponent(trimmedQuery)}`
       : "";
@@ -198,19 +180,19 @@ const Navbar = () => {
     setIsMenuOpen(false);
   };
 
-  const closeMenu = () => setIsMenuOpen(false);
+  const categoryLabel = (category: NavCategory) =>
+    isBg ? category.nameBg ?? category.name : category.nameEn ?? category.name;
 
   return (
     <header className="sticky top-0 z-40 bg-white shadow-sm transition-colors dark:bg-black">
       <div className="bg-white transition-colors dark:bg-black">
-        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
+        <div className="site-container flex min-w-0 items-center gap-2 py-2.5 sm:gap-3 sm:py-3 xl:gap-4 xl:py-4">
           <button
             type="button"
-            onClick={() =>
-              setIsMenuOpen((previous) => !previous)
-            }
-            className="inline-flex h-11 w-11 items-center justify-center rounded-none border border-[#d6dde3] text-[#70808d] transition hover:border-[#18b99f] hover:text-[#18b99f] dark:border-white/20 dark:text-white md:hidden"
-            aria-label="Toggle menu"
+            onClick={() => setIsMenuOpen((previous) => !previous)}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center border border-[#d6dde3] text-[#70808d] transition hover:border-[#18b99f] hover:text-[#18b99f] dark:border-white/20 dark:text-white xl:hidden"
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMenuOpen}
           >
             {isMenuOpen ? (
               <XMarkIcon className="h-5 w-5" />
@@ -219,32 +201,26 @@ const Navbar = () => {
             )}
           </button>
 
-          <Link to="/" className="flex shrink-0 items-center">
+          <Link to="/" className="flex min-w-0 shrink items-center xl:shrink-0">
             <img
               src="/higiqlogo.png"
               alt="HygiaTrade"
-              className="h-14 w-auto object-contain"
+              className="h-10 w-auto max-w-[145px] object-contain sm:h-12 sm:max-w-[185px] xl:h-14 xl:max-w-none"
             />
           </Link>
 
-          <form
-            onSubmit={handleSearchSubmit}
-            className="hidden flex-1 md:block"
-          >
+          <form onSubmit={handleSearchSubmit} className="hidden min-w-0 flex-1 xl:block">
             <div className="relative mx-auto max-w-2xl">
               <input
                 type="search"
                 value={searchQuery}
-                onChange={(event) =>
-                  setSearchQuery(event.target.value)
-                }
+                onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder={t("nav.searchPlaceholder")}
-                className="h-12 w-full rounded-none border border-[#e1e5e8] bg-[#f3f3f3] px-4 pr-14 text-sm text-black outline-none transition placeholder:text-[#8a98a4] focus:border-[#18b99f] focus:bg-white dark:border-white/20 dark:bg-black dark:text-white dark:placeholder:text-white/50"
+                className="h-12 w-full border border-[#e1e5e8] bg-[#f3f3f3] px-4 pr-14 text-sm text-black outline-none transition placeholder:text-[#8a98a4] focus:border-[#18b99f] focus:bg-white dark:border-white/20 dark:bg-black dark:text-white dark:placeholder:text-white/50"
               />
-
               <button
                 type="submit"
-                className="absolute right-0 top-0 flex h-12 w-14 items-center justify-center rounded-none bg-[#18b99f] text-white transition hover:bg-[#14a990]"
+                className="absolute right-0 top-0 flex h-12 w-14 items-center justify-center bg-[#18b99f] text-white transition hover:bg-[#14a990]"
                 aria-label={isBg ? "Търси" : "Search"}
               >
                 <MagnifyingGlassIcon className="h-6 w-6" />
@@ -252,25 +228,22 @@ const Navbar = () => {
             </div>
           </form>
 
-          <div className="hidden items-center gap-3 lg:flex">
+          <div className="hidden shrink-0 items-center gap-3 2xl:flex">
             <PhoneIcon className="h-8 w-8 text-[#70808d] dark:text-white" />
-
             <div>
               <p className="text-sm font-bold text-[#7a8791] dark:text-white">
                 {CONTACT_PHONE}
               </p>
-
               <p className="text-xs font-bold uppercase tracking-wide text-[#263b4d] dark:text-white/80">
                 {isBg ? "Свържете се с нас" : "Contact us"}
               </p>
-
               <p className="text-[11px] text-[#7a8791] dark:text-white/70">
                 {CONTACT_EMAIL}
               </p>
             </div>
           </div>
 
-          <div className="ml-auto hidden items-center gap-2 md:flex">
+          <div className="ml-auto hidden shrink-0 items-center gap-1.5 xl:flex 2xl:gap-2">
             <button
               type="button"
               onClick={toggleLanguage}
@@ -299,7 +272,6 @@ const Navbar = () => {
               title={isBg ? "Сравни" : "Compare"}
             >
               <ArrowsRightLeftIcon className="h-6 w-6" />
-
               <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#7b8187] px-1 text-xs font-bold text-white">
                 {compareCount}
               </span>
@@ -311,7 +283,6 @@ const Navbar = () => {
               title={isBg ? "Любими" : "Wishlist"}
             >
               <HeartIcon className="h-6 w-6" />
-
               <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#7b8187] px-1 text-xs font-bold text-white">
                 {wishlistCount}
               </span>
@@ -323,7 +294,6 @@ const Navbar = () => {
               title={t("nav.cart")}
             >
               <ShoppingBagIcon className="h-7 w-7" />
-
               <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#7b8187] px-1 text-xs font-bold text-white">
                 {cartCount}
               </span>
@@ -338,11 +308,10 @@ const Navbar = () => {
                 >
                   <UserCircleIcon className="h-7 w-7" />
                 </Link>
-
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="rounded-none bg-[#263b4d] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#18b99f]"
+                  className="bg-[#263b4d] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#18b99f] 2xl:px-4"
                 >
                   {t("nav.signOut")}
                 </button>
@@ -357,80 +326,74 @@ const Navbar = () => {
               </Link>
             )}
           </div>
+
+          <div className="ml-auto flex shrink-0 items-center xl:hidden">
+            <Link
+              to="/cart"
+              className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#d6dde3] text-[#70808d] dark:border-white/20 dark:text-white"
+              title={t("nav.cart")}
+            >
+              <ShoppingBagIcon className="h-6 w-6" />
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#7b8187] px-1 text-xs font-bold text-white">
+                {cartCount}
+              </span>
+            </Link>
+          </div>
         </div>
       </div>
 
-      <div className="bg-[#263b4d] text-white dark:bg-black">
-        <div className="mx-auto flex max-w-7xl items-center px-4 sm:px-6 lg:px-8">
-          <div className="group relative">
+      <div className="hidden bg-[#263b4d] text-white dark:bg-black xl:block">
+        <div className="site-container flex min-w-0 items-center">
+          <div className="group relative shrink-0">
             <button
               type="button"
               onClick={() => navigate("/products")}
-              className="flex h-12 items-center gap-3 bg-[#18b99f] px-5 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#14a990]"
+              className="flex h-12 items-center gap-2 bg-[#18b99f] px-4 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-[#14a990] 2xl:gap-3 2xl:px-5 2xl:text-sm"
             >
               <Bars3Icon className="h-6 w-6" />
               {isBg ? "Категории" : "Categories"}
             </button>
 
             <div className="invisible absolute left-0 top-full z-50 w-64 translate-y-2 border border-[#d6dde3] bg-white p-2 opacity-0 shadow-xl transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 dark:border-white/20 dark:bg-black">
-              {categories.map((category) => {
-                const categoryName = isBg
-                  ? category.nameBg ?? category.name
-                  : category.nameEn ?? category.name;
-
-                return (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() =>
-                      navigate(
-                        `/products?category=${encodeURIComponent(
-                          category.id
-                        )}`
-                      )
-                    }
-                    className="block w-full px-4 py-2.5 text-left text-sm font-medium text-[#263b4d] transition hover:bg-[#edf2f5] hover:text-[#18b99f] dark:text-white dark:hover:bg-white/10"
-                  >
-                    {categoryName}
-                  </button>
-                );
-              })}
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() =>
+                    navigate(`/products?category=${encodeURIComponent(category.id)}`)
+                  }
+                  className="block w-full px-4 py-2.5 text-left text-sm font-medium text-[#263b4d] transition hover:bg-[#edf2f5] hover:text-[#18b99f] dark:text-white dark:hover:bg-white/10"
+                >
+                  {categoryLabel(category)}
+                </button>
+              ))}
             </div>
           </div>
 
-          <nav className="hidden min-w-0 flex-1 items-center md:flex">
+          <nav className="flex min-w-0 flex-1 items-center overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const label = isBg
-                ? item.labelBg
-                : item.labelEn;
-              const badge = isBg
-                ? item.badgeBg
-                : item.badgeEn;
+              const label = isBg ? item.labelBg : item.labelEn;
+              const badge = isBg ? item.badgeBg : item.badgeEn;
 
               return (
                 <NavLink
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    `flex h-12 items-center gap-2 border-r border-[#385066] px-5 text-sm font-semibold transition hover:bg-[#1f3446] ${
-                      isActive
-                        ? "bg-[#1f3446] text-white"
-                        : "text-white"
+                    `flex h-12 shrink-0 items-center gap-2 border-r border-[#385066] px-3 text-xs font-semibold transition hover:bg-[#1f3446] 2xl:px-5 2xl:text-sm ${
+                      isActive ? "bg-[#1f3446] text-white" : "text-white"
                     }`
                   }
                 >
                   {Icon && <Icon className="h-5 w-5" />}
-
                   <span>{label}</span>
-
                   {badge && (
                     <span
                       className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
                         badge === "ТОП" || badge === "TOP"
                           ? "bg-[#3bd300] text-white"
-                          : badge === "Ново" ||
-                              badge === "New"
+                          : badge === "Ново" || badge === "New"
                             ? "bg-[#fff200] text-black"
                             : "bg-[#ff0000] text-white"
                       }`}
@@ -445,10 +408,8 @@ const Navbar = () => {
             {isAdmin && (
               <Link
                 to="/admin"
-                className={`flex h-12 items-center border-r border-[#385066] px-5 text-sm font-semibold transition hover:bg-[#1f3446] ${
-                  location.pathname.startsWith("/admin")
-                    ? "bg-[#1f3446]"
-                    : ""
+                className={`flex h-12 shrink-0 items-center border-r border-[#385066] px-3 text-xs font-semibold transition hover:bg-[#1f3446] 2xl:px-5 2xl:text-sm ${
+                  location.pathname.startsWith("/admin") ? "bg-[#1f3446]" : ""
                 }`}
               >
                 {t("nav.admin")}
@@ -459,161 +420,136 @@ const Navbar = () => {
       </div>
 
       {isMenuOpen && (
-        <div className="border-t border-[#d6dde3] bg-white px-4 py-4 transition-colors dark:border-white/20 dark:bg-black sm:px-6 md:hidden">
-          <form
-            onSubmit={handleSearchSubmit}
-            className="mb-4"
-          >
+        <div className="max-h-[calc(100dvh-4.5rem)] overflow-y-auto border-t border-[#d6dde3] bg-white px-4 py-4 transition-colors dark:border-white/20 dark:bg-black sm:px-6 xl:hidden">
+          <form onSubmit={handleSearchSubmit} className="mb-4">
             <div className="relative">
               <input
                 type="search"
                 value={searchQuery}
-                onChange={(event) =>
-                  setSearchQuery(event.target.value)
-                }
+                onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder={t("nav.searchProducts")}
-                className="h-12 w-full rounded-none border border-[#d6dde3] bg-[#f3f3f3] pl-4 pr-12 text-sm text-black outline-none transition focus:border-[#18b99f] focus:bg-white dark:border-white/20 dark:bg-black dark:text-white"
+                className="h-12 w-full border border-[#d6dde3] bg-[#f3f3f3] pl-4 pr-12 text-black outline-none transition focus:border-[#18b99f] focus:bg-white dark:border-white/20 dark:bg-black dark:text-white"
               />
-
-              <MagnifyingGlassIcon className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#70808d]" />
+              <button
+                type="submit"
+                className="absolute right-0 top-0 flex h-12 w-12 items-center justify-center bg-[#18b99f] text-white"
+                aria-label={isBg ? "Търси" : "Search"}
+              >
+                <MagnifyingGlassIcon className="h-5 w-5" />
+              </button>
             </div>
           </form>
 
           <div className="space-y-2">
             <button
               type="button"
-              onClick={() => {
-                navigate("/products");
-                closeMenu();
-              }}
-              className="block w-full rounded-none bg-[#18b99f] px-4 py-3 text-left text-sm font-bold uppercase text-white"
+              onClick={() => navigate("/products")}
+              className="block min-h-11 w-full bg-[#18b99f] px-4 py-3 text-left text-sm font-bold uppercase text-white"
             >
               {isBg ? "Категории" : "Categories"}
             </button>
 
-            <div className="grid gap-1 border border-[#d6dde3] p-2 dark:border-white/20">
-              {categories.map((category) => {
-                const categoryName = isBg
-                  ? category.nameBg ?? category.name
-                  : category.nameEn ?? category.name;
-
-                return (
+            {categories.length > 0 && (
+              <div className="grid gap-1 border border-[#d6dde3] p-2 dark:border-white/20 sm:grid-cols-2">
+                {categories.map((category) => (
                   <button
                     key={category.id}
                     type="button"
-                    onClick={() => {
-                      navigate(
-                        `/products?category=${encodeURIComponent(
-                          category.id
-                        )}`
-                      );
-
-                      closeMenu();
-                    }}
-                    className="block w-full px-3 py-2 text-left text-sm font-medium text-[#263b4d] transition hover:bg-[#edf2f5] hover:text-[#18b99f] dark:text-white dark:hover:bg-white/10"
+                    onClick={() =>
+                      navigate(`/products?category=${encodeURIComponent(category.id)}`)
+                    }
+                    className="min-h-11 w-full px-3 py-2 text-left text-sm font-medium text-[#263b4d] transition hover:bg-[#edf2f5] hover:text-[#18b99f] dark:text-white dark:hover:bg-white/10"
                   >
-                    {categoryName}
+                    {categoryLabel(category)}
                   </button>
+                ))}
+              </div>
+            )}
+
+            <div className="grid gap-1 sm:grid-cols-2">
+              {menuItems.map((item) => {
+                const label = isBg ? item.labelBg : item.labelEn;
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={({ isActive }) =>
+                      `flex min-h-11 items-center px-4 py-3 text-sm font-medium transition ${
+                        isActive
+                          ? "bg-[#edf2f5] text-[#263b4d] dark:bg-white/10 dark:text-white"
+                          : "text-[#263b4d] hover:bg-[#edf2f5] hover:text-[#18b99f] dark:text-white dark:hover:bg-white/10"
+                      }`
+                    }
+                  >
+                    {label}
+                  </NavLink>
                 );
               })}
             </div>
 
-            {menuItems.map((item) => {
-              const label = isBg
-                ? item.labelBg
-                : item.labelEn;
-
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  onClick={closeMenu}
-                  className={({ isActive }) =>
-                    `block rounded-none px-4 py-3 text-sm font-medium transition ${
-                      isActive
-                        ? "bg-[#edf2f5] text-[#263b4d] dark:bg-white/10 dark:text-white"
-                        : "text-[#263b4d] hover:bg-[#edf2f5] hover:text-[#18b99f] dark:text-white dark:hover:bg-white/10"
-                    }`
-                  }
-                >
-                  {label}
-                </NavLink>
-              );
-            })}
-
-            <Link
-              to="/wishlist"
-              onClick={closeMenu}
-              className="block rounded-none px-4 py-3 text-sm font-medium text-[#263b4d] dark:text-white"
-            >
-              {isBg ? "Любими" : "Wishlist"} ({wishlistCount})
-            </Link>
-
-            <Link
-              to="/cart"
-              onClick={closeMenu}
-              className="block rounded-none px-4 py-3 text-sm font-medium text-[#263b4d] dark:text-white"
-            >
-              {t("nav.cart")} ({cartCount})
-            </Link>
-
-            <button
-              type="button"
-              onClick={toggleLanguage}
-              className="block w-full rounded-none px-4 py-3 text-left text-sm font-medium text-[#263b4d] dark:text-white"
-            >
-              {isBg ? "EN" : "BG"}
-            </button>
-
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="flex w-full items-center gap-2 rounded-none px-4 py-3 text-left text-sm font-medium text-[#263b4d] dark:text-white"
-            >
-              {theme === "dark" ? (
-                <SunIcon className="h-4 w-4" />
-              ) : (
-                <MoonIcon className="h-4 w-4" />
-              )}
-
-              {theme === "dark"
-                ? t("nav.themeLight")
-                : t("nav.themeDark")}
-            </button>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <Link
+                to="/wishlist"
+                className="flex min-h-11 items-center justify-center border border-[#d6dde3] px-3 py-2 text-sm font-medium text-[#263b4d] dark:border-white/20 dark:text-white"
+              >
+                {isBg ? "Любими" : "Wishlist"} ({wishlistCount})
+              </Link>
+              <Link
+                to="/cart"
+                className="flex min-h-11 items-center justify-center border border-[#d6dde3] px-3 py-2 text-sm font-medium text-[#263b4d] dark:border-white/20 dark:text-white"
+              >
+                {t("nav.cart")} ({cartCount})
+              </Link>
+              <button
+                type="button"
+                onClick={toggleLanguage}
+                className="min-h-11 border border-[#d6dde3] px-3 py-2 text-sm font-medium text-[#263b4d] dark:border-white/20 dark:text-white"
+              >
+                {isBg ? "EN" : "BG"}
+              </button>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="flex min-h-11 items-center justify-center gap-2 border border-[#d6dde3] px-3 py-2 text-sm font-medium text-[#263b4d] dark:border-white/20 dark:text-white"
+              >
+                {theme === "dark" ? (
+                  <SunIcon className="h-4 w-4" />
+                ) : (
+                  <MoonIcon className="h-4 w-4" />
+                )}
+                {theme === "dark" ? t("nav.themeLight") : t("nav.themeDark")}
+              </button>
+            </div>
 
             {isAdmin && (
               <Link
                 to="/admin"
-                onClick={closeMenu}
-                className="block rounded-none border border-[#18b99f] bg-[#e6fbf7] px-4 py-3 text-sm font-medium text-[#087966] dark:bg-white/10 dark:text-white"
+                className="block min-h-11 border border-[#18b99f] bg-[#e6fbf7] px-4 py-3 text-sm font-medium text-[#087966] dark:bg-white/10 dark:text-white"
               >
                 {t("nav.openAdmin")}
               </Link>
             )}
 
             {isAuthenticated ? (
-              <>
+              <div className="grid gap-2 sm:grid-cols-2">
                 <Link
                   to="/profile"
-                  onClick={closeMenu}
-                  className="block rounded-none border border-[#d6dde3] px-4 py-3 text-sm font-medium text-[#263b4d] dark:border-white/20 dark:text-white"
+                  className="flex min-h-11 items-center border border-[#d6dde3] px-4 py-3 text-sm font-medium text-[#263b4d] dark:border-white/20 dark:text-white"
                 >
                   {user?.name ?? t("nav.account")}
                 </Link>
-
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="block w-full rounded-none bg-[#263b4d] px-4 py-3 text-left text-sm font-medium text-white"
+                  className="min-h-11 bg-[#263b4d] px-4 py-3 text-left text-sm font-medium text-white"
                 >
                   {t("nav.signOut")}
                 </button>
-              </>
+              </div>
             ) : (
               <Link
                 to="/login"
-                onClick={closeMenu}
-                className="block rounded-none border border-[#d6dde3] px-4 py-3 text-sm font-medium text-[#263b4d] dark:border-white/20 dark:text-white"
+                className="block min-h-11 border border-[#d6dde3] px-4 py-3 text-sm font-medium text-[#263b4d] dark:border-white/20 dark:text-white"
               >
                 {t("nav.signIn")}
               </Link>
