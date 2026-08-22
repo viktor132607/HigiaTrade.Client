@@ -1,6 +1,6 @@
 FROM node:22-alpine AS build
 WORKDIR /app
-ARG NEXT_PUBLIC_API_URL=http://localhost:10000/api
+ARG NEXT_PUBLIC_API_URL=https://higiatrade-server.onrender.com/api
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 COPY package*.json ./
 RUN npm install
