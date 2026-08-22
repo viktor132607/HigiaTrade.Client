@@ -96,6 +96,18 @@ const ProductPricingAndUploadFields = ({
     return next;
   };
 
+  const moveSelectedFile = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= selectedFiles.length) return;
+    setSelectedFiles((previous) => moveItem(previous, index, target));
+  };
+
+  const moveUploadedImage = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= uploadedImages.length) return;
+    applyImages(moveItem(uploadedImages, index, target));
+  };
+
   const uploadImages = async () => {
     if (selectedFiles.length === 0) {
       setUploadError("Избери поне една снимка от устройството.");
@@ -163,7 +175,7 @@ const ProductPricingAndUploadFields = ({
           name="retailPrice"
           value={retailPrice}
           onChange={(event) => setRetailPrice(event.target.value)}
-          className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+          className="mt-1 block min-h-11 w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-primary-500 focus:ring-primary-500"
         />
       </div>
 
@@ -179,7 +191,7 @@ const ProductPricingAndUploadFields = ({
           name="wholesalePrice"
           value={wholesalePrice}
           onChange={(event) => setWholesalePrice(event.target.value)}
-          className="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+          className="mt-1 block min-h-11 w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-primary-500 focus:ring-primary-500"
         />
       </div>
 
@@ -188,7 +200,7 @@ const ProductPricingAndUploadFields = ({
         <div className="mt-1 grid grid-cols-1 gap-3 lg:grid-cols-2">
           <div className="rounded-md border border-gray-300 bg-gray-50 px-3 py-3 text-sm text-gray-700">
             <div className="mb-2 font-semibold text-gray-900">Дребно</div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-1 gap-2 min-[390px]:grid-cols-2 sm:grid-cols-4">
               <div>
                 <div className="text-xs text-gray-500">Ставка</div>
                 <div>{VAT_RATE}%</div>
@@ -210,7 +222,7 @@ const ProductPricingAndUploadFields = ({
 
           <div className="rounded-md border border-gray-300 bg-gray-50 px-3 py-3 text-sm text-gray-700">
             <div className="mb-2 font-semibold text-gray-900">Едро</div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-1 gap-2 min-[390px]:grid-cols-2 sm:grid-cols-4">
               <div>
                 <div className="text-xs text-gray-500">Ставка</div>
                 <div>{VAT_RATE}%</div>
@@ -246,27 +258,27 @@ const ProductPricingAndUploadFields = ({
               setSelectedFiles(Array.from(event.target.files ?? []));
               setUploadError("");
             }}
-            className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-200"
+            className="block min-h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-200"
           />
           <button
             type="button"
             onClick={uploadImages}
             disabled={uploading || selectedFiles.length === 0}
-            className="shrink-0 rounded-md bg-[#18b99f] px-4 py-2 text-white hover:bg-[#149f8a] disabled:cursor-not-allowed disabled:opacity-50"
+            className="min-h-11 shrink-0 rounded-md bg-[#18b99f] px-4 py-2 text-white hover:bg-[#149f8a] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {uploading ? "Качване..." : "Качи снимки"}
           </button>
         </div>
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs leading-5 text-gray-500">
           JPEG, PNG, WEBP или GIF, до 5 MB на снимка. Първата снимка в подредбата е основна.
         </p>
 
         {selectedPreviews.length > 0 && (
           <div className="mt-3">
             <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
-              Избрани за качване — влачи за подреждане
+              Избрани за качване — влачи или използвай стрелките
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 min-[390px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
               {selectedPreviews.map((preview, index) => (
                 <div
                   key={`${selectedFiles[index]?.name}-${selectedFiles[index]?.lastModified}`}
@@ -280,15 +292,35 @@ const ProductPricingAndUploadFields = ({
                     );
                     setDraggedFileIndex(null);
                   }}
-                  className="cursor-move overflow-hidden rounded-md border border-gray-300 bg-white shadow-sm"
+                  className="overflow-hidden rounded-md border border-gray-300 bg-white shadow-sm sm:cursor-move"
                 >
                   <img
                     src={preview}
                     alt={selectedFiles[index]?.name || `Снимка ${index + 1}`}
-                    className="h-28 w-full object-cover"
+                    className="h-36 w-full object-cover sm:h-28"
                   />
-                  <div className="truncate px-2 py-1.5 text-xs text-gray-600">
+                  <div className="truncate px-2 pt-1.5 text-xs text-gray-600">
                     {index + 1}. {selectedFiles[index]?.name}
+                  </div>
+                  <div className="flex gap-2 p-2">
+                    <button
+                      type="button"
+                      onClick={() => moveSelectedFile(index, -1)}
+                      disabled={index === 0}
+                      className="min-h-11 flex-1 rounded border border-gray-300 text-sm disabled:opacity-40"
+                      aria-label="Премести снимката наляво"
+                    >
+                      ←
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveSelectedFile(index, 1)}
+                      disabled={index === selectedFiles.length - 1}
+                      className="min-h-11 flex-1 rounded border border-gray-300 text-sm disabled:opacity-40"
+                      aria-label="Премести снимката надясно"
+                    >
+                      →
+                    </button>
                   </div>
                 </div>
               ))}
@@ -299,9 +331,9 @@ const ProductPricingAndUploadFields = ({
         {uploadedImages.length > 0 && (
           <div className="mt-4">
             <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
-              Снимки на продукта — влачи за подреждане
+              Снимки на продукта — влачи или използвай стрелките
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 min-[390px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
               {uploadedImages.map((image, index) => (
                 <div
                   key={`${image.uri}-${index}`}
@@ -313,12 +345,12 @@ const ProductPricingAndUploadFields = ({
                     applyImages(moveItem(uploadedImages, draggedImageIndex, index));
                     setDraggedImageIndex(null);
                   }}
-                  className="group relative cursor-move overflow-hidden rounded-md border border-gray-300 bg-white shadow-sm"
+                  className="group relative overflow-hidden rounded-md border border-gray-300 bg-white shadow-sm sm:cursor-move"
                 >
                   <img
                     src={image.uri}
                     alt={`Снимка ${index + 1}`}
-                    className="h-32 w-full object-cover"
+                    className="h-40 w-full object-cover sm:h-32"
                   />
                   <div className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs text-gray-600">
                     <span className="truncate">
@@ -329,10 +361,30 @@ const ProductPricingAndUploadFields = ({
                       onClick={() =>
                         applyImages(uploadedImages.filter((_, itemIndex) => itemIndex !== index))
                       }
-                      className="rounded px-1.5 py-0.5 text-red-600 hover:bg-red-50"
+                      className="min-h-11 min-w-11 rounded px-1.5 py-0.5 text-red-600 hover:bg-red-50"
                       title="Премахни"
                     >
                       ×
+                    </button>
+                  </div>
+                  <div className="flex gap-2 px-2 pb-2">
+                    <button
+                      type="button"
+                      onClick={() => moveUploadedImage(index, -1)}
+                      disabled={index === 0}
+                      className="min-h-11 flex-1 rounded border border-gray-300 text-sm disabled:opacity-40"
+                      aria-label="Премести снимката наляво"
+                    >
+                      ←
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveUploadedImage(index, 1)}
+                      disabled={index === uploadedImages.length - 1}
+                      className="min-h-11 flex-1 rounded border border-gray-300 text-sm disabled:opacity-40"
+                      aria-label="Премести снимката надясно"
+                    >
+                      →
                     </button>
                   </div>
                   {index === 0 && (
