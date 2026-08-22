@@ -1,11 +1,21 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+
+type ProductImage = {
+  id?: string | null;
+  uri: string;
+};
 
 type Props = {
   token: string | null;
   regularPrice: string;
   defaultRetailPrice?: number;
   defaultWholesalePrice?: number;
-  onImageUploaded: (url: string) => void;
+  currentMainImageUrl?: string;
+  currentSecondaryImages?: ProductImage[];
+  onImagesChange: (
+    mainImageUrl: string,
+    secondaryImages: ProductImage[]
+  ) => void;
 };
 
 const VAT_RATE = 20;
@@ -15,7 +25,9 @@ const ProductPricingAndUploadFields = ({
   regularPrice,
   defaultRetailPrice,
   defaultWholesalePrice,
-  onImageUploaded,
+  currentMainImageUrl,
+  currentSecondaryImages = [],
+  onImagesChange,
 }: Props) => {
   const [retailPrice, setRetailPrice] = useState(
     defaultRetailPrice && defaultRetailPrice > 0
@@ -27,27 +39,66 @@ const ProductPricingAndUploadFields = ({
       ? defaultWholesalePrice.toString()
       : ""
   );
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedPreviews, setSelectedPreviews] = useState<string[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<ProductImage[]>(() => [
+    ...(currentMainImageUrl?.trim()
+      ? [{ uri: currentMainImageUrl.trim() }]
+      : []),
+    ...currentSecondaryImages.filter((image) => image.uri?.trim()),
+  ]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
-  const [uploadedFileName, setUploadedFileName] = useState("");
+  const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
+  const [draggedFileIndex, setDraggedFileIndex] = useState<number | null>(null);
 
-  const vatCalculation = useMemo(() => {
+  useEffect(() => {
+    const previews = selectedFiles.map((file) => URL.createObjectURL(file));
+    setSelectedPreviews(previews);
+
+    return () => {
+      previews.forEach((preview) => URL.revokeObjectURL(preview));
+    };
+  }, [selectedFiles]);
+
+  const retailBreakdown = useMemo(() => {
     const source = retailPrice.trim() !== "" ? retailPrice : regularPrice;
-    const gross = Number.parseFloat(source) || 0;
+    const gross = Math.max(0, Number.parseFloat(source) || 0);
     const net = gross > 0 ? gross / (1 + VAT_RATE / 100) : 0;
-    const vat = gross - net;
 
     return {
       gross,
       net,
-      vat,
+      vat: gross - net,
     };
   }, [regularPrice, retailPrice]);
 
-  const uploadImage = async () => {
-    if (!selectedFile) {
-      setUploadError("Избери снимка от устройството.");
+  const wholesaleBreakdown = useMemo(() => {
+    const gross = Math.max(0, Number.parseFloat(wholesalePrice) || 0);
+    const net = gross > 0 ? gross / (1 + VAT_RATE / 100) : 0;
+
+    return {
+      gross,
+      net,
+      vat: gross - net,
+    };
+  }, [wholesalePrice]);
+
+  const applyImages = (images: ProductImage[]) => {
+    setUploadedImages(images);
+    onImagesChange(images[0]?.uri ?? "", images.slice(1));
+  };
+
+  const moveItem = <T,>(items: T[], from: number, to: number) => {
+    const next = [...items];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    return next;
+  };
+
+  const uploadImages = async () => {
+    if (selectedFiles.length === 0) {
+      setUploadError("Избери поне една снимка от устройството.");
       return;
     }
 
@@ -55,38 +106,43 @@ const ProductPricingAndUploadFields = ({
     setUploadError("");
 
     try {
-      const body = new window.FormData();
-      body.append("file", selectedFile);
+      const uploaded: ProductImage[] = [];
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/Images/upload`,
-        {
-          method: "POST",
-          headers: token
-            ? {
-                Authorization: `Bearer ${token}`,
-              }
-            : undefined,
-          body,
+      for (const file of selectedFiles) {
+        const body = new window.FormData();
+        body.append("file", file);
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/Images/upload`,
+          {
+            method: "POST",
+            headers: token
+              ? {
+                  Authorization: `Bearer ${token}`,
+                }
+              : undefined,
+            body,
+          }
+        );
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(data?.message || `Снимката ${file.name} не беше качена.`);
         }
-      );
 
-      const data = await response.json().catch(() => null);
+        if (!data?.url) {
+          throw new Error(`Сървърът не върна адрес за ${file.name}.`);
+        }
 
-      if (!response.ok) {
-        throw new Error(data?.message || "Снимката не беше качена.");
+        uploaded.push({ uri: String(data.url) });
       }
 
-      if (!data?.url) {
-        throw new Error("Сървърът не върна адрес на снимката.");
-      }
-
-      onImageUploaded(String(data.url));
-      setUploadedFileName(selectedFile.name);
-      setSelectedFile(null);
+      applyImages([...uploadedImages, ...uploaded]);
+      setSelectedFiles([]);
     } catch (error) {
       setUploadError(
-        error instanceof Error ? error.message : "Снимката не беше качена."
+        error instanceof Error ? error.message : "Снимките не бяха качени."
       );
     } finally {
       setUploading(false);
@@ -128,20 +184,50 @@ const ProductPricingAndUploadFields = ({
       </div>
 
       <div className="sm:col-span-2">
-        <label className="block text-sm font-medium text-gray-700">
-          ДДС
-        </label>
-        <div className="mt-1 grid grid-cols-1 gap-2 rounded-md border border-gray-300 bg-gray-50 px-3 py-3 text-sm text-gray-700 sm:grid-cols-3">
-          <div>
-            <span className="font-medium">Ставка:</span> {VAT_RATE}%
+        <label className="block text-sm font-medium text-gray-700">ДДС</label>
+        <div className="mt-1 grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="rounded-md border border-gray-300 bg-gray-50 px-3 py-3 text-sm text-gray-700">
+            <div className="mb-2 font-semibold text-gray-900">Дребно</div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div>
+                <div className="text-xs text-gray-500">Ставка</div>
+                <div>{VAT_RATE}%</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500">Без ДДС</div>
+                <div>{retailBreakdown.net.toFixed(2)} EUR</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500">ДДС</div>
+                <div>{retailBreakdown.vat.toFixed(2)} EUR</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500">Крайна с ДДС</div>
+                <div className="font-semibold">{retailBreakdown.gross.toFixed(2)} EUR</div>
+              </div>
+            </div>
           </div>
-          <div>
-            <span className="font-medium">Без ДДС:</span>{" "}
-            {vatCalculation.net.toFixed(2)} EUR
-          </div>
-          <div>
-            <span className="font-medium">ДДС:</span>{" "}
-            {vatCalculation.vat.toFixed(2)} EUR
+
+          <div className="rounded-md border border-gray-300 bg-gray-50 px-3 py-3 text-sm text-gray-700">
+            <div className="mb-2 font-semibold text-gray-900">Едро</div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div>
+                <div className="text-xs text-gray-500">Ставка</div>
+                <div>{VAT_RATE}%</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500">Без ДДС</div>
+                <div>{wholesaleBreakdown.net.toFixed(2)} EUR</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500">ДДС</div>
+                <div>{wholesaleBreakdown.vat.toFixed(2)} EUR</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-500">Крайна с ДДС</div>
+                <div className="font-semibold">{wholesaleBreakdown.gross.toFixed(2)} EUR</div>
+              </div>
+            </div>
           </div>
         </div>
         <input type="hidden" name="vatRate" value={VAT_RATE} />
@@ -149,38 +235,119 @@ const ProductPricingAndUploadFields = ({
 
       <div className="sm:col-span-2">
         <label className="block text-sm font-medium text-gray-700">
-          Качи основна снимка от устройството
+          Качи снимки от устройството
         </label>
         <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center">
           <input
             type="file"
+            multiple
             accept="image/jpeg,image/png,image/webp,image/gif"
             onChange={(event) => {
-              setSelectedFile(event.target.files?.[0] ?? null);
+              setSelectedFiles(Array.from(event.target.files ?? []));
               setUploadError("");
-              setUploadedFileName("");
             }}
             className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-200"
           />
           <button
             type="button"
-            onClick={uploadImage}
-            disabled={uploading || !selectedFile}
+            onClick={uploadImages}
+            disabled={uploading || selectedFiles.length === 0}
             className="shrink-0 rounded-md bg-[#18b99f] px-4 py-2 text-white hover:bg-[#149f8a] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {uploading ? "Качване..." : "Качи снимка"}
+            {uploading ? "Качване..." : "Качи снимки"}
           </button>
         </div>
         <p className="mt-1 text-xs text-gray-500">
-          JPEG, PNG, WEBP или GIF, до 5 MB. Снимката се записва в базата данни и попълва полето за основен URL.
+          JPEG, PNG, WEBP или GIF, до 5 MB на снимка. Първата снимка в подредбата е основна.
         </p>
-        {uploadedFileName && (
-          <p className="mt-1 text-sm text-green-600">
-            Качена: {uploadedFileName}
-          </p>
+
+        {selectedPreviews.length > 0 && (
+          <div className="mt-3">
+            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+              Избрани за качване — влачи за подреждане
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              {selectedPreviews.map((preview, index) => (
+                <div
+                  key={`${selectedFiles[index]?.name}-${selectedFiles[index]?.lastModified}`}
+                  draggable
+                  onDragStart={() => setDraggedFileIndex(index)}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={() => {
+                    if (draggedFileIndex === null || draggedFileIndex === index) return;
+                    setSelectedFiles((previous) =>
+                      moveItem(previous, draggedFileIndex, index)
+                    );
+                    setDraggedFileIndex(null);
+                  }}
+                  className="cursor-move overflow-hidden rounded-md border border-gray-300 bg-white shadow-sm"
+                >
+                  <img
+                    src={preview}
+                    alt={selectedFiles[index]?.name || `Снимка ${index + 1}`}
+                    className="h-28 w-full object-cover"
+                  />
+                  <div className="truncate px-2 py-1.5 text-xs text-gray-600">
+                    {index + 1}. {selectedFiles[index]?.name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
+
+        {uploadedImages.length > 0 && (
+          <div className="mt-4">
+            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+              Снимки на продукта — влачи за подреждане
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              {uploadedImages.map((image, index) => (
+                <div
+                  key={`${image.uri}-${index}`}
+                  draggable
+                  onDragStart={() => setDraggedImageIndex(index)}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={() => {
+                    if (draggedImageIndex === null || draggedImageIndex === index) return;
+                    applyImages(moveItem(uploadedImages, draggedImageIndex, index));
+                    setDraggedImageIndex(null);
+                  }}
+                  className="group relative cursor-move overflow-hidden rounded-md border border-gray-300 bg-white shadow-sm"
+                >
+                  <img
+                    src={image.uri}
+                    alt={`Снимка ${index + 1}`}
+                    className="h-32 w-full object-cover"
+                  />
+                  <div className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs text-gray-600">
+                    <span className="truncate">
+                      {index === 0 ? "Основна" : `Снимка ${index + 1}`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        applyImages(uploadedImages.filter((_, itemIndex) => itemIndex !== index))
+                      }
+                      className="rounded px-1.5 py-0.5 text-red-600 hover:bg-red-50"
+                      title="Премахни"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  {index === 0 && (
+                    <div className="absolute left-2 top-2 rounded bg-[#18b99f] px-2 py-1 text-[11px] font-semibold text-white">
+                      Основна
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {uploadError && (
-          <p className="mt-1 text-sm text-red-600">{uploadError}</p>
+          <p className="mt-2 text-sm text-red-600">{uploadError}</p>
         )}
       </div>
     </>
