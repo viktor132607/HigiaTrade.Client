@@ -130,25 +130,20 @@ const Products = () => {
     };
 
     if (fetchTimeoutRef.current) {
-      if (fetchTimeoutRef.current) {
       clearTimeout(fetchTimeoutRef.current);
-    }
     }
 
     fetchTimeoutRef.current = setTimeout(fetchProducts, 100);
 
     return () => {
       if (fetchTimeoutRef.current) {
-        if (fetchTimeoutRef.current) {
-      clearTimeout(fetchTimeoutRef.current);
-    }
+        clearTimeout(fetchTimeoutRef.current);
       }
     };
   }, [filters]);
 
   const handleApplyFilters = (newFilters: Partial<FilterState>) => {
     const updatedFilters = { ...filters, ...newFilters };
-
     setFilters(updatedFilters);
 
     const newParams = new URLSearchParams();
@@ -173,10 +168,11 @@ const Products = () => {
 
   const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newPageSize = parseInt(e.target.value);
-    setFilters((prev) => ({ ...prev, pageSize: newPageSize }));
+    setFilters((prev) => ({ ...prev, pageSize: newPageSize, pageNumber: 1 }));
     setSearchParams((prev) => {
       const newParams = new URLSearchParams(prev);
       newParams.set("pageSize", newPageSize.toString());
+      newParams.set("page", "1");
       return newParams;
     });
   };
@@ -198,23 +194,27 @@ const Products = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_80px_-60px_rgba(15,23,42,0.55)]">
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-5 sm:py-8 lg:py-10">
+      <div className="site-container">
+        <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_24px_80px_-60px_rgba(15,23,42,0.55)] sm:mb-8 sm:rounded-[2rem] sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600">Store</p>
-              <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-slate-950">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600">
+                Store
+              </p>
+              <h1 className="mt-3 break-words font-display text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
                 {getCategoryName(filters.category)
                   ? `${getCategoryName(filters.category)} products`
                   : "All products"}
               </h1>
-              <p className="mt-2 text-sm text-slate-600">
-                Showing {products.length} of {totalCount} products. Use category, price, and rating filters to narrow the list.
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Showing {products.length} of {totalCount} products. Use category,
+                price, and rating filters to narrow the list.
               </p>
             </div>
+
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2">
+              <div className="flex min-h-11 flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2">
                 <label htmlFor="pageSize" className="text-sm text-slate-600">
                   Per page:
                 </label>
@@ -230,12 +230,11 @@ const Products = () => {
                   <option value="100">100</option>
                 </select>
               </div>
-
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col gap-8 xl:flex-row">
+        <div className="flex flex-col gap-5 sm:gap-8 xl:flex-row">
           <FilterSidebar
             categories={categories}
             selectedCategory={filters.category}
@@ -244,34 +243,34 @@ const Products = () => {
           />
 
           <div className="min-w-0 flex-1">
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:gap-6 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
 
-              {products.length === 0 && (
-                <div className="rounded-[2rem] border border-slate-200 bg-white py-16 text-center shadow-[0_24px_80px_-60px_rgba(15,23,42,0.55)]">
-                  <p className="text-lg text-slate-600">
-                    No products match the current filters.
+            {products.length === 0 && (
+              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-12 text-center shadow-[0_24px_80px_-60px_rgba(15,23,42,0.55)] sm:rounded-[2rem] sm:py-16">
+                <p className="text-base text-slate-600 sm:text-lg">
+                  No products match the current filters.
                 </p>
               </div>
             )}
 
             {totalPages > 1 && (
-              <div className="flex justify-center mt-8">
+              <div className="mt-8 flex justify-center">
                 <nav className="flex max-w-full flex-wrap items-center justify-center gap-2">
                   <button
                     onClick={() => handlePageChange(1)}
                     disabled={filters.pageNumber === 1}
-                    className="min-w-[2.5rem] rounded-md border border-gray-300 px-3 py-1 disabled:opacity-50"
+                    className="min-h-11 min-w-11 rounded-md border border-gray-300 px-3 py-1 disabled:opacity-50"
                   >
                     &laquo;
                   </button>
                   <button
                     onClick={() => handlePageChange(filters.pageNumber - 1)}
                     disabled={filters.pageNumber === 1}
-                    className="min-w-[2.5rem] rounded-md border border-gray-300 px-3 py-1 disabled:opacity-50"
+                    className="min-h-11 min-w-11 rounded-md border border-gray-300 px-3 py-1 disabled:opacity-50"
                   >
                     &lsaquo;
                   </button>
@@ -287,11 +286,11 @@ const Products = () => {
                     .map((page, index, array) => (
                       <React.Fragment key={page}>
                         {index > 0 && array[index - 1] !== page - 1 && (
-                          <span className="px-2">...</span>
+                          <span className="px-1 sm:px-2">...</span>
                         )}
                         <button
                           onClick={() => handlePageChange(page)}
-                          className={`min-w-[2.5rem] rounded-md px-3 py-1 ${
+                          className={`min-h-11 min-w-11 rounded-md px-3 py-1 ${
                             filters.pageNumber === page
                               ? "bg-primary-600 text-white"
                               : "border border-gray-300 hover:bg-gray-100"
@@ -305,14 +304,14 @@ const Products = () => {
                   <button
                     onClick={() => handlePageChange(filters.pageNumber + 1)}
                     disabled={filters.pageNumber === totalPages}
-                    className="min-w-[2.5rem] rounded-md border border-gray-300 px-3 py-1 disabled:opacity-50"
+                    className="min-h-11 min-w-11 rounded-md border border-gray-300 px-3 py-1 disabled:opacity-50"
                   >
                     &rsaquo;
                   </button>
                   <button
                     onClick={() => handlePageChange(totalPages)}
                     disabled={filters.pageNumber === totalPages}
-                    className="min-w-[2.5rem] rounded-md border border-gray-300 px-3 py-1 disabled:opacity-50"
+                    className="min-h-11 min-w-11 rounded-md border border-gray-300 px-3 py-1 disabled:opacity-50"
                   >
                     &raquo;
                   </button>
