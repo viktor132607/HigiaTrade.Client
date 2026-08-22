@@ -48,7 +48,7 @@ const Footer = () => {
   return (
     <footer className="border-t border-[#d6dde3] bg-[#f4f6f8] text-[#263b4d] transition-colors dark:border-white/20 dark:bg-black dark:text-white">
       <div className="border-b border-[#d6dde3] bg-[#f7f8fa] dark:border-white/20 dark:bg-black">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
+        <div className="site-container grid gap-7 py-8 sm:gap-8 sm:py-10 md:grid-cols-2 lg:grid-cols-4">
           {benefits.map((item) => {
             const Icon = item.icon;
 
@@ -57,7 +57,7 @@ const Footer = () => {
                 <div className="mx-auto flex h-14 w-14 items-center justify-center text-[#263b4d] dark:text-white">
                   <Icon className="h-12 w-12 stroke-[1.5]" />
                 </div>
-                <h3 className="mt-3 text-xl font-semibold text-[#263b4d] dark:text-white">
+                <h3 className="mt-3 text-lg font-semibold text-[#263b4d] dark:text-white sm:text-xl">
                   {isBg ? item.titleBg : item.titleEn}
                 </h3>
                 <p className="mx-auto mt-2 max-w-xs text-xs leading-5 text-[#6f7f8c] dark:text-white/70">
@@ -69,22 +69,22 @@ const Footer = () => {
         </div>
       </div>
 
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 text-sm sm:px-6 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
+      <div className="site-container grid gap-8 py-8 text-sm sm:py-10 md:grid-cols-2 lg:grid-cols-4">
         <div>
           <h4 className="text-lg font-bold text-[#263b4d] dark:text-white">
             {isBg ? "Пазарувай с Хигия" : "Shop with Hygia"}
           </h4>
           <div className="mt-4 grid gap-2 text-[#4b5d6d] dark:text-white/75">
-            <Link to="/register" className="hover:text-[#18b99f]">
+            <Link to="/register" className="min-h-11 py-2 hover:text-[#18b99f]">
               {isBg ? "Регистрирай се" : "Register"}
             </Link>
-            <Link to="/products" className="hover:text-[#18b99f]">
+            <Link to="/products" className="min-h-11 py-2 hover:text-[#18b99f]">
               {isBg ? "Продукти" : "Products"}
             </Link>
-            <Link to="/orders" className="hover:text-[#18b99f]">
+            <Link to="/orders" className="min-h-11 py-2 hover:text-[#18b99f]">
               {isBg ? "Проследяване на поръчки" : "Order tracking"}
             </Link>
-            <Link to="/about" className="hover:text-[#18b99f]">
+            <Link to="/about" className="min-h-11 py-2 hover:text-[#18b99f]">
               {isBg ? "За нас" : "About us"}
             </Link>
           </div>
@@ -95,16 +95,16 @@ const Footer = () => {
             {isBg ? "Моят акаунт" : "My account"}
           </h4>
           <div className="mt-4 grid gap-2 text-[#4b5d6d] dark:text-white/75">
-            <Link to="/login" className="hover:text-[#18b99f]">
+            <Link to="/login" className="min-h-11 py-2 hover:text-[#18b99f]">
               {isBg ? "Влизане" : "Sign in"}
             </Link>
-            <Link to="/profile" className="hover:text-[#18b99f]">
+            <Link to="/profile" className="min-h-11 py-2 hover:text-[#18b99f]">
               {isBg ? "Профил" : "Profile"}
             </Link>
-            <Link to="/wishlist" className="hover:text-[#18b99f]">
+            <Link to="/wishlist" className="min-h-11 py-2 hover:text-[#18b99f]">
               {isBg ? "Любими" : "Wishlist"}
             </Link>
-            <Link to="/cart" className="hover:text-[#18b99f]">
+            <Link to="/cart" className="min-h-11 py-2 hover:text-[#18b99f]">
               {isBg ? "Количка" : "Cart"}
             </Link>
           </div>
@@ -115,16 +115,16 @@ const Footer = () => {
             {isBg ? "Информация" : "Information"}
           </h4>
           <div className="mt-4 grid gap-2 text-[#4b5d6d] dark:text-white/75">
-            <Link to="/promotions" className="hover:text-[#18b99f]">
+            <Link to="/promotions" className="min-h-11 py-2 hover:text-[#18b99f]">
               {isBg ? "Промоции" : "Promotions"}
             </Link>
-            <Link to="/new-products" className="hover:text-[#18b99f]">
+            <Link to="/new-products" className="min-h-11 py-2 hover:text-[#18b99f]">
               {isBg ? "Нови стоки" : "New products"}
             </Link>
-            <Link to="/best-sellers" className="hover:text-[#18b99f]">
+            <Link to="/best-sellers" className="min-h-11 py-2 hover:text-[#18b99f]">
               {isBg ? "Най-продавани" : "Best sellers"}
             </Link>
-            <Link to="/brands" className="hover:text-[#18b99f]">
+            <Link to="/brands" className="min-h-11 py-2 hover:text-[#18b99f]">
               {isBg ? "По марка" : "By brand"}
             </Link>
           </div>
@@ -134,7 +134,7 @@ const Footer = () => {
           <h4 className="text-lg font-bold text-[#263b4d] dark:text-white">
             {isBg ? "За контакти" : "Contacts"}
           </h4>
-          <div className="mt-4 space-y-2 text-[#4b5d6d] dark:text-white/75">
+          <div className="mt-4 space-y-2 break-words text-[#4b5d6d] dark:text-white/75">
             <p>{isBg ? "Телефон" : "Phone"}: {CONTACT_PHONE}</p>
             <p>Email: {CONTACT_EMAIL}</p>
             <p>{isBg ? "Адрес" : "Address"}: Ruse, Bulgaria</p>
@@ -152,7 +152,7 @@ const Footer = () => {
       </div>
 
       <div className="border-t border-[#d6dde3] bg-[#263b4d] text-white dark:border-white/20 dark:bg-black">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 text-xs sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+        <div className="site-container flex flex-col gap-3 py-4 text-xs sm:flex-row sm:items-center sm:justify-between">
           <p>
             &copy; {new Date().getFullYear()} HygiaTrade.{" "}
             {isBg ? "Всички права запазени." : "All rights reserved."}
