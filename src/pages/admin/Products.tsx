@@ -10,6 +10,7 @@ import { RootState } from "../../store";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { formatCurrency } from "../../utils/currency";
+import ProductPricingAndUploadFields from "../../components/admin/ProductPricingAndUploadFields";
 
 
 interface Category {
@@ -28,6 +29,9 @@ interface Product {
   rating: number;
   discountPercentage: number;
   discountedPrice: number;
+  wholesalePrice?: number;
+  wholesalePriceInclVat?: number;
+  vatRate?: number;
   reviews: Array<{
     id: string;
     userId: string;
@@ -278,12 +282,27 @@ const AdminProducts = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!validateForm()) {
       return;
     }
+
+    const submittedFields = new window.FormData(e.currentTarget);
+    const retailPriceRaw = String(submittedFields.get("retailPrice") ?? "").trim();
+    const wholesalePriceRaw = String(submittedFields.get("wholesalePrice") ?? "").trim();
+    const vatRateRaw = String(submittedFields.get("vatRate") ?? "20").trim();
+
+    const retailPrice =
+      retailPriceRaw === ""
+        ? parseFloat(formData.regularPrice) || 0
+        : Math.max(0, parseFloat(retailPriceRaw) || 0);
+    const wholesalePrice =
+      wholesalePriceRaw === ""
+        ? 0
+        : Math.max(0, parseFloat(wholesalePriceRaw) || 0);
+    const vatRate = Math.min(100, Math.max(0, parseFloat(vatRateRaw) || 20));
 
     try {
       const isEditing = !!editingProduct;
@@ -293,7 +312,10 @@ const AdminProducts = () => {
         title: formData.name,
         description: formData.description,
         mainImageUrl: formData.mainImageUrl,
-        regularPrice: parseFloat(formData.regularPrice) || 0,
+        regularPrice: retailPrice,
+        wholesalePrice,
+        wholesaleMinQuantity: wholesalePrice > 0 ? 2 : 0,
+        vatRate,
         discountPercentage: parseFloat(formData.discountPercentage) || 0,
         discountedPrice: parseFloat(formData.discountedPrice) || 0,
         quantity: parseInt(formData.stock) || 0,
@@ -958,6 +980,27 @@ const AdminProducts = () => {
                     </p>
                   )}
                 </div>
+
+                <ProductPricingAndUploadFields
+                  key={editingProduct?.id ?? "new-product"}
+                  token={token}
+                  regularPrice={formData.regularPrice}
+                  defaultRetailPrice={editingProduct?.regularPrice}
+                  defaultWholesalePrice={
+                    editingProduct?.wholesalePriceInclVat ??
+                    editingProduct?.wholesalePrice
+                  }
+                  onImageUploaded={(url) => {
+                    setFormData((previous) => ({
+                      ...previous,
+                      mainImageUrl: url,
+                    }));
+                    setValidationErrors((previous) => ({
+                      ...previous,
+                      mainImageUrl: undefined,
+                    }));
+                  }}
+                />
               </div>
 
               <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
