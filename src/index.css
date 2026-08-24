@@ -80,6 +80,7 @@
   .table-scroll {
     @apply overflow-x-auto;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
   }
 
   .rich-text-shell .ql-toolbar {
@@ -154,7 +155,47 @@
     touch-action: manipulation;
   }
 
-  /* Existing admin overlays stay above the sticky navigation and scroll naturally on phones. */
+  .admin-shell {
+    overflow-x: hidden;
+  }
+
+  .admin-shell main {
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  .admin-shell main h1 {
+    font-size: 1.35rem;
+    line-height: 1.7rem;
+  }
+
+  .admin-shell .table-scroll {
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+    padding-bottom: 0.35rem;
+  }
+
+  .admin-shell .table-scroll table {
+    font-size: 0.8rem;
+  }
+
+  .admin-shell form input,
+  .admin-shell form select,
+  .admin-shell form textarea {
+    width: 100%;
+  }
+
+  .admin-shell form button[type="submit"],
+  .admin-shell form button[type="button"] {
+    min-height: 44px;
+  }
+
+  .admin-mobile-nav {
+    padding-left: max(0.25rem, env(safe-area-inset-left));
+    padding-right: max(0.25rem, env(safe-area-inset-right));
+  }
+
+  /* Existing admin overlays stay above the mobile navigation and scroll naturally on phones. */
   .fixed.inset-0.bg-black.bg-opacity-50 {
     z-index: 60;
     align-items: flex-start;
@@ -163,8 +204,13 @@
   }
 
   .fixed.inset-0.bg-black.bg-opacity-50 > div {
+    width: 100%;
+    min-height: 100%;
     max-height: none;
     border-radius: 0;
+    padding: 1rem;
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(5rem, calc(env(safe-area-inset-bottom) + 1rem));
   }
 }
 
