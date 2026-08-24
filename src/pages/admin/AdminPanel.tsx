@@ -11,15 +11,16 @@ import {
 import { Navigate, NavLink, Outlet } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
+import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 
 const navigation = [
-  { to: "/admin", label: "Табло", icon: Squares2X2Icon, end: true },
-  { to: "/admin/orders", label: "Поръчки", icon: QueueListIcon },
-  { to: "/admin/products", label: "Продукти", icon: CubeIcon },
-  { to: "/admin/categories", label: "Категории", icon: ChartBarSquareIcon },
-  { to: "/admin/brands", label: "Марки", icon: TagIcon },
-  { to: "/admin/users", label: "Клиенти", icon: UsersIcon },
-  { to: "/admin/reports", label: "Справки", icon: DocumentChartBarIcon },
+  { to: "/admin", labelBg: "Табло", labelEn: "Overview", icon: Squares2X2Icon, end: true },
+  { to: "/admin/orders", labelBg: "Поръчки", labelEn: "Orders", icon: QueueListIcon },
+  { to: "/admin/products", labelBg: "Продукти", labelEn: "Products", icon: CubeIcon },
+  { to: "/admin/categories", labelBg: "Категории", labelEn: "Categories", icon: ChartBarSquareIcon },
+  { to: "/admin/brands", labelBg: "Марки", labelEn: "Brands", icon: TagIcon },
+  { to: "/admin/users", labelBg: "Клиенти", labelEn: "Customers", icon: UsersIcon },
+  { to: "/admin/reports", labelBg: "Справки", labelEn: "Reports", icon: DocumentChartBarIcon },
 ];
 
 type AdminPanelProps = {
@@ -28,6 +29,8 @@ type AdminPanelProps = {
 
 const AdminPanel = ({ children }: AdminPanelProps) => {
   const { user } = useSelector((state: RootState) => state.auth);
+  const { language } = useLanguageTheme();
+  const isBg = language === "bg";
 
   if (user?.role !== "Admin") {
     return <Navigate to="/" replace />;
@@ -52,7 +55,7 @@ const AdminPanel = ({ children }: AdminPanelProps) => {
                 }
               >
                 <item.icon className="h-5 w-5 flex-none" />
-                {item.label}
+                {isBg ? item.labelBg : item.labelEn}
               </NavLink>
             ))}
           </nav>
@@ -63,15 +66,15 @@ const AdminPanel = ({ children }: AdminPanelProps) => {
         </main>
       </div>
 
-      <nav className="admin-mobile-nav fixed inset-x-0 bottom-0 z-[55] border-t border-slate-800 bg-slate-950/95 px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1.5 text-slate-100 shadow-[0_-12px_35px_rgba(15,23,42,0.25)] backdrop-blur lg:hidden">
-        <div className="mx-auto grid max-w-2xl grid-cols-7 gap-1">
+      <nav className="admin-mobile-nav fixed inset-x-0 bottom-0 z-[55] border-t border-slate-800 bg-slate-950/95 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1.5 text-slate-100 shadow-[0_-12px_35px_rgba(15,23,42,0.25)] backdrop-blur lg:hidden">
+        <div className="mx-auto flex max-w-full gap-1 overflow-x-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {navigation.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
               className={({ isActive }) =>
-                `flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium leading-none transition ${
+                `flex min-w-[74px] flex-none flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[10px] font-medium leading-tight transition ${
                   isActive
                     ? "bg-white text-slate-950"
                     : "text-slate-300 active:bg-white/10 active:text-white"
@@ -79,7 +82,7 @@ const AdminPanel = ({ children }: AdminPanelProps) => {
               }
             >
               <item.icon className="h-5 w-5 flex-none" />
-              <span className="max-w-full truncate">{item.label}</span>
+              <span className="max-w-full text-center">{isBg ? item.labelBg : item.labelEn}</span>
             </NavLink>
           ))}
         </div>
