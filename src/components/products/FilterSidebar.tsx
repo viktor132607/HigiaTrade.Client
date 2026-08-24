@@ -1,5 +1,6 @@
 import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
+import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 
 interface Category {
   id: string;
@@ -25,6 +26,8 @@ const FilterSidebar = ({
   searchQuery,
   onApplyFilters,
 }: FilterSidebarProps) => {
+  const { language } = useLanguageTheme();
+  const isBg = language === "bg";
   const [searchInput, setSearchInput] = useState(searchQuery);
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
@@ -134,7 +137,7 @@ const FilterSidebar = ({
                   : "bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-950"
               }`}
             >
-              All categories
+              {isBg ? "Всички категории" : "All categories"}
             </button>
             {categories.map((category) => (
               <button
