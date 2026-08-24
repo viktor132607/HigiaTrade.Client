@@ -1,11 +1,11 @@
 import React from "react";
+import AdminProductsLegacy from "../../components/admin/AdminProductsLegacy";
 import ProductDescriptionEnhancer from "../../components/admin/ProductDescriptionEnhancer";
-import ProductsLegacy from "./ProductsLegacy";
 
 const AdminProducts = () => (
   <>
     <ProductDescriptionEnhancer />
-    <ProductsLegacy />
+    <AdminProductsLegacy />
   </>
 );
 
