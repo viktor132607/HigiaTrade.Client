@@ -5,6 +5,7 @@ import Footer from "./Footer";
 import CartHoverPreview from "./CartHoverPreview";
 import ProductSearchEnhancer from "./ProductSearchEnhancer";
 import CompareNavbarEnhancer from "./CompareNavbarEnhancer";
+import CompareTray from "../products/CompareTray";
 
 type LayoutProps = {
   children?: ReactNode;
@@ -17,6 +18,7 @@ const Layout = ({ children }: LayoutProps) => {
       <ProductSearchEnhancer />
       <CompareNavbarEnhancer />
       <CartHoverPreview />
+      <CompareTray />
       <main className="min-w-0 flex-1">
         {children ?? <Outlet />}
       </main>
