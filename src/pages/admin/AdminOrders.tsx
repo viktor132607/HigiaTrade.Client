@@ -9,6 +9,7 @@ import {
   getOrderStatusColor,
 } from "../../enums/OrderStatus";
 import { formatCurrency } from "../../utils/currency";
+import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 
 interface Order {
   id: string;
@@ -30,16 +31,23 @@ interface Order {
   }>;
 }
 
-const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
+const PAGE_SIZE_OPTIONS = [20, 50, 100];
+const PAGE_SIZE_STORAGE_KEY = "adminOrdersItemsPerPage";
 
-const ORDER_STATUS_OPTIONS_BG = [
-  { value: OrderStatus.Created, label: "Чернова" },
-  { value: OrderStatus.PendingVerification, label: "Чака преглед" },
-  { value: OrderStatus.Verified, label: "Потвърдена" },
-  { value: OrderStatus.Processing, label: "Обработва се" },
-  { value: OrderStatus.Shipped, label: "Изпратена" },
-  { value: OrderStatus.Delivered, label: "Доставена" },
-  { value: OrderStatus.Cancelled, label: "Отказана" },
+const getInitialPageSize = () => {
+  if (typeof window === "undefined") return PAGE_SIZE_OPTIONS[0];
+  const saved = Number(window.localStorage.getItem(PAGE_SIZE_STORAGE_KEY));
+  return PAGE_SIZE_OPTIONS.includes(saved) ? saved : PAGE_SIZE_OPTIONS[0];
+};
+
+const statusOptions = (isBg: boolean) => [
+  { value: OrderStatus.Created, label: isBg ? "Чернова" : "Draft" },
+  { value: OrderStatus.PendingVerification, label: isBg ? "Чака преглед" : "Pending review" },
+  { value: OrderStatus.Verified, label: isBg ? "Потвърдена" : "Verified" },
+  { value: OrderStatus.Processing, label: isBg ? "Обработва се" : "Processing" },
+  { value: OrderStatus.Shipped, label: isBg ? "Изпратена" : "Shipped" },
+  { value: OrderStatus.Delivered, label: isBg ? "Доставена" : "Delivered" },
+  { value: OrderStatus.Cancelled, label: isBg ? "Отказана" : "Cancelled" },
 ];
 
 const AdminOrders = () => {
@@ -49,14 +57,17 @@ const AdminOrders = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(PAGE_SIZE_OPTIONS[0]);
-  const [sortBy, setSortBy] = useState('createdOn');
+  const [itemsPerPage, setItemsPerPage] = useState(getInitialPageSize);
+  const [sortBy, setSortBy] = useState("createdOn");
   const [sortDescending, setSortDescending] = useState(true);
   const { token } = useSelector((state: RootState) => state.auth);
+  const { language } = useLanguageTheme();
+  const isBg = language === "bg";
+  const orderStatusOptions = statusOptions(isBg);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("bg-BG", {
+    return date.toLocaleDateString(isBg ? "bg-BG" : "en-GB", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -67,7 +78,7 @@ const AdminOrders = () => {
 
   useEffect(() => {
     setLoading(true);
-    fetchOrders();
+    void fetchOrders();
   }, [currentPage, itemsPerPage, sortBy, sortDescending, orderId]);
 
   const fetchOrders = async () => {
@@ -76,12 +87,10 @@ const AdminOrders = () => {
         PageNumber: orderId ? "1" : currentPage.toString(),
         PageSize: orderId ? "1" : itemsPerPage.toString(),
         SortBy: sortBy,
-        SortDescending: sortDescending.toString()
+        SortDescending: sortDescending.toString(),
       });
 
-      if (orderId) {
-        queryParams.set("OrderId", orderId);
-      }
+      if (orderId) queryParams.set("OrderId", orderId);
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/Orders/get-list?${queryParams.toString()}`,
@@ -93,12 +102,12 @@ const AdminOrders = () => {
       );
 
       if (!response.ok) {
-        throw new Error("Поръчките не можаха да бъдат заредени.");
+        throw new Error(isBg ? "Поръчките не можаха да бъдат заредени." : "Orders could not be loaded.");
       }
 
       const data = await response.json();
-
       let ordersArray: Order[] = [];
+
       if (Array.isArray(data)) {
         ordersArray = data;
       } else if (data && data.items && Array.isArray(data.items)) {
@@ -114,8 +123,8 @@ const AdminOrders = () => {
 
       setOrders(ordersArray);
     } catch (error) {
-      console.error("Грешка при зареждане на поръчките:", error);
-      toast.error("Списъкът с поръчки не можа да бъде зареден.");
+      console.error("Admin orders load failed:", error);
+      toast.error(isBg ? "Списъкът с поръчки не можа да бъде зареден." : "The order list could not be loaded.");
       setOrders([]);
     } finally {
       setLoading(false);
@@ -137,143 +146,132 @@ const AdminOrders = () => {
       );
 
       if (!response.ok) {
-        throw new Error("Статусът на поръчката не можа да бъде променен.");
+        throw new Error(isBg ? "Статусът на поръчката не можа да бъде променен." : "The order status could not be changed.");
       }
 
-      toast.success("Статусът на поръчката е обновен.");
-      fetchOrders();
+      toast.success(isBg ? "Статусът на поръчката е обновен." : "Order status updated.");
+      void fetchOrders();
     } catch (error) {
-      console.error("Грешка при промяна на статуса на поръчката:", error);
-      toast.error("Статусът на поръчката не можа да бъде променен.");
+      console.error("Order status update failed:", error);
+      toast.error(isBg ? "Статусът на поръчката не можа да бъде променен." : "The order status could not be changed.");
     }
   };
 
   const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
-    }
+    if (newPage >= 1 && newPage <= totalPages) setCurrentPage(newPage);
   };
 
   const handleItemsPerPageChange = (newSize: number) => {
     setItemsPerPage(newSize);
     setCurrentPage(1);
+    window.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(newSize));
   };
 
   if (loading) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-primary-500" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+    <div className="min-h-[calc(100vh-4rem)] px-0 py-2 sm:px-2 sm:py-4 lg:px-4 lg:py-6">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Поръчки</h1>
+        <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between sm:mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">{isBg ? "Поръчки" : "Orders"}</h1>
           {!orderId && (
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-                <label htmlFor="sortBy" className="text-sm text-gray-700">
-                  Сортиране по:
-                </label>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:items-end">
+              <label className="grid gap-1 text-sm text-gray-700">
+                <span>{isBg ? "Сортиране по:" : "Sort by:"}</span>
                 <select
-                  id="sortBy"
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="block w-32 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                  onChange={(event) => {
+                    setSortBy(event.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="block min-h-11 w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:min-w-36 sm:text-sm"
                 >
-                  <option value="createdOn">Дата</option>
-                  <option value="orderTotalPrice">Обща сума</option>
-                  <option value="status">Статус</option>
+                  <option value="createdOn">{isBg ? "Дата" : "Date"}</option>
+                  <option value="orderTotalPrice">{isBg ? "Обща сума" : "Total amount"}</option>
+                  <option value="status">{isBg ? "Статус" : "Status"}</option>
                 </select>
-              </div>
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-                <label htmlFor="sortOrder" className="text-sm text-gray-700">
-                  Ред:
-                </label>
+              </label>
+
+              <label className="grid gap-1 text-sm text-gray-700">
+                <span>{isBg ? "Ред:" : "Order:"}</span>
                 <select
-                  id="sortOrder"
-                  value={sortDescending ? 'desc' : 'asc'}
-                  onChange={(e) => setSortDescending(e.target.value === 'desc')}
-                  className="block w-28 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                  value={sortDescending ? "desc" : "asc"}
+                  onChange={(event) => {
+                    setSortDescending(event.target.value === "desc");
+                    setCurrentPage(1);
+                  }}
+                  className="block min-h-11 w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:min-w-32 sm:text-sm"
                 >
-                  <option value="desc">Най-нови</option>
-                  <option value="asc">Най-стари</option>
+                  <option value="desc">{isBg ? "Най-нови" : "Newest"}</option>
+                  <option value="asc">{isBg ? "Най-стари" : "Oldest"}</option>
                 </select>
-              </div>
-              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-                <label htmlFor="itemsPerPage" className="text-sm text-gray-700">
-                  На страница:
-                </label>
+              </label>
+
+              <label className="grid gap-1 text-sm text-gray-700">
+                <span>{isBg ? "На страница:" : "Per page:"}</span>
                 <select
-                  id="itemsPerPage"
                   value={itemsPerPage}
-                  onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                  className="block w-20 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                  onChange={(event) => handleItemsPerPageChange(Number(event.target.value))}
+                  className="block min-h-11 w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:min-w-28 sm:text-sm"
                 >
                   {PAGE_SIZE_OPTIONS.map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
+                    <option key={size} value={size}>{size}</option>
                   ))}
                 </select>
-              </div>
+              </label>
             </div>
           )}
         </div>
 
-        {!loading && orders.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500">Няма поръчки за показване.</p>
+        {orders.length === 0 ? (
+          <div className="py-12 text-center">
+            <p className="text-gray-500">{isBg ? "Няма поръчки за показване." : "No orders to show."}</p>
           </div>
         ) : (
           <>
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {orders.map((order) => (
-                <div
+                <article
                   key={order.id}
                   id={`order-${order.id}`}
-                  className={`overflow-hidden rounded-[2rem] bg-white shadow ${orderId === order.id ? "ring-2 ring-primary-500" : ""}`}
+                  className={`overflow-hidden rounded-2xl bg-white shadow sm:rounded-[2rem] ${orderId === order.id ? "ring-2 ring-primary-500" : ""}`}
                 >
-                  <div className="p-6">
+                  <div className="p-4 sm:p-6">
                     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <h2 className="text-lg font-semibold text-gray-900">
-                          Поръчка #{order.id.slice(0, 8)}
+                      <div className="min-w-0">
+                        <h2 className="text-base font-semibold text-gray-900 sm:text-lg">
+                          {isBg ? "Поръчка" : "Order"} #{order.id.slice(0, 8)}
                         </h2>
                         <p className="mt-1 break-all text-xs text-gray-400">{order.id}</p>
-                        <p className="text-sm text-gray-500">
-                          Дата: {order.createdOn ? formatDate(order.createdOn) : "Няма данни"}
+                        <p className="mt-1 text-sm text-gray-500">
+                          {isBg ? "Дата" : "Date"}: {order.createdOn ? formatDate(order.createdOn) : isBg ? "Няма данни" : "No data"}
                         </p>
                       </div>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <div className="relative">
-                          <select
-                            value={order.status ?? OrderStatus.Created}
-                            onChange={(e) =>
-                              handleStatusChange(order.id, parseInt(e.target.value))
-                            }
-                            className={`w-full appearance-none rounded-md py-1 pl-3 pr-8 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 sm:w-auto ${getOrderStatusColor(
-                              order.status ?? OrderStatus.Created
-                            )}`}
-                          >
-                            {ORDER_STATUS_OPTIONS_BG.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDownIcon className="h-4 w-4 absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                        </div>
+
+                      <div className="relative w-full sm:w-auto">
+                        <select
+                          value={order.status ?? OrderStatus.Created}
+                          onChange={(event) => handleStatusChange(order.id, Number.parseInt(event.target.value, 10))}
+                          className={`min-h-11 w-full appearance-none rounded-md py-2 pl-3 pr-9 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 sm:w-auto ${getOrderStatusColor(order.status ?? OrderStatus.Created)}`}
+                        >
+                          {orderStatusOptions.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                        <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                       </div>
                     </div>
 
-                    <div className="mt-6 pt-6 border-t border-gray-200">
+                    <div className="mt-5 border-t border-gray-200 pt-5 sm:mt-6 sm:pt-6">
                       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                        <span className="text-lg font-semibold text-gray-900">
-                          Общо за поръчката:
+                        <span className="text-base font-semibold text-gray-900 sm:text-lg">
+                          {isBg ? "Общо за поръчката:" : "Order total:"}
                         </span>
                         <span className="text-lg font-semibold text-gray-900">
                           {formatCurrency(order.orderTotalPrice)}
@@ -281,34 +279,30 @@ const AdminOrders = () => {
                       </div>
                     </div>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
 
             {!orderId && totalPages > 1 && (
               <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
                 <button
+                  type="button"
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`p-2 rounded-md ${
-                    currentPage === 1
-                      ? "bg-gray-200 cursor-not-allowed"
-                      : "bg-primary-500 hover:bg-primary-600"
-                  } text-white`}
+                  className={`rounded-md p-2 ${currentPage === 1 ? "cursor-not-allowed bg-gray-200" : "bg-primary-500 hover:bg-primary-600"} text-white`}
+                  aria-label={isBg ? "Предишна страница" : "Previous page"}
                 >
                   <ChevronLeftIcon className="h-5 w-5" />
                 </button>
-                <span className="text-gray-700">
-                  Страница {currentPage} от {totalPages}
+                <span className="text-sm text-gray-700 sm:text-base">
+                  {isBg ? `Страница ${currentPage} от ${totalPages}` : `Page ${currentPage} of ${totalPages}`}
                 </span>
                 <button
+                  type="button"
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className={`p-2 rounded-md ${
-                    currentPage === totalPages
-                      ? "bg-gray-200 cursor-not-allowed"
-                      : "bg-primary-500 hover:bg-primary-600"
-                  } text-white`}
+                  className={`rounded-md p-2 ${currentPage === totalPages ? "cursor-not-allowed bg-gray-200" : "bg-primary-500 hover:bg-primary-600"} text-white`}
+                  aria-label={isBg ? "Следваща страница" : "Next page"}
                 >
                   <ChevronRightIcon className="h-5 w-5" />
                 </button>
