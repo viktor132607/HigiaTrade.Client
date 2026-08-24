@@ -67,7 +67,13 @@ const ProductDescriptionEnhancer = () => {
   if (!target) return null;
 
   const updateDescription = (html: string) => {
-    const normalized = html.trim() && target.mount.textContent?.trim() !== "" ? html : "";
+    const plainText = html
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const normalized = plainText ? html : "";
+
     setValue(normalized);
 
     const setter = Object.getOwnPropertyDescriptor(
