@@ -3,7 +3,6 @@ export const CONTACT_PHONE_COMPACT = "0888822861";
 export const CONTACT_PHONE_LINK = "+359888822861";
 
 export const CONTACT_EMAILS = [
-  "iliev132607@gmail.com",
   "higiatrade@abv.bg",
 ] as const;
 
