@@ -122,6 +122,8 @@ const AdminProducts = () => {
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [categorySearch, setCategorySearch] = useState("");
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const [categoryCreateError, setCategoryCreateError] = useState("");
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
@@ -164,6 +166,15 @@ const AdminProducts = () => {
       category.name.toLocaleLowerCase("bg-BG").includes(query)
     );
   }, [categories, categorySearch]);
+
+  const categoryNameToCreate = categorySearch.trim();
+  const canCreateCategory =
+    categoryNameToCreate.length >= 2 &&
+    !categories.some(
+      (category) =>
+        category.name.trim().toLocaleLowerCase("bg-BG") ===
+        categoryNameToCreate.toLocaleLowerCase("bg-BG")
+    );
 
   const fetchCategories = async () => {
     try {
@@ -237,6 +248,7 @@ const AdminProducts = () => {
     setValidationErrors({});
     setEditingProduct(null);
     setIsCategoryMenuOpen(false);
+    setCategoryCreateError("");
   };
 
   const closeEditModal = () => {
@@ -268,6 +280,7 @@ const AdminProducts = () => {
     setCategorySearch(category?.name || product.categoryName || "");
     setValidationErrors({});
     setIsCategoryMenuOpen(false);
+    setCategoryCreateError("");
     setIsModalOpen(true);
   };
 
@@ -282,6 +295,7 @@ const AdminProducts = () => {
     setCategorySearch(value);
     setFormData((previous) => ({ ...previous, categoryId: "" }));
     setValidationErrors((previous) => ({ ...previous, categoryId: undefined }));
+    setCategoryCreateError("");
     setIsCategoryMenuOpen(true);
   };
 
@@ -289,7 +303,70 @@ const AdminProducts = () => {
     setCategorySearch(category.name);
     setFormData((previous) => ({ ...previous, categoryId: category.id }));
     setValidationErrors((previous) => ({ ...previous, categoryId: undefined }));
+    setCategoryCreateError("");
     setIsCategoryMenuOpen(false);
+  };
+
+  const createCategoryFromSearch = async () => {
+    const name = categorySearch.trim();
+    if (creatingCategory || name.length < 2) return;
+
+    const existing = categories.find(
+      (category) =>
+        category.name.trim().toLocaleLowerCase("bg-BG") ===
+        name.toLocaleLowerCase("bg-BG")
+    );
+    if (existing) {
+      selectCategory(existing);
+      return;
+    }
+
+    try {
+      setCreatingCategory(true);
+      setCategoryCreateError("");
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Categories`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ name, imageURI: null }),
+      });
+
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.message || "Категорията не можа да бъде създадена.");
+      }
+
+      if (!data?.id) {
+        throw new Error("Сървърът не върна идентификатор за новата категория.");
+      }
+
+      const createdCategory: Category = {
+        id: String(data.id),
+        name: String(data.name || name),
+      };
+
+      setCategories((current) =>
+        [
+          ...current.filter(
+            (category) =>
+              category.name.trim().toLocaleLowerCase("bg-BG") !==
+              createdCategory.name.toLocaleLowerCase("bg-BG")
+          ),
+          createdCategory,
+        ].sort((a, b) => a.name.localeCompare(b.name, "bg-BG"))
+      );
+      selectCategory(createdCategory);
+      toast.success(`Категория „${createdCategory.name}“ е създадена.`);
+    } catch (error) {
+      setCategoryCreateError(
+        error instanceof Error ? error.message : "Категорията не можа да бъде създадена."
+      );
+      setIsCategoryMenuOpen(true);
+    } finally {
+      setCreatingCategory(false);
+    }
   };
 
   const validateForm = () => {
@@ -674,19 +751,28 @@ const AdminProducts = () => {
               </div>
 
               <div className="relative">
-                <label className="block text-sm font-semibold text-gray-800">Категория</label>
+                <div className="flex items-center justify-between gap-3">
+                  <label className="block text-sm font-semibold text-gray-800">Категория</label>
+                  <a href="/admin/categories" className="text-xs font-semibold text-[#18b99f] hover:underline">Управление на категории</a>
+                </div>
                 <input
                   type="text"
                   value={categorySearch}
                   onChange={(event) => handleCategorySearchChange(event.target.value)}
                   onFocus={() => setIsCategoryMenuOpen(true)}
-                  onBlur={() => window.setTimeout(() => setIsCategoryMenuOpen(false), 120)}
-                  placeholder="Започни да пишеш категория..."
+                  onBlur={() => window.setTimeout(() => setIsCategoryMenuOpen(false), 180)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && canCreateCategory) {
+                      event.preventDefault();
+                      void createCategoryFromSearch();
+                    }
+                  }}
+                  placeholder="Избери или напиши нова категория..."
                   autoComplete="off"
                   className={`${regularInputClass} ${validationErrors.categoryId ? "border-red-500" : ""}`}
                 />
                 {isCategoryMenuOpen && (
-                  <div className="absolute z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-md border border-slate-500 bg-white shadow-xl">
+                  <div className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-slate-500 bg-white shadow-xl">
                     {filteredFormCategories.length ? (
                       filteredFormCategories.map((category) => (
                         <button
@@ -702,9 +788,25 @@ const AdminProducts = () => {
                     ) : (
                       <div className="px-3 py-3 text-sm text-gray-500">Няма намерени категории.</div>
                     )}
+
+                    {canCreateCategory && (
+                      <button
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => void createCategoryFromSearch()}
+                        disabled={creatingCategory}
+                        className="sticky bottom-0 block w-full border-t border-emerald-200 bg-emerald-50 px-3 py-3 text-left text-sm font-semibold text-[#138b78] hover:bg-emerald-100 disabled:opacity-60"
+                      >
+                        {creatingCategory
+                          ? "Създаване..."
+                          : `+ Създай нова категория „${categoryNameToCreate}“`}
+                      </button>
+                    )}
                   </div>
                 )}
+                {categoryCreateError && <p className="mt-1 text-sm text-red-600">{categoryCreateError}</p>}
                 {validationErrors.categoryId && <p className="mt-1 text-sm text-red-600">{validationErrors.categoryId}</p>}
+                <p className="mt-1 text-xs text-gray-500">Напиши ново име и натисни Enter или избери „Създай нова категория“.</p>
               </div>
 
               <div>
