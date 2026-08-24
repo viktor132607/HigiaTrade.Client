@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { InformationCircleIcon, PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 
@@ -9,6 +10,10 @@ interface User {
   email: string;
   role: string;
   phone: string;
+}
+
+interface AssociatedOrder {
+  id: string;
 }
 
 interface ValidationErrors {
@@ -22,6 +27,9 @@ const AdminUsers = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [previewUser, setPreviewUser] = useState<User | null>(null);
+  const [previewOrders, setPreviewOrders] = useState<AssociatedOrder[]>([]);
+  const [previewOrdersLoading, setPreviewOrdersLoading] = useState(false);
+  const [previewOrdersError, setPreviewOrdersError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -59,14 +67,67 @@ const AdminUsers = () => {
     }
   };
 
-  const handlePreviewUser = (user: User) => {
+  const handlePreviewUser = async (user: User) => {
     setPreviewUser(user);
+    setPreviewOrders([]);
+    setPreviewOrdersError('');
+    setPreviewOrdersLoading(true);
     setIsPreviewModalOpen(true);
+
+    try {
+      const queryParams = new URLSearchParams({
+        UserId: user.id,
+        PageNumber: '1',
+        PageSize: '1000',
+        SortBy: 'createdOn',
+        SortDescending: 'true'
+      });
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/Orders/get-list?${queryParams.toString()}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('We could not load associated orders.');
+      }
+
+      const data = await response.json();
+      const orders = Array.isArray(data)
+        ? data
+        : data && Array.isArray(data.items)
+          ? data.items
+          : [];
+
+      const uniqueOrders = Array.from(
+        new Map(
+          orders
+            .filter((order: AssociatedOrder) => Boolean(order?.id))
+            .map((order: AssociatedOrder) => [order.id, { id: order.id }])
+        ).values()
+      ) as AssociatedOrder[];
+
+      setPreviewOrders(uniqueOrders);
+    } catch (err) {
+      console.error('Error loading associated orders:', err);
+      setPreviewOrdersError(
+        err instanceof Error ? err.message : 'We could not load associated orders.'
+      );
+    } finally {
+      setPreviewOrdersLoading(false);
+    }
   };
 
   const closePreviewModal = () => {
     setIsPreviewModalOpen(false);
     setPreviewUser(null);
+    setPreviewOrders([]);
+    setPreviewOrdersError('');
+    setPreviewOrdersLoading(false);
   };
 
   const handleViewUser = (user: User) => {
@@ -361,7 +422,7 @@ const AdminUsers = () => {
             if (event.target === event.currentTarget) closePreviewModal();
           }}
         >
-          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-lg w-full">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-4 sm:p-6">
             <h2 className="text-lg sm:text-xl font-bold mb-4">Customer info</h2>
             <div className="space-y-3 text-sm">
               <div>
@@ -383,6 +444,31 @@ const AdminUsers = () => {
               <div>
                 <div className="text-xs font-medium uppercase tracking-wide text-gray-500">ID</div>
                 <div className="mt-1 break-all text-gray-900">{previewUser.id}</div>
+              </div>
+              <div className="border-t border-gray-200 pt-3">
+                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                  Associated orders
+                </div>
+                {previewOrdersLoading ? (
+                  <div className="mt-2 text-gray-500">Loading orders...</div>
+                ) : previewOrdersError ? (
+                  <div className="mt-2 text-red-600">{previewOrdersError}</div>
+                ) : previewOrders.length === 0 ? (
+                  <div className="mt-2 text-gray-500">No associated orders.</div>
+                ) : (
+                  <div className="mt-2 space-y-2">
+                    {previewOrders.map((order) => (
+                      <Link
+                        key={order.id}
+                        to={`/admin/orders?orderId=${encodeURIComponent(order.id)}`}
+                        className="block break-all rounded-md border border-blue-100 bg-blue-50 px-3 py-2 font-mono text-xs text-blue-700 hover:border-blue-300 hover:bg-blue-100"
+                        title={`Open order ${order.id}`}
+                      >
+                        {order.id}
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <div className="mt-6 flex justify-end">
