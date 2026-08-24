@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 
 type ProductImage = {
   id?: string | null;
@@ -47,8 +47,6 @@ const ProductPricingAndUploadFields = ({
       ? defaultWholesalePrice.toString()
       : ""
   );
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [selectedPreviews, setSelectedPreviews] = useState<string[]>([]);
   const [uploadedImages, setUploadedImages] = useState<ProductImage[]>(initialImages);
   const [mainImageUri, setMainImageUri] = useState(
     initialMainImageUrl || initialImages[0]?.uri || ""
@@ -56,15 +54,6 @@ const ProductPricingAndUploadFields = ({
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
-
-  useEffect(() => {
-    const previews = selectedFiles.map((file) => URL.createObjectURL(file));
-    setSelectedPreviews(previews);
-
-    return () => {
-      previews.forEach((preview) => URL.revokeObjectURL(preview));
-    };
-  }, [selectedFiles]);
 
   const retailBreakdown = useMemo(() => {
     const source = retailPrice.trim() !== "" ? retailPrice : regularPrice;
@@ -135,11 +124,8 @@ const ProductPricingAndUploadFields = ({
     );
   };
 
-  const uploadImages = async () => {
-    if (selectedFiles.length === 0) {
-      setUploadError("Избери поне една снимка от устройството.");
-      return;
-    }
+  const uploadImages = async (files: File[]) => {
+    if (files.length === 0) return;
 
     setUploading(true);
     setUploadError("");
@@ -147,7 +133,7 @@ const ProductPricingAndUploadFields = ({
     try {
       const uploaded: ProductImage[] = [];
 
-      for (const file of selectedFiles) {
+      for (const file of files) {
         const body = new window.FormData();
         body.append("file", file);
 
@@ -178,7 +164,6 @@ const ProductPricingAndUploadFields = ({
       }
 
       notifyImagesChange([...uploadedImages, ...uploaded]);
-      setSelectedFiles([]);
     } catch (error) {
       setUploadError(
         error instanceof Error ? error.message : "Снимките не бяха качени."
@@ -280,48 +265,25 @@ const ProductPricingAndUploadFields = ({
         <label className="block text-sm font-medium text-gray-700">
           Снимки на продукта
         </label>
-        <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center">
-          <input
-            type="file"
-            multiple
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            onChange={(event) => {
-              setSelectedFiles(Array.from(event.target.files ?? []));
-              setUploadError("");
-            }}
-            className="block min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-200"
-          />
-          <button
-            type="button"
-            onClick={uploadImages}
-            disabled={uploading || selectedFiles.length === 0}
-            className="min-h-11 shrink-0 rounded-md bg-[#18b99f] px-4 py-2 text-white hover:bg-[#149f8a] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {uploading ? "Качване..." : "Качи снимки"}
-          </button>
-        </div>
+        <input
+          type="file"
+          multiple
+          disabled={uploading}
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          onChange={(event) => {
+            const input = event.currentTarget;
+            const files = Array.from(input.files ?? []);
+            input.value = "";
+            setUploadError("");
+            void uploadImages(files);
+          }}
+          className="mt-1 block min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-60"
+        />
         <p className="mt-1 text-xs leading-5 text-gray-500">
-          JPEG, PNG, WEBP или GIF, до 5 MB на снимка. След качване избери коя снимка да е основна.
+          JPEG, PNG, WEBP или GIF, до 5 MB на снимка. Снимките се качват автоматично веднага след избора.
         </p>
-
-        {selectedPreviews.length > 0 && (
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {selectedPreviews.map((preview, index) => (
-              <div
-                key={`${selectedFiles[index]?.name}-${selectedFiles[index]?.lastModified}`}
-                className="overflow-hidden rounded-md border border-gray-300 bg-white shadow-sm"
-              >
-                <img
-                  src={preview}
-                  alt={selectedFiles[index]?.name || `Снимка ${index + 1}`}
-                  className="h-32 w-full object-cover"
-                />
-                <div className="truncate px-2 py-2 text-xs text-gray-600">
-                  {selectedFiles[index]?.name}
-                </div>
-              </div>
-            ))}
-          </div>
+        {uploading && (
+          <p className="mt-2 text-sm font-medium text-[#149f8a]">Качване...</p>
         )}
 
         {uploadedImages.length > 0 && (
