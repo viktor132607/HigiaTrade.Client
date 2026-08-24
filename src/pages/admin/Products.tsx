@@ -67,7 +67,19 @@ interface ValidationErrors {
   secondaryImages?: string[];
 }
 
-const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
+const PAGE_SIZE_OPTIONS = [20, 50, 100];
+const PAGE_SIZE_STORAGE_KEY = "adminProductsItemsPerPage";
+
+const getInitialPageSize = () => {
+  if (typeof window === "undefined") {
+    return PAGE_SIZE_OPTIONS[0];
+  }
+
+  const savedPageSize = Number(window.localStorage.getItem(PAGE_SIZE_STORAGE_KEY));
+  return PAGE_SIZE_OPTIONS.includes(savedPageSize)
+    ? savedPageSize
+    : PAGE_SIZE_OPTIONS[0];
+};
 
 const AdminProducts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -78,7 +90,7 @@ const AdminProducts = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(PAGE_SIZE_OPTIONS[0]);
+  const [itemsPerPage, setItemsPerPage] = useState(getInitialPageSize);
   const [sortBy, setSortBy] = useState("title");
   const [sortDescending, setSortDescending] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -516,6 +528,10 @@ const AdminProducts = () => {
   const handleItemsPerPageChange = (newSize: number) => {
     setItemsPerPage(newSize);
     setCurrentPage(1);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, newSize.toString());
+    }
   };
 
   return (
