@@ -808,56 +808,78 @@ const AdminProducts = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {products.map((product) => (
-                      <tr key={product.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            checked={selectedProductIds.includes(product.id)}
-                            onChange={() => toggleProductSelection(product.id)}
-                            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                          />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {product.title || ""}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {categories.find((c) => c.id === product.categoryId)
-                            ?.name || "Без категория"}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatCurrency(
-                            product.discountedPrice ||
-                              product.regularPrice ||
-                              0
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {product.discountPercentage
-                            ? `${product.discountPercentage}%`
-                            : "0%"}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {product.quantity || 0}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button
-                            onClick={() => handleEditProduct(product)}
-                            className="text-white bg-yellow-600 hover:bg-yellow-700 p-1.5 rounded-md mr-2"
-                            title="Редактирай"
-                          >
-                            <PencilIcon className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(product)}
-                            className="text-white bg-red-600 hover:bg-red-700 p-1.5 rounded-md"
-                            title="Изтрий"
-                          >
-                            <TrashIcon className="w-5 h-5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {products.map((product) => {
+                      const thumbnailUrl = product.mainImageUrl || product.imageUrl;
+
+                      return (
+                        <tr key={product.id}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={selectedProductIds.includes(product.id)}
+                              onChange={() => toggleProductSelection(product.id)}
+                              className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                            />
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-900">
+                            <div className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => handleEditProduct(product)}
+                                className="flex-none rounded-md focus:outline-none focus:ring-2 focus:ring-[#18b99f] focus:ring-offset-2"
+                                title="Редактирай продукт"
+                              >
+                                {thumbnailUrl ? (
+                                  <img
+                                    src={thumbnailUrl}
+                                    alt={product.title || "Продукт"}
+                                    className="h-12 w-12 rounded-md border border-gray-200 object-cover transition hover:opacity-80"
+                                  />
+                                ) : (
+                                  <div className="h-12 w-12 rounded-md border border-gray-200 bg-gray-100" />
+                                )}
+                              </button>
+                              <span>{product.title || ""}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {categories.find((c) => c.id === product.categoryId)
+                              ?.name || "Без категория"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {formatCurrency(
+                              product.discountedPrice ||
+                                product.regularPrice ||
+                                0
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {product.discountPercentage
+                              ? `${product.discountPercentage}%`
+                              : "0%"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {product.quantity || 0}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button
+                              onClick={() => handleEditProduct(product)}
+                              className="text-white bg-yellow-600 hover:bg-yellow-700 p-1.5 rounded-md mr-2"
+                              title="Редактирай"
+                            >
+                              <PencilIcon className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(product)}
+                              className="text-white bg-red-600 hover:bg-red-700 p-1.5 rounded-md"
+                              title="Изтрий"
+                            >
+                              <TrashIcon className="w-5 h-5" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
