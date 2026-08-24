@@ -14,8 +14,8 @@ type SearchProduct = {
 
 type SearchTarget = {
   input: HTMLInputElement;
-  form: HTMLFormElement;
   mount: HTMLDivElement;
+  cleanup: () => void;
 };
 
 const ProductSearchEnhancer = () => {
@@ -29,24 +29,14 @@ const ProductSearchEnhancer = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const cleanupTargets = () => {
-      targetsRef.current.forEach(({ input, form, mount }) => {
-        input.removeAttribute("data-product-search-enhanced");
-        mount.remove();
-      });
-      targetsRef.current = [];
-      setActiveTarget(null);
-    };
-
     const attach = () => {
       const inputs = Array.from(
         document.querySelectorAll<HTMLInputElement>('header input[type="search"]')
       ).filter((input) => !input.dataset.productSearchEnhanced);
 
       inputs.forEach((input) => {
-        const form = input.closest("form");
         const wrapper = input.parentElement;
-        if (!form || !wrapper) return;
+        if (!wrapper) return;
 
         input.dataset.productSearchEnhanced = "true";
         input.placeholder = isBg ? "ТЪРСЕНЕ НА ПРОДУКТ" : "PRODUCT SEARCH";
@@ -56,8 +46,7 @@ const ProductSearchEnhancer = () => {
         mount.dataset.productSearchResults = "true";
         wrapper.appendChild(mount);
 
-        const target: SearchTarget = { input, form, mount };
-        targetsRef.current.push(target);
+        let target: SearchTarget;
 
         const handleInput = () => {
           setQuery(input.value);
@@ -69,38 +58,33 @@ const ProductSearchEnhancer = () => {
           setActiveTarget(target);
         };
 
-        const handleSubmit = (event: Event) => {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          const value = input.value.trim();
-          const url = value
-            ? `/products?search=${encodeURIComponent(value)}`
-            : "/products";
-          window.location.assign(url);
+        const cleanup = () => {
+          input.removeEventListener("input", handleInput);
+          input.removeEventListener("focus", handleFocus);
+          input.removeAttribute("data-product-search-enhanced");
+          mount.remove();
         };
+
+        target = { input, mount, cleanup };
+        targetsRef.current.push(target);
 
         input.addEventListener("input", handleInput);
         input.addEventListener("focus", handleFocus);
-        form.addEventListener("submit", handleSubmit, true);
-
-        (target as SearchTarget & { cleanup?: () => void }).cleanup = () => {
-          input.removeEventListener("input", handleInput);
-          input.removeEventListener("focus", handleFocus);
-          form.removeEventListener("submit", handleSubmit, true);
-        };
       });
     };
 
     attach();
+
     const observer = new MutationObserver(attach);
-    observer.observe(document.body, { childList: true, subtree: true });
+    const header = document.querySelector("header");
+    if (header) {
+      observer.observe(header, { childList: true, subtree: true });
+    }
 
     return () => {
       observer.disconnect();
-      targetsRef.current.forEach((target) => {
-        (target as SearchTarget & { cleanup?: () => void }).cleanup?.();
-      });
-      cleanupTargets();
+      targetsRef.current.forEach((target) => target.cleanup());
+      targetsRef.current = [];
     };
   }, [isBg]);
 
@@ -129,7 +113,13 @@ const ProductSearchEnhancer = () => {
         );
         if (!response.ok) throw new Error("Search failed");
         const payload = await response.json();
-        setResults(Array.isArray(payload) ? payload.slice(0, 6) : (payload.items ?? []).slice(0, 6));
+        setResults(
+          Array.isArray(payload)
+            ? payload.slice(0, 6)
+            : Array.isArray(payload.items)
+              ? payload.items.slice(0, 6)
+              : []
+        );
       } catch {
         setResults([]);
       } finally {
@@ -144,9 +134,9 @@ const ProductSearchEnhancer = () => {
 
   useEffect(() => {
     const close = (event: PointerEvent) => {
-      const target = event.target as Node;
+      const node = event.target as Node;
       const insideSearch = targetsRef.current.some(
-        ({ input, mount }) => input.contains(target) || mount.contains(target)
+        ({ input, mount }) => input.contains(node) || mount.contains(node)
       );
       if (!insideSearch) setActiveTarget(null);
     };
@@ -195,8 +185,14 @@ const ProductSearchEnhancer = () => {
                     {product.title}
                   </div>
                   <div className="mt-0.5 flex items-center gap-2 text-xs">
-                    <span className="font-semibold text-[#18b99f]">{formatCurrency(price)}</span>
-                    <span className={product.quantity > 0 ? "text-emerald-600" : "text-rose-600"}>
+                    <span className="font-semibold text-[#18b99f]">
+                      {formatCurrency(price)}
+                    </span>
+                    <span
+                      className={
+                        product.quantity > 0 ? "text-emerald-600" : "text-rose-600"
+                      }
+                    >
                       {product.quantity > 0
                         ? isBg
                           ? "В наличност"
@@ -210,15 +206,20 @@ const ProductSearchEnhancer = () => {
               </button>
             );
           })}
+
           <button
             type="button"
             onMouseDown={(event) => {
               event.preventDefault();
-              window.location.assign(`/products?search=${encodeURIComponent(query.trim())}`);
+              window.location.assign(
+                `/products?search=${encodeURIComponent(query.trim())}`
+              );
             }}
             className="w-full bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-[#18b99f] hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10"
           >
-            {isBg ? `Виж всички резултати за „${query.trim()}“` : `View all results for “${query.trim()}”`}
+            {isBg
+              ? `Виж всички резултати за „${query.trim()}“`
+              : `View all results for “${query.trim()}”`}
           </button>
         </>
       ) : (
