@@ -5,11 +5,11 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../store";
 
 const navigation = [
-  { to: "/admin", label: "Overview", icon: Squares2X2Icon, end: true },
-  { to: "/admin/orders", label: "Orders", icon: QueueListIcon },
-  { to: "/admin/products", label: "Products", icon: CubeIcon },
-  { to: "/admin/categories", label: "Categories", icon: ChartBarSquareIcon },
-  { to: "/admin/users", label: "Customers", icon: UsersIcon },
+  { to: "/admin", label: "Табло", icon: Squares2X2Icon, end: true },
+  { to: "/admin/orders", label: "Поръчки", icon: QueueListIcon },
+  { to: "/admin/products", label: "Продукти", icon: CubeIcon },
+  { to: "/admin/categories", label: "Категории", icon: ChartBarSquareIcon },
+  { to: "/admin/users", label: "Клиенти", icon: UsersIcon },
 ];
 
 type AdminPanelProps = {
