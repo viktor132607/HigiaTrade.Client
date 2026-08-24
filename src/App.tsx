@@ -16,6 +16,7 @@ import PrivateRoute from "./routes/PrivateRoute";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import ProductDetails from "./pages/ProductDetails";
+import Brands from "./pages/Brands";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Login from "./pages/auth/Login";
@@ -90,17 +91,7 @@ function App() {
                 }
               />
 
-              <Route
-                path="/brands"
-                element={
-                  <InfoPage
-                    titleBg="По марка"
-                    titleEn="By brand"
-                    descriptionBg="Тук ще се показват продуктите, групирани по марка."
-                    descriptionEn="Products grouped by brand will be shown here."
-                  />
-                }
-              />
+              <Route path="/brands" element={<Brands />} />
 
               <Route
                 path="/compare"
