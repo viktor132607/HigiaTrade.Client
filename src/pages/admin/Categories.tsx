@@ -228,8 +228,19 @@ const AdminCategories = () => {
           <tbody className="bg-white divide-y divide-gray-200">
             {categories.map((category) => (
               <tr key={category.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {category.name}
+                <td className="px-6 py-3 text-sm text-gray-900">
+                  <div className="flex items-center gap-3">
+                    {category.imageURI ? (
+                      <img
+                        src={category.imageURI}
+                        alt={category.name}
+                        className="h-12 w-12 flex-none rounded-md border border-gray-200 object-cover"
+                      />
+                    ) : (
+                      <div className="h-12 w-12 flex-none rounded-md border border-gray-200 bg-gray-100" />
+                    )}
+                    <span>{category.name}</span>
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
