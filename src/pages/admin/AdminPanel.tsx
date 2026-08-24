@@ -27,15 +27,7 @@ const AdminPanel = ({ children }: AdminPanelProps) => {
     <div className="min-h-[calc(100vh-4rem)] bg-slate-100">
       <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-[1600px] lg:grid-cols-[280px_1fr]">
         <aside className="border-b border-slate-200 bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 sm:py-8 lg:border-b-0 lg:border-r">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-primary-300">Admin workspace</p>
-            <h1 className="mt-4 font-display text-3xl font-bold tracking-tight">HygiaTrade admin</h1>
-            <p className="mt-3 text-sm leading-6 text-slate-400">
-              Manage products, categories, customers, and order activity from one back-office workspace.
-            </p>
-          </div>
-
-          <nav className="mt-10 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+          <nav className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
             {navigation.map((item) => (
               <NavLink
                 key={item.to}
