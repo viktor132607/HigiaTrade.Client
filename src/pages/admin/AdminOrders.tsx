@@ -6,7 +6,6 @@ import { toast } from "react-toastify";
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/20/solid";
 import {
   OrderStatus,
-  OrderStatusOptions,
   getOrderStatusColor,
 } from "../../enums/OrderStatus";
 import { formatCurrency } from "../../utils/currency";
@@ -33,6 +32,16 @@ interface Order {
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
+const ORDER_STATUS_OPTIONS_BG = [
+  { value: OrderStatus.Created, label: "Чернова" },
+  { value: OrderStatus.PendingVerification, label: "Чака преглед" },
+  { value: OrderStatus.Verified, label: "Потвърдена" },
+  { value: OrderStatus.Processing, label: "Обработва се" },
+  { value: OrderStatus.Shipped, label: "Изпратена" },
+  { value: OrderStatus.Delivered, label: "Доставена" },
+  { value: OrderStatus.Cancelled, label: "Отказана" },
+];
+
 const AdminOrders = () => {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get("orderId");
@@ -47,7 +56,7 @@ const AdminOrders = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-GB", {
+    return date.toLocaleDateString("bg-BG", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -84,7 +93,7 @@ const AdminOrders = () => {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch orders");
+        throw new Error("Поръчките не можаха да бъдат заредени.");
       }
 
       const data = await response.json();
@@ -105,8 +114,8 @@ const AdminOrders = () => {
 
       setOrders(ordersArray);
     } catch (error) {
-      console.error("Error fetching orders:", error);
-      toast.error("We could not load the order list.");
+      console.error("Грешка при зареждане на поръчките:", error);
+      toast.error("Списъкът с поръчки не можа да бъде зареден.");
       setOrders([]);
     } finally {
       setLoading(false);
@@ -128,14 +137,14 @@ const AdminOrders = () => {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to update order status");
+        throw new Error("Статусът на поръчката не можа да бъде променен.");
       }
 
-      toast.success("Order status updated.");
+      toast.success("Статусът на поръчката е обновен.");
       fetchOrders();
     } catch (error) {
-      console.error("Error updating order status:", error);
-      toast.error("We could not update the order status.");
+      console.error("Грешка при промяна на статуса на поръчката:", error);
+      toast.error("Статусът на поръчката не можа да бъде променен.");
     }
   };
 
@@ -162,12 +171,12 @@ const AdminOrders = () => {
     <div className="min-h-[calc(100vh-4rem)] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Поръчки</h1>
           {!orderId && (
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
                 <label htmlFor="sortBy" className="text-sm text-gray-700">
-                  Sort by:
+                  Сортиране по:
                 </label>
                 <select
                   id="sortBy"
@@ -175,28 +184,28 @@ const AdminOrders = () => {
                   onChange={(e) => setSortBy(e.target.value)}
                   className="block w-32 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                 >
-                  <option value="createdOn">Date</option>
-                  <option value="orderTotalPrice">Total</option>
-                  <option value="status">Status</option>
+                  <option value="createdOn">Дата</option>
+                  <option value="orderTotalPrice">Обща сума</option>
+                  <option value="status">Статус</option>
                 </select>
               </div>
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
                 <label htmlFor="sortOrder" className="text-sm text-gray-700">
-                  Order:
+                  Ред:
                 </label>
                 <select
                   id="sortOrder"
                   value={sortDescending ? 'desc' : 'asc'}
                   onChange={(e) => setSortDescending(e.target.value === 'desc')}
-                  className="block w-24 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                  className="block w-28 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
                 >
-                  <option value="desc">Newest first</option>
-                  <option value="asc">Oldest first</option>
+                  <option value="desc">Най-нови</option>
+                  <option value="asc">Най-стари</option>
                 </select>
               </div>
               <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
                 <label htmlFor="itemsPerPage" className="text-sm text-gray-700">
-                  Per page:
+                  На страница:
                 </label>
                 <select
                   id="itemsPerPage"
@@ -217,7 +226,7 @@ const AdminOrders = () => {
 
         {!loading && orders.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">No orders to show.</p>
+            <p className="text-gray-500">Няма поръчки за показване.</p>
           </div>
         ) : (
           <>
@@ -232,11 +241,11 @@ const AdminOrders = () => {
                     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <h2 className="text-lg font-semibold text-gray-900">
-                          Order #{order.id.slice(0, 8)}
+                          Поръчка #{order.id.slice(0, 8)}
                         </h2>
                         <p className="mt-1 break-all text-xs text-gray-400">{order.id}</p>
                         <p className="text-sm text-gray-500">
-                          Date: {order.createdOn ? formatDate(order.createdOn) : "N/A"}
+                          Дата: {order.createdOn ? formatDate(order.createdOn) : "Няма данни"}
                         </p>
                       </div>
                       <div className="flex flex-wrap items-center gap-3">
@@ -250,7 +259,7 @@ const AdminOrders = () => {
                               order.status ?? OrderStatus.Created
                             )}`}
                           >
-                            {OrderStatusOptions.map((option) => (
+                            {ORDER_STATUS_OPTIONS_BG.map((option) => (
                               <option key={option.value} value={option.value}>
                                 {option.label}
                               </option>
@@ -264,7 +273,7 @@ const AdminOrders = () => {
                     <div className="mt-6 pt-6 border-t border-gray-200">
                       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                         <span className="text-lg font-semibold text-gray-900">
-                          Order total:
+                          Общо за поръчката:
                         </span>
                         <span className="text-lg font-semibold text-gray-900">
                           {formatCurrency(order.orderTotalPrice)}
@@ -290,7 +299,7 @@ const AdminOrders = () => {
                   <ChevronLeftIcon className="h-5 w-5" />
                 </button>
                 <span className="text-gray-700">
-                  Page {currentPage} of {totalPages}
+                  Страница {currentPage} от {totalPages}
                 </span>
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
