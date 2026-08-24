@@ -17,6 +17,7 @@ import Home from "./pages/Home";
 import Products from "./pages/Products";
 import ProductDetails from "./pages/ProductDetails";
 import Brands from "./pages/Brands";
+import NewProducts from "./pages/NewProducts";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Login from "./pages/auth/Login";
@@ -67,17 +68,7 @@ function App() {
                 }
               />
 
-              <Route
-                path="/new-products"
-                element={
-                  <InfoPage
-                    titleBg="Нови стоки"
-                    titleEn="New products"
-                    descriptionBg="Тук ще се показват най-новите добавени продукти."
-                    descriptionEn="The newest added products will be shown here."
-                  />
-                }
-              />
+              <Route path="/new-products" element={<NewProducts />} />
 
               <Route
                 path="/best-sellers"
