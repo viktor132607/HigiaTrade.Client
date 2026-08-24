@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 type ProductImage = {
   id?: string | null;
@@ -58,6 +58,7 @@ const ProductPricingAndUploadFields = ({
   const [uploadError, setUploadError] = useState("");
   const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
   const [dragOverImageIndex, setDragOverImageIndex] = useState<number | null>(null);
+  const [isUploadDropActive, setIsUploadDropActive] = useState(false);
   const [mobileOrdering, setMobileOrdering] = useState(false);
   const [mobileOrderSelection, setMobileOrderSelection] = useState<string[]>([]);
 
@@ -164,9 +165,15 @@ const ProductPricingAndUploadFields = ({
   };
 
   const uploadImages = async (files: File[]) => {
-    if (files.length === 0) return;
+    if (files.length === 0 || uploading) return;
 
-    const oversizedFile = files.find((file) => file.size > MAX_IMAGE_SIZE);
+    const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+    if (imageFiles.length === 0) {
+      setUploadError("Добави поне един валиден файл с изображение.");
+      return;
+    }
+
+    const oversizedFile = imageFiles.find((file) => file.size > MAX_IMAGE_SIZE);
     if (oversizedFile) {
       setUploadError(`Снимката ${oversizedFile.name} е по-голяма от 10 MB.`);
       return;
@@ -178,7 +185,7 @@ const ProductPricingAndUploadFields = ({
     try {
       const uploaded: ProductImage[] = [];
 
-      for (const file of files) {
+      for (const file of imageFiles) {
         const body = new window.FormData();
         body.append("file", file);
 
@@ -227,6 +234,27 @@ const ProductPricingAndUploadFields = ({
       setUploading(false);
     }
   };
+
+  useEffect(() => {
+    const handlePaste = (event: ClipboardEvent) => {
+      if (!event.clipboardData || uploading) return;
+
+      const pastedImages = Array.from(event.clipboardData.items)
+        .filter(
+          (item) => item.kind === "file" && item.type.startsWith("image/")
+        )
+        .map((item) => item.getAsFile())
+        .filter((file): file is File => Boolean(file));
+
+      if (pastedImages.length === 0) return;
+
+      event.preventDefault();
+      void uploadImages(pastedImages);
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [uploadedImages, mainImageUri, uploading, token]);
 
   return (
     <>
@@ -337,17 +365,62 @@ const ProductPricingAndUploadFields = ({
           className="hidden"
         />
 
-        <button
-          type="button"
-          disabled={uploading}
-          onClick={() => fileInputRef.current?.click()}
-          className="mt-1 flex min-h-12 w-full items-center justify-center rounded-lg border-2 border-dashed border-slate-400 bg-white px-4 py-3 text-sm font-semibold text-gray-800 transition hover:border-[#18b99f] hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            if (!uploading) fileInputRef.current?.click();
+          }}
+          onKeyDown={(event) => {
+            if (
+              !uploading &&
+              (event.key === "Enter" || event.key === " ")
+            ) {
+              event.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
+          onDragEnter={(event) => {
+            event.preventDefault();
+            if (!uploading) setIsUploadDropActive(true);
+          }}
+          onDragOver={(event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "copy";
+            if (!uploading) setIsUploadDropActive(true);
+          }}
+          onDragLeave={() => setIsUploadDropActive(false)}
+          onDrop={(event) => {
+            event.preventDefault();
+            setIsUploadDropActive(false);
+            if (uploading) return;
+
+            const files = Array.from(event.dataTransfer.files ?? []);
+            setUploadError("");
+            void uploadImages(files);
+          }}
+          className={`mt-1 flex min-h-28 w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-5 text-center transition focus:outline-none focus:ring-2 focus:ring-[#18b99f]/30 ${
+            isUploadDropActive
+              ? "scale-[1.01] border-[#18b99f] bg-emerald-50 ring-2 ring-[#18b99f]/20"
+              : "border-slate-400 bg-white hover:border-[#18b99f] hover:bg-emerald-50"
+          } ${uploading ? "cursor-not-allowed opacity-60" : ""}`}
         >
-          {uploading ? "Качване..." : "Избери снимки от галерията"}
-        </button>
+          <div className="text-sm font-semibold text-gray-900 sm:text-base">
+            {uploading
+              ? "Качване..."
+              : isUploadDropActive
+                ? "Пусни снимките тук"
+                : "Избери снимки, пусни ги тук или натисни Ctrl+V"}
+          </div>
+          {!uploading && (
+            <div className="mt-1 text-xs text-gray-500 sm:text-sm">
+              Галерия / File Explorer / буфер за копиране
+            </div>
+          )}
+        </div>
 
         <p className="mt-1 text-xs leading-5 text-gray-500">
-          До 10 MB на снимка. На телефон ще се отвори системната галерия/избор на снимки и файловете се качват веднага след избора.
+          До 10 MB на снимка. Файловете се качват автоматично веднага след избор, пускане или поставяне от буфера.
         </p>
 
         {uploadedImages.length > 1 && !mobileOrdering && (
