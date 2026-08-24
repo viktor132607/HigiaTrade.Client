@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
 import { toast } from "react-toastify";
@@ -33,6 +34,8 @@ interface Order {
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
 const AdminOrders = () => {
+  const [searchParams] = useSearchParams();
+  const orderId = searchParams.get("orderId");
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -54,17 +57,22 @@ const AdminOrders = () => {
   };
 
   useEffect(() => {
+    setLoading(true);
     fetchOrders();
-  }, [currentPage, itemsPerPage, sortBy, sortDescending]);
+  }, [currentPage, itemsPerPage, sortBy, sortDescending, orderId]);
 
   const fetchOrders = async () => {
     try {
       const queryParams = new URLSearchParams({
-        PageNumber: currentPage.toString(),
-        PageSize: itemsPerPage.toString(),
+        PageNumber: orderId ? "1" : currentPage.toString(),
+        PageSize: orderId ? "1" : itemsPerPage.toString(),
         SortBy: sortBy,
         SortDescending: sortDescending.toString()
       });
+
+      if (orderId) {
+        queryParams.set("OrderId", orderId);
+      }
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/Orders/get-list?${queryParams.toString()}`,
@@ -81,13 +89,17 @@ const AdminOrders = () => {
 
       const data = await response.json();
 
-      let ordersArray = [];
+      let ordersArray: Order[] = [];
       if (Array.isArray(data)) {
         ordersArray = data;
       } else if (data && data.items && Array.isArray(data.items)) {
         ordersArray = data.items;
-        if (data.totalCount) {
+        if (orderId) {
+          setTotalPages(1);
+        } else if (data.totalCount) {
           setTotalPages(Math.ceil(data.totalCount / itemsPerPage));
+        } else {
+          setTotalPages(1);
         }
       }
 
@@ -101,7 +113,7 @@ const AdminOrders = () => {
     }
   };
 
-  const handleStatusChange = async (orderId: string, newStatus: number) => {
+  const handleStatusChange = async (orderIdValue: string, newStatus: number) => {
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/Orders/change-status`,
@@ -111,7 +123,7 @@ const AdminOrders = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ orderStatus: newStatus, orderId: orderId }),
+          body: JSON.stringify({ orderStatus: newStatus, orderId: orderIdValue }),
         }
       );
 
@@ -135,7 +147,7 @@ const AdminOrders = () => {
 
   const handleItemsPerPageChange = (newSize: number) => {
     setItemsPerPage(newSize);
-    setCurrentPage(1); // Reset to first page when changing items per page
+    setCurrentPage(1);
   };
 
   if (loading) {
@@ -151,125 +163,120 @@ const AdminOrders = () => {
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-              <label htmlFor="sortBy" className="text-sm text-gray-700">
-                Sort by:
-              </label>
-              <select
-                id="sortBy"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="block w-32 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-              >
-                <option value="createdOn">Date</option>
-                <option value="orderTotalPrice">Total</option>
-                <option value="status">Status</option>
-              </select>
+          {!orderId && (
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                <label htmlFor="sortBy" className="text-sm text-gray-700">
+                  Sort by:
+                </label>
+                <select
+                  id="sortBy"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="block w-32 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                >
+                  <option value="createdOn">Date</option>
+                  <option value="orderTotalPrice">Total</option>
+                  <option value="status">Status</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                <label htmlFor="sortOrder" className="text-sm text-gray-700">
+                  Order:
+                </label>
+                <select
+                  id="sortOrder"
+                  value={sortDescending ? 'desc' : 'asc'}
+                  onChange={(e) => setSortDescending(e.target.value === 'desc')}
+                  className="block w-24 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                >
+                  <option value="desc">Newest first</option>
+                  <option value="asc">Oldest first</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                <label htmlFor="itemsPerPage" className="text-sm text-gray-700">
+                  Per page:
+                </label>
+                <select
+                  id="itemsPerPage"
+                  value={itemsPerPage}
+                  onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                  className="block w-20 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                >
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-              <label htmlFor="sortOrder" className="text-sm text-gray-700">
-                Order:
-              </label>
-              <select
-                id="sortOrder"
-                value={sortDescending ? 'desc' : 'asc'}
-                onChange={(e) => setSortDescending(e.target.value === 'desc')}
-                className="block w-24 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-              >
-                <option value="desc">Newest first</option>
-                <option value="asc">Oldest first</option>
-              </select>
-            </div>
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-              <label htmlFor="itemsPerPage" className="text-sm text-gray-700">
-                Per page:
-              </label>
-              <select
-                id="itemsPerPage"
-                value={itemsPerPage}
-                onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-                className="block w-20 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-              >
-                {PAGE_SIZE_OPTIONS.map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+          )}
         </div>
 
-        {!loading && orders && orders.length === 0 ? (
+        {!loading && orders.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500">No orders to show.</p>
           </div>
         ) : (
           <>
             <div className="space-y-6">
-              {orders &&
-                orders.map((order) => (
-                  <div
-                    key={order?.id || Math.random()}
-                    className="overflow-hidden rounded-[2rem] bg-white shadow"
-                  >
-                    <div className="p-6">
-                      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <h2 className="text-lg font-semibold text-gray-900">
-                            Order #{order?.id ? order.id.slice(0, 8) : "N/A"}
-                          </h2>
-                          <p className="text-sm text-gray-500">
-                            Date:{" "}
-                            {order?.createdOn
-                              ? formatDate(order.createdOn)
-                              : "N/A"}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3">
-                          <div className="relative">
-                            <select
-                              value={order?.status ?? OrderStatus.Created}
-                              onChange={(e) =>
-                                order?.id &&
-                                handleStatusChange(
-                                  order.id,
-                                  parseInt(e.target.value)
-                                )
-                              }
-                              className={`w-full appearance-none rounded-md py-1 pl-3 pr-8 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 sm:w-auto ${getOrderStatusColor(
-                                order?.status ?? OrderStatus.Created
-                              )}`}
-                            >
-                              {OrderStatusOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDownIcon className="h-4 w-4 absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                          </div>
-                        </div>
+              {orders.map((order) => (
+                <div
+                  key={order.id}
+                  id={`order-${order.id}`}
+                  className={`overflow-hidden rounded-[2rem] bg-white shadow ${orderId === order.id ? "ring-2 ring-primary-500" : ""}`}
+                >
+                  <div className="p-6">
+                    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <h2 className="text-lg font-semibold text-gray-900">
+                          Order #{order.id.slice(0, 8)}
+                        </h2>
+                        <p className="mt-1 break-all text-xs text-gray-400">{order.id}</p>
+                        <p className="text-sm text-gray-500">
+                          Date: {order.createdOn ? formatDate(order.createdOn) : "N/A"}
+                        </p>
                       </div>
-
-                      <div className="mt-6 pt-6 border-t border-gray-200">
-                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                          <span className="text-lg font-semibold text-gray-900">
-                            Order total:
-                          </span>
-                          <span className="text-lg font-semibold text-gray-900">
-                            {formatCurrency(order?.orderTotalPrice)}
-                          </span>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="relative">
+                          <select
+                            value={order.status ?? OrderStatus.Created}
+                            onChange={(e) =>
+                              handleStatusChange(order.id, parseInt(e.target.value))
+                            }
+                            className={`w-full appearance-none rounded-md py-1 pl-3 pr-8 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 sm:w-auto ${getOrderStatusColor(
+                              order.status ?? OrderStatus.Created
+                            )}`}
+                          >
+                            {OrderStatusOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDownIcon className="h-4 w-4 absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
                         </div>
                       </div>
                     </div>
+
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                        <span className="text-lg font-semibold text-gray-900">
+                          Order total:
+                        </span>
+                        <span className="text-lg font-semibold text-gray-900">
+                          {formatCurrency(order.orderTotalPrice)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                ))}
+                </div>
+              ))}
             </div>
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
+            {!orderId && totalPages > 1 && (
               <div className="mt-8 flex flex-wrap items-center justify-center gap-2">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
