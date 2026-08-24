@@ -36,6 +36,7 @@ const AdminCategories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState<FormData>({ name: '', imageURI: '' });
+  const [fullImageUrl, setFullImageUrl] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const { token } = useSelector((state: RootState) => state.auth);
@@ -110,6 +111,7 @@ const AdminCategories = () => {
     setIsModalOpen(false);
     setEditingCategory(null);
     setFormData({ name: '', imageURI: '' });
+    setFullImageUrl(null);
     setValidationErrors({});
   };
 
@@ -227,7 +229,14 @@ const AdminCategories = () => {
                           <div className="h-12 w-12 rounded-md border border-gray-200 bg-gray-100" />
                         )}
                       </button>
-                      <span>{category.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleEditCategory(category)}
+                        className="text-left hover:underline focus:outline-none focus:underline"
+                        title="Edit category"
+                      >
+                        {category.name}
+                      </button>
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
@@ -291,9 +300,18 @@ const AdminCategories = () => {
                 />
                 {validationErrors.imageURI && <p className="mt-1 text-sm text-red-600">{validationErrors.imageURI}</p>}
                 {formData.imageURI.trim() && !validationErrors.imageURI && (
-                  <div className="mt-3 overflow-hidden rounded-md border border-gray-200 bg-gray-50">
-                    <img src={formData.imageURI} alt={`${formData.name || 'Category'} preview`} className="h-44 w-full object-cover" />
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFullImageUrl(formData.imageURI.trim())}
+                    className="mt-3 block w-full cursor-zoom-in overflow-hidden rounded-md border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#18b99f] focus:ring-offset-2"
+                    title="Open full size image"
+                  >
+                    <img
+                      src={formData.imageURI}
+                      alt={`${formData.name || 'Category'} preview`}
+                      className="h-44 w-full object-cover transition hover:opacity-90"
+                    />
+                  </button>
                 )}
               </div>
 
@@ -303,6 +321,22 @@ const AdminCategories = () => {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {fullImageUrl && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setFullImageUrl(null);
+          }}
+        >
+          <img
+            src={fullImageUrl}
+            alt={`${formData.name || 'Category'} full size`}
+            className="max-h-[95vh] max-w-[95vw] object-contain"
+            onMouseDown={(event) => event.stopPropagation()}
+          />
         </div>
       )}
 
