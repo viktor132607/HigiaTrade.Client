@@ -43,9 +43,11 @@ const fallbackCategories: Category[] = Array.from({ length: 10 }, (_, index) => 
   ][index % 4],
 }));
 
-
 const HomeProductTile = ({ product, language }: { product: Product; language: "bg" | "en" }) => {
-  const displayPrice = product.discountedPrice && product.discountedPrice > 0 ? product.discountedPrice : product.regularPrice;
+  const displayPrice =
+    product.discountedPrice && product.discountedPrice > 0
+      ? product.discountedPrice
+      : product.regularPrice;
 
   return (
     <Link
@@ -54,7 +56,7 @@ const HomeProductTile = ({ product, language }: { product: Product; language: "b
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-900">
         <img
-          src={product.mainImageUrl || fallbackProducts[0].mainImageUrl}
+          src={product.mainImageUrl || "/placeholder-image.jpg"}
           alt={product.title}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
         />
@@ -97,48 +99,6 @@ const HomeProductTile = ({ product, language }: { product: Product; language: "b
     </Link>
   );
 };
-
-const fallbackProducts: Product[] = [
-  {
-    id: "placeholder-1",
-    title: "Универсален почистващ препарат",
-    description: "Подходящ за ежедневна употреба у дома, в офис и в търговски обекти.",
-    mainImageUrl:
-      "https://images.unsplash.com/photo-1585421514738-01798e348b17?auto=format&fit=crop&w=900&q=80",
-    regularPrice: 12.99,
-    discountedPrice: 9.99,
-    discountPercentage: 23,
-    quantity: 24,
-    categoryId: "placeholder-1",
-    rating: 4.8,
-  },
-  {
-    id: "placeholder-2",
-    title: "Перилен препарат концентрат",
-    description: "Концентрирана формула за бяло и цветно пране с икономичен разход.",
-    mainImageUrl:
-      "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?auto=format&fit=crop&w=900&q=80",
-    regularPrice: 18.5,
-    discountedPrice: 14.9,
-    discountPercentage: 19,
-    quantity: 18,
-    categoryId: "placeholder-2",
-    rating: 4.7,
-  },
-  {
-    id: "placeholder-3",
-    title: "Комплект консумативи за офис",
-    description: "Практичен пакет с основни консумативи за поддръжка на работни помещения.",
-    mainImageUrl:
-      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=80",
-    regularPrice: 32.0,
-    discountedPrice: 27.9,
-    discountPercentage: 13,
-    quantity: 12,
-    categoryId: "placeholder-3",
-    rating: 4.9,
-  },
-];
 
 const Home = () => {
   const { language } = useLanguageTheme();
@@ -184,8 +144,8 @@ const Home = () => {
   }, []);
 
   const visibleCategories = categories.length > 0 ? categories : fallbackCategories;
-  const visibleBestSellers = bestSellers.length > 0 ? bestSellers : fallbackProducts;
-  const visibleLatestProducts = latestProducts.length > 0 ? latestProducts : fallbackProducts;
+  const visibleBestSellers = bestSellers;
+  const visibleLatestProducts = latestProducts;
 
   const tabProducts = useMemo(() => {
     if (activeProductTab === "rating") {
@@ -313,13 +273,15 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid gap-5 md:grid-cols-3 lg:grid-cols-6">
-          {tabProducts.slice(0, 6).map((product) => (
-            <HomeProductTile key={product.id} product={product} language={language} />
-          ))}
-        </div>
-      </section>
+      {tabProducts.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="grid gap-5 md:grid-cols-3 lg:grid-cols-6">
+            {tabProducts.slice(0, 6).map((product) => (
+              <HomeProductTile key={product.id} product={product} language={language} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="relative overflow-hidden bg-slate-900 py-14 text-white">
         <div className="absolute inset-0 bg-cover bg-center opacity-35" style={{ backgroundImage: "url(https://images.unsplash.com/photo-1583947581924-860bda6a26df?auto=format&fit=crop&w=1600&q=80)" }} />
@@ -329,7 +291,7 @@ const Home = () => {
             {text.startShopping}
           </h2>
           <div className="mt-10 grid gap-6 md:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] md:items-center">
-            {steps.map((step, index) => (
+            {steps.map((step) => (
               <div key={step.title} className="contents">
                 <div className="rounded-full bg-white/90 p-8 text-slate-950 shadow-xl backdrop-blur dark:bg-slate-950/90 dark:text-white">
                   <step.icon className="mx-auto h-9 w-9 text-orange-500" />
@@ -351,22 +313,24 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h2 className="font-display text-3xl font-bold text-slate-950 dark:text-white">
-            {text.latest}
-          </h2>
-          <p className="mx-auto mt-3 max-w-3xl text-sm text-slate-500 dark:text-slate-300">
-            {text.latestText}
-          </p>
-        </div>
+      {visibleLatestProducts.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="font-display text-3xl font-bold text-slate-950 dark:text-white">
+              {text.latest}
+            </h2>
+            <p className="mx-auto mt-3 max-w-3xl text-sm text-slate-500 dark:text-slate-300">
+              {text.latestText}
+            </p>
+          </div>
 
-        <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {visibleLatestProducts.slice(0, 8).map((product) => (
-            <HomeProductTile key={product.id} product={product} language={language} />
-          ))}
-        </div>
-      </section>
+          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {visibleLatestProducts.slice(0, 8).map((product) => (
+              <HomeProductTile key={product.id} product={product} language={language} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="border-y border-slate-200 bg-slate-50 transition-colors dark:border-slate-800 dark:bg-black">
         <div className="mx-auto grid max-w-7xl gap-4 px-4 py-6 sm:px-6 md:grid-cols-4 lg:px-8">
