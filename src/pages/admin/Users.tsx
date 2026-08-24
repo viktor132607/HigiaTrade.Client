@@ -9,7 +9,6 @@ interface User {
   email: string;
   role: string;
   phone: string;
-  password: string;
 }
 
 interface ValidationErrors {
@@ -25,11 +24,11 @@ const AdminUsers = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [error, setError] = useState('');
-  const [editFormData, setEditFormData] = useState({ 
-    names: '', 
-    email: '', 
+  const [editFormData, setEditFormData] = useState({
+    names: '',
+    email: '',
     phone: '',
-    newPassword: '' 
+    newPassword: ''
   });
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const { token } = useSelector((state: RootState) => state.auth);
@@ -45,11 +44,11 @@ const AdminUsers = () => {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error("We could not load customers.");
       }
-      
+
       const data = await response.json();
       setUsers(data);
     } catch (err) {
@@ -60,11 +59,11 @@ const AdminUsers = () => {
 
   const handleViewUser = (user: User) => {
     setSelectedUser(user);
-    setEditFormData({ 
-      names: user.names, 
-      email: user.email, 
+    setEditFormData({
+      names: user.names,
+      email: user.email,
       phone: user.phone || '',
-      newPassword: '' 
+      newPassword: ''
     });
     setIsModalOpen(true);
   };
@@ -72,7 +71,6 @@ const AdminUsers = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setEditFormData(prev => ({ ...prev, [name]: value }));
-    // Clear validation error when user starts typing
     if (validationErrors[name as keyof ValidationErrors]) {
       setValidationErrors(prev => ({ ...prev, [name]: undefined }));
     }
@@ -80,8 +78,7 @@ const AdminUsers = () => {
 
   const validateForm = (): boolean => {
     const errors: ValidationErrors = {};
-    
-    // Names validation
+
     if (!editFormData.names.trim()) {
       errors.names = "Customer name is required.";
     } else if (editFormData.names.length < 2) {
@@ -90,20 +87,18 @@ const AdminUsers = () => {
       errors.names = "Use 50 characters or fewer.";
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!editFormData.email.trim()) {
       errors.email = "Email is required.";
     } else if (!emailRegex.test(editFormData.email)) {
       errors.email = "Enter a valid email address.";
-    } else if (users.some(user => 
-      user.email.toLowerCase() === editFormData.email.toLowerCase() && 
+    } else if (users.some(user =>
+      user.email.toLowerCase() === editFormData.email.toLowerCase() &&
       user.id !== selectedUser?.id
     )) {
       errors.email = "A customer with this email already exists.";
     }
 
-    // Phone validation (optional)
     if (editFormData.phone.trim()) {
       const phoneRegex = /^[0-9]{10}$/;
       if (!phoneRegex.test(editFormData.phone.trim())) {
@@ -111,11 +106,10 @@ const AdminUsers = () => {
       }
     }
 
-    // Password validation (required for new users, optional for editing)
-    if (!selectedUser && !editFormData.newPassword) {
-      errors.newPassword = "Password is required for new customers.";
-    } else if (editFormData.newPassword) {
-      if (editFormData.newPassword.length < 6) {
+    if (!selectedUser) {
+      if (!editFormData.newPassword) {
+        errors.newPassword = "Password is required for new customers.";
+      } else if (editFormData.newPassword.length < 6) {
         errors.newPassword = "Use at least 6 characters.";
       } else if (editFormData.newPassword.length > 100) {
         errors.newPassword = "Use 100 characters or fewer.";
@@ -135,9 +129,7 @@ const AdminUsers = () => {
     }
 
     try {
-      const url = selectedUser 
-        ? `${process.env.NEXT_PUBLIC_API_URL}/Users`
-        : `${process.env.NEXT_PUBLIC_API_URL}/Users`;
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/Users`;
 
       const response = await fetch(url, {
         method: selectedUser ? 'PUT' : 'POST',
@@ -148,7 +140,6 @@ const AdminUsers = () => {
         body: JSON.stringify(selectedUser ? {
           id: selectedUser.id,
           email: editFormData.email,
-          password: editFormData.newPassword || "123456",
           names: editFormData.names,
           phone: editFormData.phone,
         } : {
@@ -166,11 +157,11 @@ const AdminUsers = () => {
 
       await fetchUsers();
       setIsModalOpen(false);
-      setEditFormData({ 
-        names: '', 
-        email: '', 
+      setEditFormData({
+        names: '',
+        email: '',
         phone: '',
-        newPassword: '' 
+        newPassword: ''
       });
       setValidationErrors({});
       setSelectedUser(null);
@@ -214,7 +205,7 @@ const AdminUsers = () => {
       const currentUser = users.find(u => u.id === userId);
       if (!currentUser) return;
 
-      const endpoint = currentUser.role === 'Admin' 
+      const endpoint = currentUser.role === 'Admin'
         ? `${process.env.NEXT_PUBLIC_API_URL}/Users/demote-to-registered-customer`
         : `${process.env.NEXT_PUBLIC_API_URL}/Users/promote-to-admin`;
 
@@ -252,11 +243,11 @@ const AdminUsers = () => {
         <button
           onClick={() => {
             setSelectedUser(null);
-            setEditFormData({ 
-              names: '', 
-              email: '', 
+            setEditFormData({
+              names: '',
+              email: '',
               phone: '',
-              newPassword: '' 
+              newPassword: ''
             });
             setIsModalOpen(true);
           }}
@@ -342,7 +333,6 @@ const AdminUsers = () => {
         </div>
       </div>
 
-      {/* Edit/View Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4">
           <div className="bg-white rounded-lg p-3 sm:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -406,23 +396,25 @@ const AdminUsers = () => {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700">
-                    {selectedUser ? "New password (optional)" : "Password"}
-                  </label>
-                  <input
-                    type="password"
-                    name="newPassword"
-                    value={editFormData.newPassword}
-                    onChange={handleInputChange}
-                    className={`mt-1 block w-full rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500 text-xs sm:text-sm ${
-                      validationErrors.newPassword ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                  />
-                  {validationErrors.newPassword && (
-                    <p className="mt-1 text-xs text-red-600">{validationErrors.newPassword}</p>
-                  )}
-                </div>
+                {!selectedUser && (
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      name="newPassword"
+                      value={editFormData.newPassword}
+                      onChange={handleInputChange}
+                      className={`mt-1 block w-full rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500 text-xs sm:text-sm ${
+                        validationErrors.newPassword ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                    />
+                    {validationErrors.newPassword && (
+                      <p className="mt-1 text-xs text-red-600">{validationErrors.newPassword}</p>
+                    )}
+                  </div>
+                )}
 
                 <div className="mt-4 flex flex-col-reverse gap-2 sm:mt-6 sm:flex-row sm:justify-end sm:gap-3">
                   <button
@@ -430,11 +422,11 @@ const AdminUsers = () => {
                     onClick={() => {
                       setIsModalOpen(false);
                       setSelectedUser(null);
-                      setEditFormData({ 
-                        names: '', 
-                        email: '', 
+                      setEditFormData({
+                        names: '',
+                        email: '',
                         phone: '',
-                        newPassword: '' 
+                        newPassword: ''
                       });
                     }}
                     className="px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 text-xs sm:text-sm"
@@ -454,7 +446,6 @@ const AdminUsers = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4">
           <div className="bg-white rounded-lg p-3 sm:p-6 max-w-md w-full">
@@ -483,4 +474,4 @@ const AdminUsers = () => {
   );
 };
 
-export default AdminUsers; 
+export default AdminUsers;
