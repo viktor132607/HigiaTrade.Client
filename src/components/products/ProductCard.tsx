@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { addItem } from "../../store/slices/cartSlice";
 import { RootState } from "../../store";
 import { formatCurrency } from "../../utils/currency";
+import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 
 interface Product {
   id: string;
@@ -27,13 +28,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const dispatch = useDispatch();
   const token = useSelector((state: RootState) => state.auth.token);
   const user = useSelector((state: RootState) => state.auth.user);
+  const { language } = useLanguageTheme();
+  const isBg = language === "bg";
 
   const handleAddToCart = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
 
     if (!user) {
-      toast.error("Please sign in before adding products to your cart.");
+      toast.error(isBg ? "Влез в профила си, за да добавиш продукт в количката." : "Please sign in before adding products to your cart.");
       return;
     }
 
@@ -67,15 +70,20 @@ const ProductCard = ({ product }: ProductCardProps) => {
         })
       );
 
-      toast.success("Product added to cart.");
+      toast.success(isBg ? "Продуктът е добавен в количката." : "Product added to cart.");
     } catch (error) {
       console.error(error);
-      toast.error("Unable to add the selected product.");
+      toast.error(isBg ? "Продуктът не можа да бъде добавен." : "Unable to add the selected product.");
     }
   };
 
   const displayPrice = product.discountedPrice && product.discountedPrice > 0 ? product.discountedPrice : product.regularPrice;
   const isLowStock = product.quantity > 0 && product.quantity <= 10;
+  const stockLabel = product.quantity === 0
+    ? (isBg ? "Няма наличност" : "Out of stock")
+    : isLowStock
+      ? (isBg ? "Ограничена наличност" : "Low stock")
+      : (isBg ? "В наличност" : "In stock");
 
   return (
     <Link to={`/products/${product.id}`} className="group block h-full">
@@ -100,14 +108,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
                   : "bg-emerald-100 text-emerald-700"
             }`}
           >
-            {product.quantity === 0 ? "Out of stock" : isLowStock ? "Low stock" : "In stock"}
+            {stockLabel}
           </span>
         </div>
 
         <div className="flex flex-1 flex-col p-5">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-              Product
+              {isBg ? "Продукт" : "Product"}
             </p>
             <div className="flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
               <StarIcon className="h-3.5 w-3.5" />
@@ -129,7 +137,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
                 <p className="mt-1 text-sm text-slate-400 line-through">{formatCurrency(product.regularPrice)}</p>
               ) : null}
             </div>
-            <span className="text-xs text-slate-500">{product.quantity} available</span>
+            <span className={`text-xs ${product.quantity === 0 ? "font-semibold text-rose-600" : "text-slate-500"}`}>
+              {product.quantity === 0
+                ? (isBg ? "Няма наличност" : "Out of stock")
+                : isBg
+                  ? `${product.quantity} бр. налични`
+                  : `${product.quantity} available`}
+            </span>
           </div>
 
           <button
@@ -143,7 +157,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
             }`}
           >
             <ShoppingBagIcon className="h-5 w-5" />
-            {product.quantity === 0 ? "Unavailable" : "Add to cart"}
+            {product.quantity === 0
+              ? (isBg ? "Няма наличност" : "Unavailable")
+              : (isBg ? "Добави в количката" : "Add to cart")}
           </button>
         </div>
       </article>
