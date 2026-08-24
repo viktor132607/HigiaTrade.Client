@@ -26,6 +26,10 @@ const ProductBrandEnhancer = () => {
   const [target, setTarget] = useState<Target | null>(null);
   const [brand, setBrand] = useState("");
   const [brands, setBrands] = useState<BrandOption[]>([]);
+  const [isCreatingBrand, setIsCreatingBrand] = useState(false);
+  const [newBrandName, setNewBrandName] = useState("");
+  const [creatingBrand, setCreatingBrand] = useState(false);
+  const [brandCreateError, setBrandCreateError] = useState("");
   const targetRef = useRef<Target | null>(null);
   const brandRef = useRef("");
 
@@ -33,21 +37,81 @@ const ProductBrandEnhancer = () => {
     brandRef.current = brand;
   }, [brand]);
 
-  useEffect(() => {
-    const loadBrands = async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Brands`);
-        if (response.ok) {
-          const data = await response.json();
-          setBrands(Array.isArray(data) ? data : []);
-        }
-      } catch {
-        setBrands([]);
-      }
-    };
+  const loadBrands = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Brands`);
+      if (!response.ok) throw new Error();
+      const data = await response.json();
+      setBrands(Array.isArray(data) ? data : []);
+    } catch {
+      setBrands([]);
+    }
+  };
 
+  useEffect(() => {
     void loadBrands();
   }, []);
+
+  const createBrand = async () => {
+    const name = newBrandName.trim();
+    if (creatingBrand) return;
+
+    if (name.length < 2) {
+      setBrandCreateError("Името на марката трябва да е поне 2 символа.");
+      return;
+    }
+
+    const existing = brands.find(
+      (item) => item.name.trim().toLocaleLowerCase("bg-BG") === name.toLocaleLowerCase("bg-BG")
+    );
+    if (existing) {
+      setBrand(existing.name);
+      setNewBrandName("");
+      setBrandCreateError("");
+      setIsCreatingBrand(false);
+      return;
+    }
+
+    try {
+      setCreatingBrand(true);
+      setBrandCreateError("");
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Brands`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          name,
+          thumbnailImageUrl: null,
+          description: null,
+        }),
+      });
+
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.message || "Марката не можа да бъде създадена.");
+      }
+
+      const created: BrandOption = {
+        id: data?.id ? String(data.id) : undefined,
+        name: String(data?.name || name),
+        productCount: Number(data?.productCount || 0),
+      };
+
+      setBrands((current) =>
+        [...current.filter((item) => item.name.toLocaleLowerCase("bg-BG") !== created.name.toLocaleLowerCase("bg-BG")), created]
+          .sort((a, b) => a.name.localeCompare(b.name, "bg-BG"))
+      );
+      setBrand(created.name);
+      setNewBrandName("");
+      setIsCreatingBrand(false);
+    } catch (error) {
+      setBrandCreateError(error instanceof Error ? error.message : "Марката не можа да бъде създадена.");
+    } finally {
+      setCreatingBrand(false);
+    }
+  };
 
   useEffect(() => {
     let active: Target | null = null;
@@ -59,6 +123,9 @@ const ProductBrandEnhancer = () => {
       targetRef.current = null;
       setTarget(null);
       setBrand("");
+      setIsCreatingBrand(false);
+      setNewBrandName("");
+      setBrandCreateError("");
     };
 
     const attach = async () => {
@@ -174,9 +241,67 @@ const ProductBrandEnhancer = () => {
           </option>
         ))}
       </select>
-      <p className="mt-1 text-xs text-gray-500">
-        Марките се създават и управляват от раздел „Марки“.
-      </p>
+
+      <div className="mt-2">
+        {!isCreatingBrand ? (
+          <button
+            type="button"
+            onClick={() => {
+              setIsCreatingBrand(true);
+              setNewBrandName("");
+              setBrandCreateError("");
+            }}
+            className="text-sm font-semibold text-[#138b78] hover:underline"
+          >
+            + Добави нова марка
+          </button>
+        ) : (
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                type="text"
+                value={newBrandName}
+                onChange={(event) => {
+                  setNewBrandName(event.target.value);
+                  setBrandCreateError("");
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    void createBrand();
+                  }
+                }}
+                placeholder="Име на новата марка"
+                maxLength={80}
+                autoFocus
+                className="min-h-10 flex-1 rounded-md border border-slate-400 bg-white px-3 py-2 text-sm outline-none focus:border-[#18b99f]"
+              />
+              <button
+                type="button"
+                onClick={() => void createBrand()}
+                disabled={creatingBrand}
+                className="rounded-md bg-[#18b99f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#149f8a] disabled:opacity-50"
+              >
+                {creatingBrand ? "Създаване..." : "Създай"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCreatingBrand(false);
+                  setNewBrandName("");
+                  setBrandCreateError("");
+                }}
+                disabled={creatingBrand}
+                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Отказ
+              </button>
+            </div>
+            {brandCreateError && <p className="mt-2 text-sm text-red-600">{brandCreateError}</p>}
+            <p className="mt-2 text-xs text-slate-500">Новата марка се записва веднага и се избира за текущия продукт.</p>
+          </div>
+        )}
+      </div>
     </div>,
     target.mount
   );
