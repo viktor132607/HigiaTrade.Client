@@ -9,25 +9,35 @@ const CompareNavbarEnhancer = () => {
 
   useEffect(() => {
     const bind = () => {
-      const buttons = Array.from(
-        document.querySelectorAll<HTMLButtonElement>('button[title="Сравни"], button[title="Compare"]')
+      const button = document.querySelector<HTMLButtonElement>(
+        'header button[title="Сравни"], header button[title="Compare"]'
       );
 
-      buttons.forEach((button) => {
-        button.onclick = (event) => {
-          event.preventDefault();
-          navigate("/compare");
-        };
+      if (!button) return;
 
-        const badge = button.querySelector("span");
-        if (badge) badge.textContent = String(compareCount);
-      });
+      button.onclick = (event) => {
+        event.preventDefault();
+        navigate("/compare");
+      };
+
+      const badge = button.querySelector("span");
+      if (badge) badge.textContent = String(compareCount);
     };
 
     bind();
     const observer = new MutationObserver(bind);
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["title"] });
-    return () => observer.disconnect();
+    observer.observe(document.querySelector("header") ?? document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    return () => {
+      observer.disconnect();
+      const button = document.querySelector<HTMLButtonElement>(
+        'header button[title="Сравни"], header button[title="Compare"]'
+      );
+      if (button) button.onclick = null;
+    };
   }, [compareCount, navigate]);
 
   return null;
