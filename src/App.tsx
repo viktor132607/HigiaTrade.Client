@@ -36,6 +36,7 @@ import AdminProducts from "./pages/admin/Products";
 import AdminCategories from "./pages/admin/Categories";
 import AdminUsers from "./pages/admin/Users";
 import AdminOrders from "./pages/admin/AdminOrders";
+import AdminReports from "./pages/admin/Reports";
 
 function App() {
   return (
@@ -185,6 +186,7 @@ function App() {
                 <Route path="categories" element={<AdminCategories />} />
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="orders" element={<AdminOrders />} />
+                <Route path="reports" element={<AdminReports />} />
                 <Route path="*" element={<Navigate to="/admin" replace />} />
               </Route>
 
