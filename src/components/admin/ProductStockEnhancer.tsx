@@ -9,6 +9,17 @@ type StockTarget = {
   container: HTMLElement;
   mount: HTMLDivElement;
   productTitle: string;
+  isEditing: boolean;
+};
+
+const setNativeInputValue = (input: HTMLInputElement, value: string) => {
+  const setter = Object.getOwnPropertyDescriptor(
+    window.HTMLInputElement.prototype,
+    "value"
+  )?.set;
+
+  setter?.call(input, value);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
 };
 
 const ProductStockEnhancer = () => {
@@ -43,11 +54,13 @@ const ProductStockEnhancer = () => {
 
       if (activeTarget) detach();
 
-      const modalHeading = Array.from(document.querySelectorAll("h2")).find(
-        (heading) => heading.textContent?.trim() === "Редактирай продукт"
-      );
+      const modalHeading = Array.from(document.querySelectorAll("h2")).find((heading) => {
+        const text = heading.textContent?.trim();
+        return text === "Редактирай продукт" || text === "Добави продукт";
+      });
       if (!modalHeading) return;
 
+      const isEditing = modalHeading.textContent?.trim() === "Редактирай продукт";
       const stockInput = document.querySelector<HTMLInputElement>('input[name="stock"]');
       const nameInput = document.querySelector<HTMLInputElement>('input[name="name"]');
 
@@ -68,14 +81,20 @@ const ProductStockEnhancer = () => {
       container.insertAdjacentElement("afterend", mount);
       container.style.display = "none";
 
+      if (!isEditing) {
+        // New products always start at zero. Stock is created only through a receipt/invoice.
+        setNativeInputValue(stockInput, "0");
+      }
+
       activeTarget = {
         stockInput,
         container,
         mount,
         productTitle: nameInput.value.trim(),
+        isEditing,
       };
 
-      setCurrentQuantity(Number.parseInt(stockInput.value, 10) || 0);
+      setCurrentQuantity(isEditing ? Number.parseInt(stockInput.value, 10) || 0 : 0);
       setTarget(activeTarget);
     };
 
@@ -91,7 +110,11 @@ const ProductStockEnhancer = () => {
   }, []);
 
   useEffect(() => {
-    if (!target) return;
+    if (!target || !target.isEditing) {
+      setProductId(null);
+      setResolveError("");
+      return;
+    }
 
     let cancelled = false;
 
@@ -132,7 +155,7 @@ const ProductStockEnhancer = () => {
 
         if (!cancelled) {
           setProductId(String(exactProduct.id));
-          setCurrentQuantity(Number(exactProduct.quantity) || stockValue);
+          setCurrentQuantity(Number(exactProduct.quantity) || 0);
         }
       } catch (error) {
         if (!cancelled) {
@@ -156,18 +179,18 @@ const ProductStockEnhancer = () => {
 
   const updateLegacyStock = (quantity: number) => {
     setCurrentQuantity(quantity);
-
-    const setter = Object.getOwnPropertyDescriptor(
-      window.HTMLInputElement.prototype,
-      "value"
-    )?.set;
-
-    setter?.call(target.stockInput, String(quantity));
-    target.stockInput.dispatchEvent(new Event("input", { bubbles: true }));
+    setNativeInputValue(target.stockInput, String(quantity));
   };
 
   return createPortal(
-    productId ? (
+    !target.isEditing ? (
+      <div className="rounded-lg border border-slate-300 bg-slate-50 p-4 text-sm text-gray-700">
+        <div className="font-semibold">Начална наличност: 0 бр.</div>
+        <div className="mt-1 text-gray-500">
+          Запази продукта, след което добави реалното количество от „Наличност“ с номер на фактура.
+        </div>
+      </div>
+    ) : productId ? (
       <ProductStockManager
         token={token}
         productId={productId}
