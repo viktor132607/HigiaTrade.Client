@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { InformationCircleIcon, PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 
@@ -21,7 +21,9 @@ interface ValidationErrors {
 const AdminUsers = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [previewUser, setPreviewUser] = useState<User | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [error, setError] = useState('');
   const [editFormData, setEditFormData] = useState({
@@ -55,6 +57,16 @@ const AdminUsers = () => {
       console.error("Error loading customers:", err);
       setError("We could not load customers.");
     }
+  };
+
+  const handlePreviewUser = (user: User) => {
+    setPreviewUser(user);
+    setIsPreviewModalOpen(true);
+  };
+
+  const closePreviewModal = () => {
+    setIsPreviewModalOpen(false);
+    setPreviewUser(null);
   };
 
   const handleViewUser = (user: User) => {
@@ -310,6 +322,15 @@ const AdminUsers = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button
+                    type="button"
+                    onClick={() => handlePreviewUser(user)}
+                    className="text-white bg-blue-600 hover:bg-blue-700 p-1.5 rounded-md mr-2"
+                    title="More info"
+                    aria-label={`More info for ${user.names}`}
+                  >
+                    <InformationCircleIcon className="w-5 h-5" />
+                  </button>
+                  <button
                     onClick={() => {
                       handleViewUser(user);
                     }}
@@ -332,6 +353,50 @@ const AdminUsers = () => {
           </table>
         </div>
       </div>
+
+      {isPreviewModalOpen && previewUser && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closePreviewModal();
+          }}
+        >
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-lg w-full">
+            <h2 className="text-lg sm:text-xl font-bold mb-4">Customer info</h2>
+            <div className="space-y-3 text-sm">
+              <div>
+                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Name</div>
+                <div className="mt-1 text-gray-900">{previewUser.names}</div>
+              </div>
+              <div>
+                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Email</div>
+                <div className="mt-1 break-all text-gray-900">{previewUser.email}</div>
+              </div>
+              <div>
+                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Phone</div>
+                <div className="mt-1 text-gray-900">{previewUser.phone || 'Not provided'}</div>
+              </div>
+              <div>
+                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Role</div>
+                <div className="mt-1 text-gray-900">{previewUser.role === 'Admin' ? 'Admin' : 'Customer'}</div>
+              </div>
+              <div>
+                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">ID</div>
+                <div className="mt-1 break-all text-gray-900">{previewUser.id}</div>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={closePreviewModal}
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4">
