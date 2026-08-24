@@ -93,6 +93,7 @@ const AdminProducts = () => {
   const [itemsPerPage, setItemsPerPage] = useState(getInitialPageSize);
   const [sortBy, setSortBy] = useState("title");
   const [sortDescending, setSortDescending] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -110,9 +111,12 @@ const AdminProducts = () => {
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
 
   useEffect(() => {
-    fetchProducts();
     fetchCategories();
-  }, [currentPage, itemsPerPage, sortBy, sortDescending]);
+  }, []);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [currentPage, itemsPerPage, sortBy, sortDescending, selectedCategoryId]);
 
   const fetchCategories = async () => {
     try {
@@ -147,6 +151,10 @@ const AdminProducts = () => {
         SortDescending: sortDescending.toString(),
       });
 
+      if (selectedCategoryId) {
+        queryParams.set("CategoryId", selectedCategoryId);
+      }
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/Products?${queryParams.toString()}`,
         {
@@ -165,17 +173,18 @@ const AdminProducts = () => {
       if (data.items && Array.isArray(data.items)) {
         setProducts(data.items);
         setSelectedProductIds([]);
-        if (data.totalCount) {
-          setTotalPages(Math.ceil(data.totalCount / itemsPerPage));
-        }
+        const totalCount = Number(data.totalCount ?? data.items.length);
+        setTotalPages(Math.max(1, Math.ceil(totalCount / itemsPerPage)));
       } else {
         setProducts([]);
         setSelectedProductIds([]);
+        setTotalPages(1);
       }
     } catch (err) {
       console.error("Грешка при зареждане на продуктите:", err);
       toast.error("Продуктите не можаха да бъдат заредени.");
       setProducts([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -534,12 +543,35 @@ const AdminProducts = () => {
     }
   };
 
+  const handleCategoryFilterChange = (categoryId: string) => {
+    setSelectedCategoryId(categoryId);
+    setCurrentPage(1);
+  };
+
   return (
     <div className="min-h-[calc(100vh-4rem)] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Управление на продукти</h1>
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+              <label htmlFor="categoryFilter" className="text-sm text-gray-700">
+                Категория:
+              </label>
+              <select
+                id="categoryFilter"
+                value={selectedCategoryId}
+                onChange={(e) => handleCategoryFilterChange(e.target.value)}
+                className="block w-52 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              >
+                <option value="">Всички категории</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
               <label htmlFor="sortBy" className="text-sm text-gray-700">
                 Сортиране по:
