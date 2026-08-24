@@ -13,6 +13,11 @@ interface Category {
   name: string;
 }
 
+interface BrandOption {
+  name: string;
+  productCount: number;
+}
+
 interface ProductImage {
   id?: string | null;
   uri: string;
@@ -22,6 +27,7 @@ interface Product {
   id: string;
   title: string;
   description: string;
+  brand?: string | null;
   categoryId: string;
   categoryName?: string;
   regularPrice: number;
@@ -90,6 +96,7 @@ const AdminProducts = () => {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<BrandOption[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -99,6 +106,7 @@ const AdminProducts = () => {
   const [sortDescending, setSortDescending] = useState(false);
 
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [selectedBrand, setSelectedBrand] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
@@ -120,6 +128,7 @@ const AdminProducts = () => {
 
   useEffect(() => {
     void fetchCategories();
+    void fetchBrands();
   }, []);
 
   useEffect(() => {
@@ -141,6 +150,7 @@ const AdminProducts = () => {
     sortBy,
     sortDescending,
     selectedCategoryId,
+    selectedBrand,
     debouncedSearchTerm,
     debouncedMinPrice,
     debouncedMaxPrice,
@@ -169,6 +179,18 @@ const AdminProducts = () => {
     }
   };
 
+  const fetchBrands = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Brands`);
+      if (!response.ok) throw new Error("Марките не можаха да бъдат заредени.");
+      const data = await response.json();
+      setBrands(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Грешка при зареждане на марките:", error);
+      setBrands([]);
+    }
+  };
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -180,6 +202,7 @@ const AdminProducts = () => {
       });
 
       if (selectedCategoryId) query.set("CategoryId", selectedCategoryId);
+      if (selectedBrand) query.set("Brand", selectedBrand);
       if (debouncedSearchTerm) query.set("Title", debouncedSearchTerm);
       if (debouncedMinPrice) query.set("MinPrice", debouncedMinPrice);
       if (debouncedMaxPrice) query.set("MaxPrice", debouncedMaxPrice);
@@ -359,6 +382,7 @@ const AdminProducts = () => {
       }
 
       await fetchProducts();
+      await fetchBrands();
       closeEditModal();
       toast.success(isEditing ? "Продуктът е обновен." : "Продуктът е добавен.");
     } catch (error) {
@@ -384,6 +408,7 @@ const AdminProducts = () => {
       setIsDeleteModalOpen(false);
       setProductToDelete(null);
       await fetchProducts();
+      await fetchBrands();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Продуктът не можа да бъде изтрит.");
     }
@@ -425,6 +450,7 @@ const AdminProducts = () => {
 
       setSelectedProductIds([]);
       await fetchProducts();
+      await fetchBrands();
       toast.success("Избраните продукти са изтрити.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Избраните продукти не можаха да бъдат изтрити.");
@@ -445,10 +471,11 @@ const AdminProducts = () => {
     setDebouncedMinPrice("");
     setDebouncedMaxPrice("");
     setSelectedCategoryId("");
+    setSelectedBrand("");
     setCurrentPage(1);
   };
 
-  const hasActiveFilters = Boolean(searchTerm || selectedCategoryId || minPrice || maxPrice);
+  const hasActiveFilters = Boolean(searchTerm || selectedCategoryId || selectedBrand || minPrice || maxPrice);
   const regularInputClass =
     "mt-1 block min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-[#18b99f] focus:ring-2 focus:ring-[#18b99f]/20";
 
@@ -469,7 +496,7 @@ const AdminProducts = () => {
 
         <div className="mb-5 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <div className="mb-3 text-sm font-semibold text-gray-900">Филтри</div>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(240px,2fr)_minmax(220px,1.5fr)_120px_120px_auto] xl:items-end">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1.6fr)_minmax(190px,1.2fr)_minmax(170px,1fr)_110px_110px_auto] xl:items-end">
             <div>
               <label htmlFor="productSearch" className="mb-1 block text-xs font-medium text-gray-600">Търси по име</label>
               <input
@@ -499,6 +526,23 @@ const AdminProducts = () => {
               </select>
             </div>
             <div>
+              <label htmlFor="brandFilter" className="mb-1 block text-xs font-medium text-gray-600">Марка</label>
+              <select
+                id="brandFilter"
+                value={selectedBrand}
+                onChange={(event) => {
+                  setSelectedBrand(event.target.value);
+                  setCurrentPage(1);
+                }}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              >
+                <option value="">Всички марки</option>
+                {brands.map((brand) => (
+                  <option key={brand.name} value={brand.name}>{brand.name} ({brand.productCount})</option>
+                ))}
+              </select>
+            </div>
+            <div>
               <label htmlFor="minPrice" className="mb-1 block text-xs font-medium text-gray-600">Цена от</label>
               <input id="minPrice" type="number" min="0" step="0.01" value={minPrice} onChange={(event) => setMinPrice(event.target.value)} placeholder="0" className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" />
             </div>
@@ -514,8 +558,10 @@ const AdminProducts = () => {
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
             <div className="flex items-center gap-2">
               <label htmlFor="sortBy" className="text-sm text-gray-700">Сортиране по:</label>
-              <select id="sortBy" value={sortBy} onChange={(event) => { setSortBy(event.target.value); setCurrentPage(1); }} className="block w-32 rounded-md border-gray-300 shadow-sm sm:text-sm">
+              <select id="sortBy" value={sortBy} onChange={(event) => { setSortBy(event.target.value); setCurrentPage(1); }} className="block w-40 rounded-md border-gray-300 shadow-sm sm:text-sm">
                 <option value="title">Име</option>
+                <option value="Brand">Марка</option>
+                <option value="Category.Name">Категория</option>
                 <option value="regularPrice">Цена</option>
                 <option value="quantity">Наличност</option>
                 <option value="rating">Рейтинг</option>
@@ -552,12 +598,13 @@ const AdminProducts = () => {
           <>
             <div className="overflow-hidden rounded-lg bg-white shadow">
               <div className="table-scroll">
-                <table className="w-full min-w-[56rem] divide-y divide-gray-200">
+                <table className="w-full min-w-[64rem] divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="w-12 px-6 py-3 text-left"><input type="checkbox" checked={products.length > 0 && products.every((product) => selectedProductIds.includes(product.id))} onChange={toggleAllProductsOnPage} className="h-4 w-4 rounded border-gray-300" /></th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Име</th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Категория</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Марка</th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Цена (EUR)</th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Отстъпка</th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Наличност</th>
@@ -579,6 +626,7 @@ const AdminProducts = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-500">{categories.find((category) => category.id === product.categoryId)?.name || product.categoryName || "Без категория"}</td>
+                          <td className="px-6 py-4 text-sm text-gray-500">{product.brand?.trim() || "Без марка"}</td>
                           <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(product.discountedPrice || product.regularPrice || 0)}</td>
                           <td className="px-6 py-4 text-sm text-gray-900">{product.discountPercentage ? `${product.discountPercentage}%` : "0%"}</td>
                           <td className="px-6 py-4 text-sm text-gray-500">{product.quantity || 0}</td>
