@@ -26,7 +26,7 @@ const AdminCategories = () => {
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [formData, setFormData] = useState<FormData>({ 
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     imageURI: ''
   });
@@ -45,11 +45,11 @@ const AdminCategories = () => {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error("We could not load categories.");
       }
-      
+
       const data = await response.json();
       setCategories(data);
     } catch (err) {
@@ -60,22 +60,20 @@ const AdminCategories = () => {
 
   const validateForm = (): boolean => {
     const errors: ValidationErrors = {};
-    
-    // Name validation
+
     if (!formData.name.trim()) {
       errors.name = "Category name is required.";
     } else if (formData.name.length < 2) {
       errors.name = "Use at least 2 characters.";
     } else if (formData.name.length > 50) {
       errors.name = "Use 50 characters or fewer.";
-    } else if (categories.some(cat => 
-      cat.name.toLowerCase() === formData.name.toLowerCase() && 
+    } else if (categories.some(cat =>
+      cat.name.toLowerCase() === formData.name.toLowerCase() &&
       cat.id !== editingCategory?.id
     )) {
       errors.name = "A category with this name already exists.";
     }
 
-    // Image URL validation
     if (!formData.imageURI.trim()) {
       errors.imageURI = "Category image URL is required.";
     } else {
@@ -96,13 +94,20 @@ const AdminCategories = () => {
       ...prev,
       [name]: value
     }));
-    // Clear validation error when user starts typing
+
     if (validationErrors[name as keyof ValidationErrors]) {
       setValidationErrors(prev => ({
         ...prev,
         [name]: undefined
       }));
     }
+  };
+
+  const closeEditModal = () => {
+    setIsModalOpen(false);
+    setEditingCategory(null);
+    setFormData({ name: '', imageURI: '' });
+    setValidationErrors({});
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,8 +119,8 @@ const AdminCategories = () => {
     }
 
     try {
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/Categories/`
-      
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/Categories/`;
+
       const response = await fetch(url, {
         method: editingCategory ? "PUT" : "POST",
         headers: {
@@ -128,7 +133,6 @@ const AdminCategories = () => {
           imageURI: formData.imageURI
         })
       });
-        
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
@@ -136,9 +140,7 @@ const AdminCategories = () => {
       }
 
       await fetchCategories();
-      setIsModalOpen(false);
-      setFormData({ name: '', imageURI: '' });
-      setEditingCategory(null);
+      closeEditModal();
     } catch (err) {
       console.error("Error saving category:", err);
       setError(err instanceof Error ? err.message : "We could not save the category.");
@@ -155,7 +157,7 @@ const AdminCategories = () => {
 
   const handleEditCategory = (category: Category) => {
     setEditingCategory(category);
-    setFormData({ 
+    setFormData({
       name: category.name,
       imageURI: category.imageURI || ''
     });
@@ -215,59 +217,73 @@ const AdminCategories = () => {
       <div className="overflow-hidden rounded-lg bg-white shadow">
         <div className="table-scroll">
           <table className="min-w-[28rem] divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {categories.map((category) => (
-              <tr key={category.id}>
-                <td className="px-6 py-3 text-sm text-gray-900">
-                  <div className="flex items-center gap-3">
-                    {category.imageURI ? (
-                      <img
-                        src={category.imageURI}
-                        alt={category.name}
-                        className="h-12 w-12 flex-none rounded-md border border-gray-200 object-cover"
-                      />
-                    ) : (
-                      <div className="h-12 w-12 flex-none rounded-md border border-gray-200 bg-gray-100" />
-                    )}
-                    <span>{category.name}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    onClick={() => handleEditCategory(category)}
-                    className="text-white bg-yellow-600 hover:bg-yellow-700 p-1.5 rounded-md mr-2"
-                    title="Edit"
-                  >
-                    <PencilIcon className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteClick(category)}
-                    className="text-white bg-red-600 hover:bg-red-700 p-1.5 rounded-md"
-                    title="Delete"
-                  >
-                    <TrashIcon className="w-5 h-5" />
-                  </button>
-                </td>
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
-            ))}
-          </tbody>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {categories.map((category) => (
+                <tr key={category.id}>
+                  <td className="px-6 py-3 text-sm text-gray-900">
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleEditCategory(category)}
+                        className="flex-none rounded-md focus:outline-none focus:ring-2 focus:ring-[#18b99f] focus:ring-offset-2"
+                        title="Edit category"
+                        aria-label={`Edit ${category.name}`}
+                      >
+                        {category.imageURI ? (
+                          <img
+                            src={category.imageURI}
+                            alt={category.name}
+                            className="h-12 w-12 rounded-md border border-gray-200 object-cover transition hover:opacity-80"
+                          />
+                        ) : (
+                          <div className="h-12 w-12 rounded-md border border-gray-200 bg-gray-100 transition hover:bg-gray-200" />
+                        )}
+                      </button>
+                      <span>{category.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => handleEditCategory(category)}
+                      className="text-white bg-yellow-600 hover:bg-yellow-700 p-1.5 rounded-md mr-2"
+                      title="Edit"
+                    >
+                      <PencilIcon className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteClick(category)}
+                      className="text-white bg-red-600 hover:bg-red-700 p-1.5 rounded-md"
+                      title="Delete"
+                    >
+                      <TrashIcon className="w-5 h-5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>
       </div>
 
-      {/* Edit/Add Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              closeEditModal();
+            }
+          }}
+        >
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-6 text-gray-900">
             <h2 className="text-xl font-bold mb-4">
               {editingCategory ? "Edit category" : "Add category"}
@@ -326,12 +342,7 @@ const AdminCategories = () => {
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    setEditingCategory(null);
-                    setFormData({ name: '', imageURI: '' });
-                    setValidationErrors({});
-                  }}
+                  onClick={closeEditModal}
                   className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
@@ -348,7 +359,6 @@ const AdminCategories = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
           <div className="w-full max-w-md rounded-lg bg-white p-6">
@@ -382,4 +392,4 @@ const AdminCategories = () => {
   );
 };
 
-export default AdminCategories; 
+export default AdminCategories;
