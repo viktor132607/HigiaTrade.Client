@@ -19,6 +19,7 @@ type Props = {
 };
 
 const VAT_RATE = 20;
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 
 const ProductPricingAndUploadFields = ({
   token,
@@ -54,6 +55,7 @@ const ProductPricingAndUploadFields = ({
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
+  const [dragOverImageIndex, setDragOverImageIndex] = useState<number | null>(null);
 
   const retailBreakdown = useMemo(() => {
     const source = retailPrice.trim() !== "" ? retailPrice : regularPrice;
@@ -126,6 +128,12 @@ const ProductPricingAndUploadFields = ({
 
   const uploadImages = async (files: File[]) => {
     if (files.length === 0) return;
+
+    const oversizedFile = files.find((file) => file.size > MAX_IMAGE_SIZE);
+    if (oversizedFile) {
+      setUploadError(`Снимката ${oversizedFile.name} е по-голяма от 10 MB.`);
+      return;
+    }
 
     setUploading(true);
     setUploadError("");
@@ -280,7 +288,7 @@ const ProductPricingAndUploadFields = ({
           className="mt-1 block min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-60"
         />
         <p className="mt-1 text-xs leading-5 text-gray-500">
-          JPEG, PNG, WEBP или GIF, до 5 MB на снимка. Снимките се качват автоматично веднага след избора.
+          JPEG, PNG, WEBP или GIF, до 10 MB на снимка. Снимките се качват автоматично веднага след избора.
         </p>
         {uploading && (
           <p className="mt-2 text-sm font-medium text-[#149f8a]">Качване...</p>
@@ -289,23 +297,44 @@ const ProductPricingAndUploadFields = ({
         {uploadedImages.length > 0 && (
           <div className="mt-4">
             <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
-              Качени снимки — избери основна и подреди при нужда
+              Качени снимки — хвани карта и я пусни върху желаното място
             </div>
             <div className="grid grid-cols-1 gap-3 min-[390px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
               {uploadedImages.map((image, index) => {
                 const isMain = image.uri === mainImageUri;
+                const isDragging = draggedImageIndex === index;
+                const isDropTarget =
+                  dragOverImageIndex === index && draggedImageIndex !== index;
 
                 return (
                   <div
                     key={`${image.uri}-${index}`}
                     draggable
-                    onDragStart={() => setDraggedImageIndex(index)}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={() => {
+                    onDragStart={(event) => {
+                      setDraggedImageIndex(index);
+                      setDragOverImageIndex(index);
+                      event.dataTransfer.effectAllowed = "move";
+                      event.dataTransfer.setData("text/plain", String(index));
+                    }}
+                    onDragEnter={(event) => {
+                      event.preventDefault();
+                      if (draggedImageIndex !== null) {
+                        setDragOverImageIndex(index);
+                      }
+                    }}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = "move";
+                    }}
+                    onDrop={(event) => {
+                      event.preventDefault();
+
                       if (
                         draggedImageIndex === null ||
                         draggedImageIndex === index
                       ) {
+                        setDraggedImageIndex(null);
+                        setDragOverImageIndex(null);
                         return;
                       }
 
@@ -313,15 +342,44 @@ const ProductPricingAndUploadFields = ({
                         moveItem(uploadedImages, draggedImageIndex, index)
                       );
                       setDraggedImageIndex(null);
+                      setDragOverImageIndex(null);
                     }}
-                    className={`overflow-hidden rounded-md border bg-white shadow-sm sm:cursor-move ${
-                      isMain ? "border-[#18b99f] ring-2 ring-[#18b99f]/20" : "border-gray-300"
-                    }`}
+                    onDragEnd={() => {
+                      setDraggedImageIndex(null);
+                      setDragOverImageIndex(null);
+                    }}
+                    className={`relative overflow-hidden rounded-md border bg-white shadow-sm transition-all duration-150 sm:cursor-grab sm:active:cursor-grabbing ${
+                      isMain
+                        ? "border-[#18b99f] ring-2 ring-[#18b99f]/20"
+                        : "border-gray-300"
+                    } ${
+                      isDropTarget
+                        ? "scale-[1.02] border-[#18b99f] ring-2 ring-[#18b99f]/40"
+                        : ""
+                    } ${isDragging ? "opacity-45" : "opacity-100"}`}
                   >
+                    {isDropTarget && (
+                      <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-emerald-50/75">
+                        <span className="rounded-md bg-[#18b99f] px-3 py-1.5 text-xs font-semibold text-white shadow">
+                          Пусни тук
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex select-none items-center justify-between border-b border-gray-200 bg-gray-50 px-2 py-1.5 text-xs text-gray-600">
+                      <span className="font-semibold text-gray-700">
+                        ☰ Плъзни за подреждане
+                      </span>
+                      <span className="rounded-full bg-gray-200 px-2 py-0.5 font-semibold text-gray-700">
+                        {index + 1}
+                      </span>
+                    </div>
+
                     <img
                       src={image.uri}
                       alt={`Снимка ${index + 1}`}
-                      className="h-40 w-full object-cover sm:h-32"
+                      draggable={false}
+                      className="h-40 w-full select-none object-cover sm:h-32"
                     />
 
                     <div className="flex items-center justify-between gap-2 border-t border-gray-200 px-2 py-2">
