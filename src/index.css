@@ -124,6 +124,27 @@
   .site-container {
     max-width: 1440px;
   }
+
+  .admin-shell main .max-w-7xl {
+    width: 100%;
+    max-width: none !important;
+  }
+
+  .admin-shell .table-scroll {
+    overflow-x: visible;
+  }
+
+  .admin-shell .table-scroll table {
+    width: 100%;
+    min-width: 0 !important;
+    table-layout: fixed;
+  }
+
+  .admin-shell .table-scroll th,
+  .admin-shell .table-scroll td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 }
 
 @media (min-width: 1536px) {
