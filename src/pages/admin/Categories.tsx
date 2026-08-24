@@ -301,6 +301,15 @@ const AdminCategories = () => {
                 {validationErrors.imageURI && (
                   <p className="mt-1 text-sm text-red-600">{validationErrors.imageURI}</p>
                 )}
+                {formData.imageURI.trim() && !validationErrors.imageURI && (
+                  <div className="mt-3 overflow-hidden rounded-md border border-gray-200 bg-gray-50">
+                    <img
+                      src={formData.imageURI}
+                      alt={formData.name ? `${formData.name} preview` : 'Category preview'}
+                      className="h-44 w-full object-cover"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
