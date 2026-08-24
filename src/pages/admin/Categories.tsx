@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
-import { PencilIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { useSelector } from 'react-redux';
-import { API_BASE_URL, readApiJson } from '../../config/api';
-import { RootState } from '../../store';
+import { useEffect, useRef, useState } from "react";
+import { PencilIcon, PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useSelector } from "react-redux";
+import { API_BASE_URL, readApiJson } from "../../config/api";
+import { RootState } from "../../store";
+import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 
 interface Category {
   id: string;
@@ -15,8 +16,8 @@ interface CategoryApiItem {
   id: string;
   name: string;
   productCount?: number;
-  imageURI?: string;
-  imageUri?: string;
+  imageURI?: string | null;
+  imageUri?: string | null;
 }
 
 interface FormData {
@@ -26,41 +27,67 @@ interface FormData {
 
 interface ValidationErrors {
   name?: string;
-  imageURI?: string;
 }
 
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+const emptyForm: FormData = { name: "", imageURI: "" };
+
 const AdminCategories = () => {
+  const { token } = useSelector((state: RootState) => state.auth);
+  const { language } = useLanguageTheme();
+  const isBg = language === "bg";
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [formData, setFormData] = useState<FormData>({ name: '', imageURI: '' });
+  const [formData, setFormData] = useState<FormData>(emptyForm);
   const [fullImageUrl, setFullImageUrl] = useState<string | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
-  const { token } = useSelector((state: RootState) => state.auth);
+  const [uploading, setUploading] = useState(false);
+  const [dropActive, setDropActive] = useState(false);
+
+  const text = {
+    title: isBg ? "Управление на категории" : "Manage categories",
+    add: isBg ? "Добави категория" : "Add category",
+    edit: isBg ? "Редактирай категория" : "Edit category",
+    deleteTitle: isBg ? "Изтриване на категория" : "Delete category",
+    name: isBg ? "Име" : "Name",
+    actions: isBg ? "Действия" : "Actions",
+    image: isBg ? "Изображение на категорията" : "Category image",
+    choose: isBg ? "Избери, пусни или постави изображение с Ctrl+V" : "Choose, drop or paste an image with Ctrl+V",
+    drop: isBg ? "Пусни изображението тук" : "Drop the image here",
+    uploading: isBg ? "Качване..." : "Uploading...",
+    help: isBg ? "До 10 MB. Качва се автоматично след избор, drag & drop или Ctrl+V." : "Up to 10 MB. Uploads automatically after selection, drag & drop or Ctrl+V.",
+    remove: isBg ? "Премахни изображението" : "Remove image",
+    full: isBg ? "Отвори изображението в цял размер" : "Open image full size",
+    cancel: isBg ? "Отказ" : "Cancel",
+    save: isBg ? "Запази" : "Save",
+    delete: isBg ? "Изтрий" : "Delete",
+    noImage: isBg ? "Няма изображение" : "No image",
+  };
 
   const fetchCategories = async () => {
     try {
-      setError('');
-      const response = await fetch(`${API_BASE_URL}/Categories`, { cache: 'no-store' });
+      setError("");
+      const response = await fetch(`${API_BASE_URL}/Categories`, { cache: "no-store" });
       const data = await readApiJson<CategoryApiItem[]>(response);
-
       setCategories(
         Array.isArray(data)
           ? data.map((category) => ({
               id: category.id,
               name: category.name,
               productCount: category.productCount ?? 0,
-              imageURI: category.imageURI ?? category.imageUri ?? '',
+              imageURI: category.imageURI ?? category.imageUri ?? "",
             }))
-          : [],
+          : []
       );
     } catch (err) {
-      console.error('Грешка при зареждане на категориите:', err);
       setCategories([]);
-      setError(err instanceof Error ? err.message : 'Категориите не можаха да бъдат заредени.');
+      setError(err instanceof Error ? err.message : isBg ? "Категориите не можаха да бъдат заредени." : "Categories could not be loaded.");
     }
   };
 
@@ -70,196 +97,168 @@ const AdminCategories = () => {
 
   const validateForm = () => {
     const errors: ValidationErrors = {};
-
-    if (!formData.name.trim()) {
-      errors.name = 'Името на категорията е задължително.';
-    } else if (formData.name.length < 2) {
-      errors.name = 'Използвай поне 2 символа.';
-    } else if (formData.name.length > 50) {
-      errors.name = 'Използвай до 50 символа.';
-    } else if (
-      categories.some(
-        (category) =>
-          category.name.toLowerCase() === formData.name.toLowerCase() &&
-          category.id !== editingCategory?.id,
-      )
-    ) {
-      errors.name = 'Категория с това име вече съществува.';
+    const name = formData.name.trim();
+    if (!name) errors.name = isBg ? "Името на категорията е задължително." : "Category name is required.";
+    else if (name.length < 2) errors.name = isBg ? "Използвай поне 2 символа." : "Use at least 2 characters.";
+    else if (name.length > 50) errors.name = isBg ? "Използвай до 50 символа." : "Use up to 50 characters.";
+    else if (categories.some((category) => category.name.toLocaleLowerCase("bg-BG") === name.toLocaleLowerCase("bg-BG") && category.id !== editingCategory?.id)) {
+      errors.name = isBg ? "Категория с това име вече съществува." : "A category with this name already exists.";
     }
-
-    if (!formData.imageURI.trim()) {
-      errors.imageURI = 'URL адресът на изображението е задължителен.';
-    } else {
-      try {
-        new URL(formData.imageURI);
-      } catch {
-        errors.imageURI = 'Въведи валиден URL адрес.';
-      }
-    }
-
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
-  };
-
-  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
-    setFormData((current) => ({ ...current, [name]: value }));
-    setValidationErrors((current) => ({ ...current, [name]: undefined }));
   };
 
   const closeEditModal = () => {
     setIsModalOpen(false);
     setEditingCategory(null);
-    setFormData({ name: '', imageURI: '' });
+    setFormData(emptyForm);
     setFullImageUrl(null);
     setValidationErrors({});
+    setError("");
+    setDropActive(false);
   };
 
   const handleEditCategory = (category: Category) => {
     setEditingCategory(category);
     setFormData({ name: category.name, imageURI: category.imageURI });
-    setError('');
+    setError("");
     setValidationErrors({});
+    setDropActive(false);
     setIsModalOpen(true);
   };
 
   const handleAddCategory = () => {
     setEditingCategory(null);
-    setFormData({ name: '', imageURI: '' });
-    setError('');
+    setFormData(emptyForm);
+    setError("");
     setValidationErrors({});
+    setDropActive(false);
     setIsModalOpen(true);
   };
 
+  const uploadImage = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setError(isBg ? "Избери валиден файл с изображение." : "Choose a valid image file.");
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      setError(isBg ? "Изображението трябва да е до 10 MB." : "The image must be up to 10 MB.");
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setError("");
+      const body = new FormData();
+      body.append("file", file);
+      const response = await fetch(`${API_BASE_URL}/Images/upload`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body,
+      });
+      const data = await readApiJson<{ url: string }>(response);
+      setFormData((current) => ({ ...current, imageURI: data.url }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : isBg ? "Изображението не можа да бъде качено." : "The image could not be uploaded.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const handlePaste = (event: ClipboardEvent) => {
+      if (!event.clipboardData || uploading) return;
+      const image = Array.from(event.clipboardData.items)
+        .find((item) => item.kind === "file" && item.type.startsWith("image/"))
+        ?.getAsFile();
+      if (!image) return;
+      event.preventDefault();
+      void uploadImage(image);
+    };
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [isModalOpen, uploading]);
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError('');
-
+    setError("");
     if (!validateForm()) return;
 
     try {
       const response = await fetch(`${API_BASE_URL}/Categories`, {
-        method: editingCategory ? 'PUT' : 'POST',
+        method: editingCategory ? "PUT" : "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          id: editingCategory?.id,
+          ...(editingCategory ? { id: editingCategory.id } : {}),
           name: formData.name.trim(),
-          imageURI: formData.imageURI.trim(),
+          imageURI: formData.imageURI.trim() || null,
         }),
       });
-
       await readApiJson(response);
       await fetchCategories();
       closeEditModal();
     } catch (err) {
-      console.error('Грешка при запазване на категорията:', err);
-      setError(err instanceof Error ? err.message : 'Категорията не можа да бъде запазена.');
+      setError(err instanceof Error ? err.message : isBg ? "Категорията не можа да бъде запазена." : "The category could not be saved.");
     }
   };
 
   const handleDeleteConfirm = async () => {
     if (!categoryToDelete) return;
-
     try {
       const response = await fetch(`${API_BASE_URL}/Categories/${categoryToDelete.id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-
       await readApiJson(response);
       await fetchCategories();
       setIsDeleteModalOpen(false);
       setCategoryToDelete(null);
     } catch (err) {
-      console.error('Грешка при изтриване на категорията:', err);
-      setError(err instanceof Error ? err.message : 'Категорията не можа да бъде изтрита.');
+      setError(err instanceof Error ? err.message : isBg ? "Категорията не можа да бъде изтрита." : "The category could not be deleted.");
     }
   };
 
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Управление на категории</h1>
-        <button
-          type="button"
-          onClick={handleAddCategory}
-          className="flex items-center rounded-md bg-[#18b99f] px-4 py-2 text-white transition-colors hover:bg-[#149f8a]"
-        >
-          <PlusIcon className="mr-2 h-5 w-5" />
-          Добави категория
+      <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">{text.title}</h1>
+        <button type="button" onClick={handleAddCategory} className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#18b99f] px-4 py-2 text-white transition-colors hover:bg-[#149f8a]">
+          <PlusIcon className="mr-2 h-5 w-5" />{text.add}
         </button>
       </div>
 
-      {error && (
-        <div className="mb-4 rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700">
-          {error}
-        </div>
-      )}
+      {error && <div className="mb-4 rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700">{error}</div>}
 
-      <div className="overflow-hidden rounded-lg bg-white shadow">
+      <div className="grid gap-3 sm:grid-cols-2 lg:hidden">
+        {categories.map((category) => (
+          <article key={category.id} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => handleEditCategory(category)} className="h-16 w-16 flex-none overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                {category.imageURI ? <img src={category.imageURI} alt={category.name} className="h-full w-full object-cover" /> : <span className="flex h-full items-center justify-center px-1 text-center text-[10px] text-slate-400">{text.noImage}</span>}
+              </button>
+              <button type="button" onClick={() => handleEditCategory(category)} className="min-w-0 flex-1 text-left font-semibold text-slate-950 hover:underline">{category.name}</button>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => handleEditCategory(category)} className="rounded-md bg-yellow-600 p-2 text-white" title={text.edit}><PencilIcon className="h-5 w-5" /></button>
+                <button type="button" onClick={() => { setCategoryToDelete(category); setIsDeleteModalOpen(true); }} className="rounded-md bg-red-600 p-2 text-white" title={text.delete}><TrashIcon className="h-5 w-5" /></button>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-lg bg-white shadow lg:block">
         <div className="table-scroll">
-          <table className="min-w-[28rem] divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Име</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Действия</th>
-              </tr>
-            </thead>
+          <table className="w-full min-w-[28rem] divide-y divide-gray-200">
+            <thead className="bg-gray-50"><tr><th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{text.name}</th><th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">{text.actions}</th></tr></thead>
             <tbody className="divide-y divide-gray-200 bg-white">
               {categories.map((category) => (
                 <tr key={category.id}>
-                  <td className="px-6 py-3 text-sm text-gray-900">
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => handleEditCategory(category)}
-                        className="flex-none rounded-md focus:outline-none focus:ring-2 focus:ring-[#18b99f] focus:ring-offset-2"
-                        title="Редактирай категория"
-                      >
-                        {category.imageURI ? (
-                          <img
-                            src={category.imageURI}
-                            alt={category.name}
-                            className="h-12 w-12 rounded-md border border-gray-200 object-cover transition hover:opacity-80"
-                          />
-                        ) : (
-                          <div className="h-12 w-12 rounded-md border border-gray-200 bg-gray-100" />
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleEditCategory(category)}
-                        className="text-left hover:underline focus:outline-none focus:underline"
-                        title="Редактирай категория"
-                      >
-                        {category.name}
-                      </button>
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                    <button
-                      type="button"
-                      onClick={() => handleEditCategory(category)}
-                      className="mr-2 rounded-md bg-yellow-600 p-1.5 text-white hover:bg-yellow-700"
-                      title="Редактирай"
-                    >
-                      <PencilIcon className="h-5 w-5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCategoryToDelete(category);
-                        setIsDeleteModalOpen(true);
-                      }}
-                      className="rounded-md bg-red-600 p-1.5 text-white hover:bg-red-700"
-                      title="Изтрий"
-                    >
-                      <TrashIcon className="h-5 w-5" />
-                    </button>
-                  </td>
+                  <td className="px-6 py-3 text-sm text-gray-900"><div className="flex items-center gap-3"><button type="button" onClick={() => handleEditCategory(category)} className="flex-none rounded-md"><div className="h-12 w-12 overflow-hidden rounded-md border border-gray-200 bg-gray-100">{category.imageURI ? <img src={category.imageURI} alt={category.name} className="h-full w-full object-cover" /> : null}</div></button><button type="button" onClick={() => handleEditCategory(category)} className="text-left hover:underline">{category.name}</button></div></td>
+                  <td className="px-6 py-4 text-right"><button type="button" onClick={() => handleEditCategory(category)} className="mr-2 rounded-md bg-yellow-600 p-1.5 text-white hover:bg-yellow-700" title={text.edit}><PencilIcon className="h-5 w-5" /></button><button type="button" onClick={() => { setCategoryToDelete(category); setIsDeleteModalOpen(true); }} className="rounded-md bg-red-600 p-1.5 text-white hover:bg-red-700" title={text.delete}><TrashIcon className="h-5 w-5" /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -268,96 +267,36 @@ const AdminCategories = () => {
       </div>
 
       {isModalOpen && (
-        <div
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) closeEditModal();
-          }}
-        >
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-6 text-gray-900">
-            <h2 className="mb-4 text-xl font-bold">{editingCategory ? 'Редактирай категория' : 'Добави категория'}</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Име</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className={`mt-1 block w-full rounded-md bg-white text-gray-900 shadow-sm ${validationErrors.name ? 'border-red-300' : 'border-gray-300'}`}
-                />
-                {validationErrors.name && <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>}
-              </div>
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4" onMouseDown={(event) => event.target === event.currentTarget && closeEditModal()}>
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-4 text-gray-900 sm:p-6">
+            <div className="flex items-center justify-between gap-3"><h2 className="text-xl font-bold">{editingCategory ? text.edit : text.add}</h2><button type="button" onClick={closeEditModal} className="rounded-md p-2 text-slate-500 hover:bg-slate-100" aria-label={text.cancel}><XMarkIcon className="h-5 w-5" /></button></div>
+            <form onSubmit={handleSubmit} className="mt-5 space-y-5">
+              <div><label className="mb-1 block text-sm font-medium text-gray-700">{text.name}</label><input type="text" value={formData.name} onChange={(event) => { setFormData((current) => ({ ...current, name: event.target.value })); setValidationErrors({}); }} className={`block min-h-11 w-full rounded-md border bg-white px-3 py-2 text-gray-900 shadow-sm ${validationErrors.name ? "border-red-400" : "border-slate-400"}`} />{validationErrors.name && <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>}</div>
 
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">URL на изображение</label>
-                <input
-                  type="url"
-                  name="imageURI"
-                  value={formData.imageURI}
-                  onChange={handleInputChange}
-                  className={`mt-1 block w-full rounded-md bg-white text-gray-900 shadow-sm ${validationErrors.imageURI ? 'border-red-300' : 'border-gray-300'}`}
-                />
-                {validationErrors.imageURI && <p className="mt-1 text-sm text-red-600">{validationErrors.imageURI}</p>}
-                {formData.imageURI.trim() && !validationErrors.imageURI && (
-                  <button
-                    type="button"
-                    onClick={() => setFullImageUrl(formData.imageURI.trim())}
-                    className="mt-3 block w-full cursor-zoom-in overflow-hidden rounded-md border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#18b99f] focus:ring-offset-2"
-                    title="Отвори изображението в цял размер"
-                  >
-                    <img
-                      src={formData.imageURI}
-                      alt={`${formData.name || 'Категория'} - преглед`}
-                      className="h-44 w-full object-cover transition hover:opacity-90"
-                    />
-                  </button>
+                <label className="mb-1 block text-sm font-medium text-gray-700">{text.image}</label>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadImage(file); event.currentTarget.value = ""; }} />
+                <div role="button" tabIndex={0} onClick={() => !uploading && fileInputRef.current?.click()} onKeyDown={(event) => { if (!uploading && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); fileInputRef.current?.click(); } }} onDragEnter={(event) => { event.preventDefault(); if (!uploading) setDropActive(true); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; if (!uploading) setDropActive(true); }} onDragLeave={() => setDropActive(false)} onDrop={(event) => { event.preventDefault(); setDropActive(false); if (uploading) return; const file = Array.from(event.dataTransfer.files).find((item) => item.type.startsWith("image/")); if (file) void uploadImage(file); }} className={`flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-5 text-center transition ${dropActive ? "border-[#18b99f] bg-emerald-50 ring-2 ring-[#18b99f]/20" : "border-slate-300 bg-slate-50 hover:border-[#18b99f]"} ${uploading ? "opacity-60" : ""}`}><div className="text-sm font-semibold">{uploading ? text.uploading : dropActive ? text.drop : text.choose}</div><div className="mt-1 text-xs text-slate-500">{text.help}</div></div>
+
+                {formData.imageURI && (
+                  <div className="mt-3 overflow-hidden rounded-xl border border-slate-200">
+                    <button type="button" onClick={() => setFullImageUrl(formData.imageURI)} className="block w-full cursor-zoom-in bg-slate-100" title={text.full}><img src={formData.imageURI} alt={formData.name || text.image} className="aspect-[16/8] w-full object-cover" /></button>
+                    <button type="button" onClick={() => setFormData((current) => ({ ...current, imageURI: "" }))} className="flex min-h-11 w-full items-center justify-center gap-2 border-t border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"><TrashIcon className="h-4 w-4" />{text.remove}</button>
+                  </div>
                 )}
               </div>
 
-              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <button type="button" onClick={closeEditModal} className="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">Отказ</button>
-                <button type="submit" className="rounded-md bg-[#18b99f] px-4 py-2 text-white hover:bg-[#149f8a]">{editingCategory ? 'Запази' : 'Добави'}</button>
-              </div>
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={closeEditModal} className="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">{text.cancel}</button><button type="submit" disabled={uploading} className="rounded-md bg-[#18b99f] px-4 py-2 text-white hover:bg-[#149f8a] disabled:opacity-50">{editingCategory ? text.save : text.add}</button></div>
             </form>
           </div>
         </div>
       )}
 
-      {fullImageUrl && (
-        <div
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/90 p-4"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setFullImageUrl(null);
-          }}
-        >
-          <img
-            src={fullImageUrl}
-            alt={`${formData.name || 'Категория'} - цял размер`}
-            className="max-h-[95vh] max-w-[95vw] object-contain"
-            onMouseDown={(event) => event.stopPropagation()}
-          />
-        </div>
-      )}
+      {fullImageUrl && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4" onMouseDown={(event) => event.target === event.currentTarget && setFullImageUrl(null)}><img src={fullImageUrl} alt={formData.name || text.image} className="max-h-[95vh] max-w-[95vw] object-contain" /></div>}
 
-      {isDeleteModalOpen && (
-        <div
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              setIsDeleteModalOpen(false);
-              setCategoryToDelete(null);
-            }
-          }}
-        >
-          <div className="w-full max-w-md rounded-lg bg-white p-6">
-            <h2 className="mb-4 text-xl font-bold text-gray-900">Изтриване на категория</h2>
-            <p className="mb-6 text-gray-600">Да се изтрие ли категорията „{categoryToDelete?.name}“?</p>
-            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <button type="button" onClick={() => setIsDeleteModalOpen(false)} className="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">Отказ</button>
-              <button type="button" onClick={handleDeleteConfirm} className="rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700">Изтрий</button>
-            </div>
-          </div>
+      {isDeleteModalOpen && categoryToDelete && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) { setIsDeleteModalOpen(false); setCategoryToDelete(null); } }}>
+          <div className="w-full max-w-md rounded-lg bg-white p-4 sm:p-6"><h2 className="mb-4 text-xl font-bold text-gray-900">{text.deleteTitle}</h2><p className="mb-6 text-gray-600">{isBg ? `Да се изтрие ли категорията „${categoryToDelete.name}“?` : `Delete category “${categoryToDelete.name}”?`}</p><div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={() => setIsDeleteModalOpen(false)} className="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">{text.cancel}</button><button type="button" onClick={() => void handleDeleteConfirm()} className="rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700">{text.delete}</button></div></div>
         </div>
       )}
     </div>
