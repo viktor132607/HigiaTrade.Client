@@ -9,8 +9,10 @@ import {
 import { Provider } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "./responsive-audit.css";
 import { store } from "./store";
 import { LanguageThemeProvider } from "./i18n/LanguageThemeContext";
+import GlobalUiEnhancer from "./i18n/GlobalUiEnhancer";
 import Layout from "./components/layout/Layout";
 import PrivateRoute from "./routes/PrivateRoute";
 import Home from "./pages/Home";
@@ -46,6 +48,7 @@ function App() {
   return (
     <Provider store={store}>
       <LanguageThemeProvider>
+        <GlobalUiEnhancer />
         <Router>
           <Routes>
             <Route element={<Layout />}>
