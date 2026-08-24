@@ -18,6 +18,8 @@ type BrandForm = {
   description: string;
 };
 
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+
 const emptyForm: BrandForm = {
   name: "",
   thumbnailImageUrl: "",
@@ -35,6 +37,7 @@ const AdminBrands = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [isDropActive, setIsDropActive] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -61,6 +64,7 @@ const AdminBrands = () => {
     setEditingBrand(null);
     setForm(emptyForm);
     setError("");
+    setIsDropActive(false);
     setIsModalOpen(true);
   };
 
@@ -72,6 +76,7 @@ const AdminBrands = () => {
       description: brand.description ?? "",
     });
     setError("");
+    setIsDropActive(false);
     setIsModalOpen(true);
   };
 
@@ -80,6 +85,7 @@ const AdminBrands = () => {
     setEditingBrand(null);
     setForm(emptyForm);
     setError("");
+    setIsDropActive(false);
   };
 
   const uploadThumbnail = async (file: File) => {
@@ -88,7 +94,7 @@ const AdminBrands = () => {
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > MAX_IMAGE_SIZE) {
       setError("Изображението трябва да е до 10 MB.");
       return;
     }
@@ -112,6 +118,25 @@ const AdminBrands = () => {
       setUploading(false);
     }
   };
+
+  useEffect(() => {
+    if (!isModalOpen) return;
+
+    const handlePaste = (event: ClipboardEvent) => {
+      if (!event.clipboardData || uploading) return;
+
+      const image = Array.from(event.clipboardData.items)
+        .find((item) => item.kind === "file" && item.type.startsWith("image/"))
+        ?.getAsFile();
+
+      if (!image) return;
+      event.preventDefault();
+      void uploadThumbnail(image);
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [isModalOpen, uploading]);
 
   const saveBrand = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -261,14 +286,53 @@ const AdminBrands = () => {
                     event.currentTarget.value = "";
                   }}
                 />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="w-full rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm font-semibold text-slate-700 transition hover:border-[#18b99f] disabled:opacity-50"
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    if (!uploading) fileInputRef.current?.click();
+                  }}
+                  onKeyDown={(event) => {
+                    if (!uploading && (event.key === "Enter" || event.key === " ")) {
+                      event.preventDefault();
+                      fileInputRef.current?.click();
+                    }
+                  }}
+                  onDragEnter={(event) => {
+                    event.preventDefault();
+                    if (!uploading) setIsDropActive(true);
+                  }}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = "copy";
+                    if (!uploading) setIsDropActive(true);
+                  }}
+                  onDragLeave={() => setIsDropActive(false)}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    setIsDropActive(false);
+                    if (uploading) return;
+                    const file = Array.from(event.dataTransfer.files ?? []).find((item) => item.type.startsWith("image/"));
+                    if (file) void uploadThumbnail(file);
+                    else setError("Пусни валиден файл с изображение.");
+                  }}
+                  className={`flex min-h-28 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-5 text-center transition focus:outline-none focus:ring-2 focus:ring-[#18b99f]/30 ${
+                    isDropActive
+                      ? "scale-[1.01] border-[#18b99f] bg-emerald-50 ring-2 ring-[#18b99f]/20"
+                      : "border-slate-300 bg-slate-50 hover:border-[#18b99f] hover:bg-emerald-50"
+                  } ${uploading ? "cursor-not-allowed opacity-60" : ""}`}
                 >
-                  {uploading ? "Качване..." : "Качи thumbnail от компютъра"}
-                </button>
+                  <div className="text-sm font-semibold text-slate-800">
+                    {uploading
+                      ? "Качване..."
+                      : isDropActive
+                        ? "Пусни изображението тук"
+                        : "Избери, пусни или постави изображение с Ctrl+V"}
+                  </div>
+                  {!uploading && (
+                    <div className="mt-1 text-xs text-slate-500">File Explorer / drag & drop / clipboard</div>
+                  )}
+                </div>
 
                 <div className="mt-3">
                   <label className="mb-1 block text-xs font-medium text-slate-500">или URL</label>
