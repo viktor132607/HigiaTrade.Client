@@ -94,6 +94,12 @@ const AdminProducts = () => {
   const [sortBy, setSortBy] = useState("title");
   const [sortDescending, setSortDescending] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [debouncedMinPrice, setDebouncedMinPrice] = useState("");
+  const [debouncedMaxPrice, setDebouncedMaxPrice] = useState("");
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -115,8 +121,28 @@ const AdminProducts = () => {
   }, []);
 
   useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+      setDebouncedMinPrice(minPrice.trim());
+      setDebouncedMaxPrice(maxPrice.trim());
+      setCurrentPage(1);
+    }, 350);
+
+    return () => window.clearTimeout(timeout);
+  }, [searchTerm, minPrice, maxPrice]);
+
+  useEffect(() => {
     fetchProducts();
-  }, [currentPage, itemsPerPage, sortBy, sortDescending, selectedCategoryId]);
+  }, [
+    currentPage,
+    itemsPerPage,
+    sortBy,
+    sortDescending,
+    selectedCategoryId,
+    debouncedSearchTerm,
+    debouncedMinPrice,
+    debouncedMaxPrice,
+  ]);
 
   const fetchCategories = async () => {
     try {
@@ -153,6 +179,18 @@ const AdminProducts = () => {
 
       if (selectedCategoryId) {
         queryParams.set("CategoryId", selectedCategoryId);
+      }
+
+      if (debouncedSearchTerm) {
+        queryParams.set("Title", debouncedSearchTerm);
+      }
+
+      if (debouncedMinPrice) {
+        queryParams.set("MinPrice", debouncedMinPrice);
+      }
+
+      if (debouncedMaxPrice) {
+        queryParams.set("MaxPrice", debouncedMaxPrice);
       }
 
       const response = await fetch(
@@ -548,21 +586,61 @@ const AdminProducts = () => {
     setCurrentPage(1);
   };
 
+  const clearFilters = () => {
+    setSearchTerm("");
+    setMinPrice("");
+    setMaxPrice("");
+    setDebouncedSearchTerm("");
+    setDebouncedMinPrice("");
+    setDebouncedMaxPrice("");
+    setSelectedCategoryId("");
+    setCurrentPage(1);
+  };
+
+  const hasActiveFilters = Boolean(
+    searchTerm || selectedCategoryId || minPrice || maxPrice
+  );
+
   return (
     <div className="min-h-[calc(100vh-4rem)] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Управление на продукти</h1>
-          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-              <label htmlFor="categoryFilter" className="text-sm text-gray-700">
-                Категория:
+          <button
+            onClick={handleAddProduct}
+            className="flex items-center justify-center rounded-md bg-[#18b99f] px-4 py-2 text-white transition hover:bg-[#149f8a]"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Добави продукт
+          </button>
+        </div>
+
+        <div className="mb-5 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="mb-3 text-sm font-semibold text-gray-900">Филтри</div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(240px,2fr)_minmax(220px,1.5fr)_120px_120px_auto] xl:items-end">
+            <div>
+              <label htmlFor="productSearch" className="mb-1 block text-xs font-medium text-gray-600">
+                Търси по име
+              </label>
+              <input
+                id="productSearch"
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Напр. Sano Floor Plus"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="categoryFilter" className="mb-1 block text-xs font-medium text-gray-600">
+                Категория
               </label>
               <select
                 id="categoryFilter"
                 value={selectedCategoryId}
                 onChange={(e) => handleCategoryFilterChange(e.target.value)}
-                className="block w-52 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
               >
                 <option value="">Всички категории</option>
                 {categories.map((category) => (
@@ -572,6 +650,52 @@ const AdminProducts = () => {
                 ))}
               </select>
             </div>
+
+            <div>
+              <label htmlFor="minPrice" className="mb-1 block text-xs font-medium text-gray-600">
+                Цена от
+              </label>
+              <input
+                id="minPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                value={minPrice}
+                onChange={(event) => setMinPrice(event.target.value)}
+                placeholder="0"
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="maxPrice" className="mb-1 block text-xs font-medium text-gray-600">
+                Цена до
+              </label>
+              <input
+                id="maxPrice"
+                type="number"
+                min="0"
+                step="0.01"
+                value={maxPrice}
+                onChange={(event) => setMaxPrice(event.target.value)}
+                placeholder="Макс."
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={clearFilters}
+              disabled={!hasActiveFilters}
+              className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Изчисти
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
               <label htmlFor="sortBy" className="text-sm text-gray-700">
                 Сортиране по:
@@ -621,24 +745,18 @@ const AdminProducts = () => {
                 ))}
               </select>
             </div>
-            {selectedProductIds.length > 0 && (
-              <button
-                type="button"
-                onClick={handleBulkDelete}
-                className="flex items-center rounded-md bg-red-600 px-4 py-2 text-white transition hover:bg-red-700"
-              >
-                <TrashIcon className="h-5 w-5 mr-2" />
-                Изтрий избраните ({selectedProductIds.length})
-              </button>
-            )}
-            <button
-              onClick={handleAddProduct}
-              className="flex items-center rounded-md bg-[#18b99f] px-4 py-2 text-white transition hover:bg-[#149f8a]"
-            >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Добави продукт
-            </button>
           </div>
+
+          {selectedProductIds.length > 0 && (
+            <button
+              type="button"
+              onClick={handleBulkDelete}
+              className="flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-white transition hover:bg-red-700"
+            >
+              <TrashIcon className="h-5 w-5 mr-2" />
+              Изтрий избраните ({selectedProductIds.length})
+            </button>
+          )}
         </div>
 
         {loading ? (
