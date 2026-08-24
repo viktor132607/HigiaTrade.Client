@@ -11,7 +11,14 @@ export interface Product {
   regularPrice: number;
   quantity: number;
   categoryId: string;
+  categoryName?: string;
+  brand?: string | null;
   rating?: number;
+  discountPercentage?: number;
+  discountedPrice?: number;
+  wholesalePrice?: number;
+  vatRate?: number;
+  isActive?: boolean;
   reviews?: Array<{
     id: string;
     userId: string;
