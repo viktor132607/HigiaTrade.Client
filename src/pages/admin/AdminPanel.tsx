@@ -1,5 +1,12 @@
 import type { ReactNode } from "react";
-import { ChartBarSquareIcon, CubeIcon, QueueListIcon, Squares2X2Icon, UsersIcon } from "@heroicons/react/24/outline";
+import {
+  ChartBarSquareIcon,
+  CubeIcon,
+  DocumentChartBarIcon,
+  QueueListIcon,
+  Squares2X2Icon,
+  UsersIcon,
+} from "@heroicons/react/24/outline";
 import { Navigate, NavLink, Outlet } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
@@ -10,6 +17,7 @@ const navigation = [
   { to: "/admin/products", label: "Продукти", icon: CubeIcon },
   { to: "/admin/categories", label: "Категории", icon: ChartBarSquareIcon },
   { to: "/admin/users", label: "Клиенти", icon: UsersIcon },
+  { to: "/admin/reports", label: "Справки", icon: DocumentChartBarIcon },
 ];
 
 type AdminPanelProps = {
@@ -54,7 +62,7 @@ const AdminPanel = ({ children }: AdminPanelProps) => {
       </div>
 
       <nav className="admin-mobile-nav fixed inset-x-0 bottom-0 z-[55] border-t border-slate-800 bg-slate-950/95 px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1.5 text-slate-100 shadow-[0_-12px_35px_rgba(15,23,42,0.25)] backdrop-blur lg:hidden">
-        <div className="mx-auto grid max-w-lg grid-cols-5 gap-1">
+        <div className="mx-auto grid max-w-xl grid-cols-6 gap-1">
           {navigation.map((item) => (
             <NavLink
               key={item.to}
