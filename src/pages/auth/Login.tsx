@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
+import { API_BASE_URL, readApiJson } from "../../config/api";
 import { setToken, setUser } from "../../store/slices/authSlice";
 
 interface LoginResponse {
@@ -30,28 +31,24 @@ const Login = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/Auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email,
+          email: email.trim(),
           password,
         }),
       });
 
-      if (!response.ok) {
-        throw new Error("Invalid credentials");
-      }
-
-      const data = (await response.json()) as LoginResponse;
+      const data = await readApiJson<LoginResponse>(response);
 
       dispatch(setToken(data.accessToken));
       dispatch(
         setUser({
           id: data.userId ?? "",
-          email: data.email ?? email,
+          email: data.email ?? email.trim(),
           name: data.names ?? "Customer",
           phone: data.phone ?? "",
           role: data.role ?? "RegisteredCustomer",
