@@ -234,7 +234,15 @@ const Products = () => {
         </div>
 
         <div className="flex flex-col gap-5 sm:gap-8 xl:flex-row">
-          <FilterSidebar categories={categories} selectedCategory={filters.category} searchQuery={filters.search} onApplyFilters={handleApplyFilters} />
+          <FilterSidebar
+            categories={categories}
+            selectedCategory={filters.category}
+            searchQuery={filters.search}
+            selectedMinPrice={filters.minPrice}
+            selectedMaxPrice={filters.maxPrice}
+            selectedRating={filters.rating}
+            onApplyFilters={handleApplyFilters}
+          />
 
           <div className="min-w-0 flex-1">
             {viewMode === "grid" ? (
