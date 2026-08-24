@@ -23,6 +23,14 @@ interface FilterSidebarProps {
   }) => void;
 }
 
+const ratingBuckets = [
+  { value: 5, stars: "★★★★★", rangeBg: "4,50 – 5,00", rangeEn: "4.50 – 5.00" },
+  { value: 4, stars: "★★★★", rangeBg: "3,50 – 4,49", rangeEn: "3.50 – 4.49" },
+  { value: 3, stars: "★★★", rangeBg: "2,50 – 3,49", rangeEn: "2.50 – 3.49" },
+  { value: 2, stars: "★★", rangeBg: "1,50 – 2,49", rangeEn: "1.50 – 2.49" },
+  { value: 1, stars: "★", rangeBg: "1,00 – 1,49", rangeEn: "1.00 – 1.49" },
+];
+
 const FilterSidebar = ({
   categories,
   selectedCategory,
@@ -100,7 +108,7 @@ const FilterSidebar = ({
       <div className="space-y-6 rounded-[2rem] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_-55px_rgba(15,23,42,0.55)] sm:p-6 xl:max-h-[calc(100dvh-7rem)] xl:overflow-y-auto xl:overscroll-contain [scrollbar-gutter:stable]">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600">
-            {isBg ? "Филтри" : "Filters"}
+            {isBg ? "Филтриране" : "Filtering"}
           </p>
           <h2 className="mt-3 font-display text-2xl font-bold tracking-tight text-slate-950">
             {isBg ? "Филтриране на продуктите" : "Refine the catalog"}
@@ -199,18 +207,21 @@ const FilterSidebar = ({
             {isBg ? "Рейтинг" : "Rating"}
           </h3>
           <div className="space-y-2">
-            {[5, 4, 3, 2, 1].map((rating) => (
+            {ratingBuckets.map((bucket) => (
               <button
                 type="button"
-                key={rating}
-                onClick={() => handleRatingChange(rating)}
+                key={bucket.value}
+                onClick={() => handleRatingChange(bucket.value)}
                 className={`w-full rounded-2xl px-4 py-3 text-left text-sm font-medium transition ${
-                  selectedRating === rating
+                  selectedRating === bucket.value
                     ? "bg-primary-50 text-primary-700"
                     : "bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-950"
                 }`}
               >
-                {Array(rating).fill("★").join("")} {isBg ? "и нагоре" : "& up"}
+                <span className="block text-amber-500">{bucket.stars}</span>
+                <span className="mt-0.5 block text-xs text-slate-500">
+                  {isBg ? bucket.rangeBg : bucket.rangeEn}
+                </span>
               </button>
             ))}
           </div>
