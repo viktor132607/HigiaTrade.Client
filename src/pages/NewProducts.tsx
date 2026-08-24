@@ -13,6 +13,7 @@ interface NewProduct {
   rating?: number;
   discountPercentage?: number;
   discountedPrice?: number;
+  isNewProduct?: boolean;
 }
 
 const NewProducts = () => {
@@ -31,7 +32,8 @@ const NewProducts = () => {
         if (!response.ok) throw new Error("Unable to load new products.");
 
         const payload = await response.json();
-        setProducts(Array.isArray(payload.items) ? payload.items : []);
+        const items: NewProduct[] = Array.isArray(payload.items) ? payload.items : [];
+        setProducts(items.map((product) => ({ ...product, isNewProduct: true })));
       } catch (error) {
         console.error("Грешка при зареждане на новите продукти:", error);
         setProducts([]);
