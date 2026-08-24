@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { BellAlertIcon, CubeTransparentIcon, ShoppingBagIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
-import { OrderStatus, getOrderStatusText } from "../../enums/OrderStatus";
+import { OrderStatus } from "../../enums/OrderStatus";
 import { formatCurrency } from "../../utils/currency";
 
 interface Category {
@@ -38,6 +38,25 @@ interface User {
 }
 
 const LOW_STOCK_THRESHOLD = 10;
+
+const getOrderStatusTextBg = (status: OrderStatus) => {
+  switch (status) {
+    case OrderStatus.Created:
+      return "Създадена";
+    case OrderStatus.PendingVerification:
+      return "Чака потвърждение";
+    case OrderStatus.Verified:
+      return "Потвърдена";
+    case OrderStatus.Shipped:
+      return "Изпратена";
+    case OrderStatus.Delivered:
+      return "Доставена";
+    case OrderStatus.Cancelled:
+      return "Отказана";
+    default:
+      return "Неизвестен статус";
+  }
+};
 
 const AdminOverview = () => {
   const token = useSelector((state: RootState) => state.auth.token);
@@ -75,7 +94,7 @@ const AdminOverview = () => {
         setCategories(categoriesData);
         setUsers(usersData);
       } catch (error) {
-        console.error("Admin overview fetch failed:", error);
+        console.error("Грешка при зареждане на администраторското табло:", error);
       } finally {
         setIsLoading(false);
       }
@@ -151,16 +170,16 @@ const AdminOverview = () => {
   return (
     <div className="space-y-6">
       <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_-55px_rgba(15,23,42,0.55)]">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-primary-600">Sales overview</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-primary-600">Преглед на продажбите</p>
         <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 className="font-display text-3xl font-bold tracking-tight text-slate-950">Operational snapshot</h2>
+            <h2 className="font-display text-3xl font-bold tracking-tight text-slate-950">Оперативен преглед</h2>
             <p className="mt-2 text-sm text-slate-600">
-              Today&apos;s order activity, current stock health, and recent customer demand across the catalog.
+              Днешните поръчки, текущите наличности и последното клиентско търсене в каталога.
             </p>
           </div>
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
-            {lowStockProducts.length} products need replenishment attention
+            {lowStockProducts.length} продукта се нуждаят от зареждане
           </div>
         </div>
       </div>
@@ -168,27 +187,27 @@ const AdminOverview = () => {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
           {
-            label: "Orders today",
+            label: "Поръчки днес",
             value: ordersToday.length,
-            detail: `${orders.filter((order) => order.status === OrderStatus.PendingVerification).length} pending review`,
+            detail: `${orders.filter((order) => order.status === OrderStatus.PendingVerification).length} чакат преглед`,
             icon: ShoppingBagIcon,
           },
           {
-            label: "Revenue this week",
+            label: "Оборот тази седмица",
             value: formatCurrency(weeklyRevenue),
-            detail: "Last 7 days, excluding cancelled orders",
+            detail: "Последните 7 дни без отказаните поръчки",
             icon: BellAlertIcon,
           },
           {
-            label: "Low stock items",
+            label: "Ниски наличности",
             value: lowStockProducts.length,
-            detail: `Below ${LOW_STOCK_THRESHOLD} units`,
+            detail: `Под ${LOW_STOCK_THRESHOLD} броя`,
             icon: CubeTransparentIcon,
           },
           {
-            label: "Active customers",
+            label: "Активни клиенти",
             value: activeCustomers,
-            detail: `${users.length} accounts, ${categories.length} categories`,
+            detail: `${users.length} акаунта, ${categories.length} категории`,
             icon: UserGroupIcon,
           },
         ].map((item) => (
@@ -207,8 +226,8 @@ const AdminOverview = () => {
         <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_-55px_rgba(15,23,42,0.55)]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600">Order pipeline</p>
-              <h3 className="mt-3 font-display text-2xl font-bold text-slate-950">Status distribution</h3>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600">Поръчки</p>
+              <h3 className="mt-3 font-display text-2xl font-bold text-slate-950">Разпределение по статус</h3>
             </div>
           </div>
 
@@ -218,8 +237,8 @@ const AdminOverview = () => {
               return (
                 <div key={status} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-slate-700">{getOrderStatusText(status)}</span>
-                    <span className="text-slate-500">{count} orders</span>
+                    <span className="font-medium text-slate-700">{getOrderStatusTextBg(status)}</span>
+                    <span className="text-slate-500">{count} поръчки</span>
                   </div>
                   <div className="h-3 rounded-full bg-slate-100">
                     <div
@@ -234,23 +253,23 @@ const AdminOverview = () => {
         </section>
 
         <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_-55px_rgba(15,23,42,0.55)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600">Inventory</p>
-          <h3 className="mt-3 font-display text-2xl font-bold text-slate-950">Products to restock</h3>
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600">Наличности</p>
+          <h3 className="mt-3 font-display text-2xl font-bold text-slate-950">Продукти за зареждане</h3>
           <div className="mt-6 space-y-3">
             {lowStockProducts.slice(0, 6).map((product) => (
               <div key={product.id} className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-slate-900">{product.title}</p>
-                    <p className="text-xs text-slate-500">{product.categoryName ?? "Uncategorized"}</p>
+                    <p className="text-xs text-slate-500">{product.categoryName ?? "Без категория"}</p>
                   </div>
                   <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-amber-700">
-                    {product.quantity} left
+                    Остават {product.quantity}
                   </span>
                 </div>
               </div>
             ))}
-            {lowStockProducts.length === 0 && <p className="text-sm text-slate-500">All tracked products are above the low-stock threshold.</p>}
+            {lowStockProducts.length === 0 && <p className="text-sm text-slate-500">Всички следени продукти са над прага за ниска наличност.</p>}
           </div>
         </section>
       </div>
@@ -258,8 +277,8 @@ const AdminOverview = () => {
       <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_-55px_rgba(15,23,42,0.55)]">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600">Recent activity</p>
-            <h3 className="mt-3 font-display text-2xl font-bold text-slate-950">Latest orders</h3>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600">Последна активност</p>
+            <h3 className="mt-3 font-display text-2xl font-bold text-slate-950">Последни поръчки</h3>
           </div>
         </div>
 
@@ -268,29 +287,29 @@ const AdminOverview = () => {
             <table className="min-w-[36rem] divide-y divide-slate-200 text-sm">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">Customer</th>
-                <th className="px-4 py-3 text-left font-medium text-slate-500">Items</th>
-                <th className="px-4 py-3 text-left font-medium text-slate-500">Status</th>
-                <th className="px-4 py-3 text-right font-medium text-slate-500">Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
-              {recentOrders.map((order) => (
-                <tr key={order.id}>
-                  <td className="px-4 py-4 text-slate-900">{order.names ?? "Customer"}</td>
-                  <td className="px-4 py-4 text-slate-600">{order.items.length} {order.items.length === 1 ? "item" : "items"}</td>
-                  <td className="px-4 py-4 text-slate-600">{getOrderStatusText(order.status)}</td>
-                  <td className="px-4 py-4 text-right font-semibold text-slate-900">{formatCurrency(order.orderTotalPrice)}</td>
+                  <th className="px-4 py-3 text-left font-medium text-slate-500">Клиент</th>
+                  <th className="px-4 py-3 text-left font-medium text-slate-500">Артикули</th>
+                  <th className="px-4 py-3 text-left font-medium text-slate-500">Статус</th>
+                  <th className="px-4 py-3 text-right font-medium text-slate-500">Общо</th>
                 </tr>
-              ))}
-              {recentOrders.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-4 py-10 text-center text-slate-500">
-                    No recent orders yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
+              </thead>
+              <tbody className="divide-y divide-slate-200 bg-white">
+                {recentOrders.map((order) => (
+                  <tr key={order.id}>
+                    <td className="px-4 py-4 text-slate-900">{order.names ?? "Клиент"}</td>
+                    <td className="px-4 py-4 text-slate-600">{order.items.length} {order.items.length === 1 ? "артикул" : "артикула"}</td>
+                    <td className="px-4 py-4 text-slate-600">{getOrderStatusTextBg(order.status)}</td>
+                    <td className="px-4 py-4 text-right font-semibold text-slate-900">{formatCurrency(order.orderTotalPrice)}</td>
+                  </tr>
+                ))}
+                {recentOrders.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-10 text-center text-slate-500">
+                      Все още няма скорошни поръчки.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
             </table>
           </div>
         </div>
