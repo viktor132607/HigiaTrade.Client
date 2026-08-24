@@ -6,9 +6,14 @@ import {
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
-
-const CONTACT_PHONE = "0899564288";
-const CONTACT_EMAIL = "iliev132607@gmail.com";
+import {
+  CONTACT_ADDRESS_BG,
+  CONTACT_ADDRESS_EN,
+  CONTACT_AREA_BG,
+  CONTACT_AREA_EN,
+  CONTACT_EMAILS,
+  CONTACT_PHONE_COMPACT,
+} from "../../config/contact";
 
 const Footer = () => {
   const { language } = useLanguageTheme();
@@ -135,9 +140,19 @@ const Footer = () => {
             {isBg ? "За контакти" : "Contacts"}
           </h4>
           <div className="mt-4 space-y-2 break-words text-[#4b5d6d] dark:text-white/75">
-            <p>{isBg ? "Телефон" : "Phone"}: {CONTACT_PHONE}</p>
-            <p>Email: {CONTACT_EMAIL}</p>
-            <p>{isBg ? "Адрес" : "Address"}: Ruse, Bulgaria</p>
+            <p>{isBg ? "Телефон" : "Phone"}: {CONTACT_PHONE_COMPACT}</p>
+            {CONTACT_EMAILS.map((email) => (
+              <p key={email}>
+                Email:{" "}
+                <a href={`mailto:${email}`} className="hover:text-[#18b99f]">
+                  {email}
+                </a>
+              </p>
+            ))}
+            <p>
+              {isBg ? "Адрес" : "Address"}: {isBg ? CONTACT_ADDRESS_BG : CONTACT_ADDRESS_EN}
+            </p>
+            <p>{isBg ? CONTACT_AREA_BG : CONTACT_AREA_EN}</p>
           </div>
 
           <h4 className="mt-7 text-lg font-bold text-[#263b4d] dark:text-white">
