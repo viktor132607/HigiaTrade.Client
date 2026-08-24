@@ -29,62 +29,52 @@ const ProductSearchEnhancer = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const attach = () => {
-      const inputs = Array.from(
-        document.querySelectorAll<HTMLInputElement>('header input[type="search"]')
-      ).filter((input) => !input.dataset.productSearchEnhanced);
+    const inputs = Array.from(
+      document.querySelectorAll<HTMLInputElement>('header input[type="search"]')
+    );
 
-      inputs.forEach((input) => {
-        const wrapper = input.parentElement;
-        if (!wrapper) return;
+    targetsRef.current.forEach((target) => target.cleanup());
+    targetsRef.current = [];
 
-        input.dataset.productSearchEnhanced = "true";
-        input.placeholder = isBg ? "ТЪРСЕНЕ НА ПРОДУКТ" : "PRODUCT SEARCH";
-        input.setAttribute("aria-label", isBg ? "Търсене на продукт" : "Product search");
+    inputs.forEach((input) => {
+      const wrapper = input.parentElement;
+      if (!wrapper) return;
 
-        const mount = document.createElement("div");
-        mount.dataset.productSearchResults = "true";
-        wrapper.appendChild(mount);
+      input.placeholder = isBg ? "ТЪРСЕНЕ НА ПРОДУКТ" : "PRODUCT SEARCH";
+      input.setAttribute("aria-label", isBg ? "Търсене на продукт" : "Product search");
 
-        let target: SearchTarget;
+      const mount = document.createElement("div");
+      mount.dataset.productSearchResults = "true";
+      wrapper.appendChild(mount);
 
-        const handleInput = () => {
-          setQuery(input.value);
-          setActiveTarget(target);
-        };
+      let target: SearchTarget;
 
-        const handleFocus = () => {
-          setQuery(input.value);
-          setActiveTarget(target);
-        };
+      const handleInput = () => {
+        setQuery(input.value);
+        setActiveTarget(target);
+      };
 
-        const cleanup = () => {
-          input.removeEventListener("input", handleInput);
-          input.removeEventListener("focus", handleFocus);
-          input.removeAttribute("data-product-search-enhanced");
-          mount.remove();
-        };
+      const handleFocus = () => {
+        setQuery(input.value);
+        setActiveTarget(target);
+      };
 
-        target = { input, mount, cleanup };
-        targetsRef.current.push(target);
+      const cleanup = () => {
+        input.removeEventListener("input", handleInput);
+        input.removeEventListener("focus", handleFocus);
+        mount.remove();
+      };
 
-        input.addEventListener("input", handleInput);
-        input.addEventListener("focus", handleFocus);
-      });
-    };
-
-    attach();
-
-    const observer = new MutationObserver(attach);
-    const header = document.querySelector("header");
-    if (header) {
-      observer.observe(header, { childList: true, subtree: true });
-    }
+      target = { input, mount, cleanup };
+      targetsRef.current.push(target);
+      input.addEventListener("input", handleInput);
+      input.addEventListener("focus", handleFocus);
+    });
 
     return () => {
-      observer.disconnect();
       targetsRef.current.forEach((target) => target.cleanup());
       targetsRef.current = [];
+      setActiveTarget(null);
     };
   }, [isBg]);
 
@@ -173,11 +163,7 @@ const ProductSearchEnhancer = () => {
               >
                 <div className="h-12 w-12 flex-none overflow-hidden rounded-md bg-slate-100">
                   {product.mainImageUrl ? (
-                    <img
-                      src={product.mainImageUrl}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
+                    <img src={product.mainImageUrl} alt="" className="h-full w-full object-cover" />
                   ) : null}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -185,41 +171,26 @@ const ProductSearchEnhancer = () => {
                     {product.title}
                   </div>
                   <div className="mt-0.5 flex items-center gap-2 text-xs">
-                    <span className="font-semibold text-[#18b99f]">
-                      {formatCurrency(price)}
-                    </span>
-                    <span
-                      className={
-                        product.quantity > 0 ? "text-emerald-600" : "text-rose-600"
-                      }
-                    >
+                    <span className="font-semibold text-[#18b99f]">{formatCurrency(price)}</span>
+                    <span className={product.quantity > 0 ? "text-emerald-600" : "text-rose-600"}>
                       {product.quantity > 0
-                        ? isBg
-                          ? "В наличност"
-                          : "In stock"
-                        : isBg
-                          ? "Няма наличност"
-                          : "Out of stock"}
+                        ? isBg ? "В наличност" : "In stock"
+                        : isBg ? "Няма наличност" : "Out of stock"}
                     </span>
                   </div>
                 </div>
               </button>
             );
           })}
-
           <button
             type="button"
             onMouseDown={(event) => {
               event.preventDefault();
-              window.location.assign(
-                `/products?search=${encodeURIComponent(query.trim())}`
-              );
+              window.location.assign(`/products?search=${encodeURIComponent(query.trim())}`);
             }}
             className="w-full bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-[#18b99f] hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10"
           >
-            {isBg
-              ? `Виж всички резултати за „${query.trim()}“`
-              : `View all results for “${query.trim()}”`}
+            {isBg ? `Виж всички резултати за „${query.trim()}“` : `View all results for “${query.trim()}”`}
           </button>
         </>
       ) : (
