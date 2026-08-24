@@ -36,6 +36,7 @@ import AdminPanel from "./pages/admin/AdminPanel";
 import AdminOverview from "./pages/admin/AdminOverview";
 import AdminProducts from "./pages/admin/Products";
 import AdminCategories from "./pages/admin/Categories";
+import AdminBrands from "./pages/admin/Brands";
 import AdminUsers from "./pages/admin/Users";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminReports from "./pages/admin/Reports";
@@ -166,6 +167,7 @@ function App() {
                 <Route index element={<AdminOverview />} />
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="categories" element={<AdminCategories />} />
+                <Route path="brands" element={<AdminBrands />} />
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="orders" element={<AdminOrders />} />
                 <Route path="reports" element={<AdminReports />} />
