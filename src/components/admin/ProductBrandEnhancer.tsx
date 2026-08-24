@@ -11,6 +11,7 @@ type Target = {
 };
 
 type BrandOption = {
+  id?: string;
   name: string;
   productCount: number;
 };
@@ -36,9 +37,12 @@ const ProductBrandEnhancer = () => {
     const loadBrands = async () => {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Brands`);
-        if (response.ok) setBrands(await response.json());
+        if (response.ok) {
+          const data = await response.json();
+          setBrands(Array.isArray(data) ? data : []);
+        }
       } catch {
-        // Brand suggestions are optional; the field still works without them.
+        setBrands([]);
       }
     };
 
@@ -103,7 +107,7 @@ const ProductBrandEnhancer = () => {
         );
         if (exact?.brand) setBrand(exact.brand);
       } catch {
-        // Keep the field editable even when the lookup fails.
+        // Keep the field optional if product lookup fails.
       }
     };
 
@@ -136,7 +140,7 @@ const ProductBrandEnhancer = () => {
 
       try {
         const payload = JSON.parse(init.body);
-        payload.brand = brandRef.current.trim();
+        payload.brand = brandRef.current.trim() || null;
         return originalFetch(input, { ...init, body: JSON.stringify(payload) });
       } catch {
         return originalFetch(input, init);
@@ -152,22 +156,27 @@ const ProductBrandEnhancer = () => {
 
   return createPortal(
     <div>
-      <label className="block text-sm font-semibold text-gray-800">Марка</label>
-      <input
-        type="text"
+      <div className="mb-1 flex items-center justify-between gap-3">
+        <label className="block text-sm font-semibold text-gray-800">Марка</label>
+        <a href="/admin/brands" className="text-xs font-semibold text-[#18b99f] hover:underline">
+          Управление на марки
+        </a>
+      </div>
+      <select
         value={brand}
         onChange={(event) => setBrand(event.target.value)}
-        list="product-brand-options"
-        placeholder="Напр. Sano, Ariel, Cif..."
-        autoComplete="off"
-        className="mt-1 block min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-[#18b99f] focus:ring-2 focus:ring-[#18b99f]/20"
-      />
-      <datalist id="product-brand-options">
+        className="block min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-[#18b99f] focus:ring-2 focus:ring-[#18b99f]/20"
+      >
+        <option value="">Без марка</option>
         {brands.map((item) => (
-          <option key={item.name} value={item.name} />
+          <option key={item.id ?? item.name} value={item.name}>
+            {item.name}
+          </option>
         ))}
-      </datalist>
-      <p className="mt-1 text-xs text-gray-500">Използва се за групиране на продуктите в раздел „По марка“.</p>
+      </select>
+      <p className="mt-1 text-xs text-gray-500">
+        Марките се създават и управляват от раздел „Марки“.
+      </p>
     </div>,
     target.mount
   );
