@@ -12,7 +12,6 @@ import "react-toastify/dist/ReactToastify.css";
 import { formatCurrency } from "../../utils/currency";
 import ProductPricingAndUploadFields from "../../components/admin/ProductPricingAndUploadFields";
 
-
 interface Category {
   id: string;
   name: string;
@@ -96,9 +95,7 @@ const AdminProducts = () => {
   });
   const { token } = useSelector((state: RootState) => state.auth);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
-    {}
-  );
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
 
   useEffect(() => {
     fetchProducts();
@@ -117,14 +114,14 @@ const AdminProducts = () => {
       );
 
       if (!response.ok) {
-        throw new Error("We could not load categories.");
+        throw new Error("Категориите не можаха да бъдат заредени.");
       }
 
       const data = await response.json();
       setCategories(data);
     } catch (err) {
-      console.error("Error loading categories:", err);
-      toast.error("We could not load categories.");
+      console.error("Грешка при зареждане на категориите:", err);
+      toast.error("Категориите не можаха да бъдат заредени.");
     }
   };
 
@@ -148,7 +145,7 @@ const AdminProducts = () => {
       );
 
       if (!response.ok) {
-        throw new Error("We could not load products.");
+        throw new Error("Продуктите не можаха да бъдат заредени.");
       }
 
       const data = await response.json();
@@ -164,8 +161,8 @@ const AdminProducts = () => {
         setSelectedProductIds([]);
       }
     } catch (err) {
-      console.error("Error loading products:", err);
-      toast.error("We could not load products.");
+      console.error("Грешка при зареждане на продуктите:", err);
+      toast.error("Продуктите не можаха да бъдат заредени.");
       setProducts([]);
     } finally {
       setLoading(false);
@@ -218,50 +215,50 @@ const AdminProducts = () => {
     const errors: ValidationErrors = {};
 
     if (!formData.name.trim()) {
-      errors.name = "Product name is required.";
+      errors.name = "Името на продукта е задължително.";
     } else if (formData.name.length < 3) {
-      errors.name = "Use at least 3 characters.";
+      errors.name = "Използвай поне 3 символа.";
     }
 
     if (!formData.description.trim()) {
-      errors.description = "Description is required.";
+      errors.description = "Описанието е задължително.";
     } else if (formData.description.length < 3) {
-      errors.description = "Use at least 3 characters.";
+      errors.description = "Използвай поне 3 символа.";
     }
 
     if (!formData.categoryId) {
-      errors.categoryId = "Choose a category.";
+      errors.categoryId = "Избери категория.";
     }
 
     const regularPriceNum = parseFloat(formData.regularPrice);
     if (!formData.regularPrice) {
-      errors.regularPrice = "Regular price is required.";
+      errors.regularPrice = "Редовната цена е задължителна.";
     } else if (isNaN(regularPriceNum)) {
-      errors.regularPrice = "Enter a valid price.";
+      errors.regularPrice = "Въведи валидна цена.";
     } else if (regularPriceNum < 0) {
-      errors.regularPrice = "Price cannot be negative.";
+      errors.regularPrice = "Цената не може да е отрицателна.";
     } else if (regularPriceNum > 100000) {
-      errors.regularPrice = "Price cannot exceed 100,000.";
+      errors.regularPrice = "Цената не може да надвишава 100 000.";
     }
 
     const stockNum = parseInt(formData.stock);
     if (!formData.stock) {
-      errors.stock = "Stock quantity is required.";
+      errors.stock = "Наличността е задължителна.";
     } else if (isNaN(stockNum)) {
-      errors.stock = "Enter a valid quantity.";
+      errors.stock = "Въведи валидно количество.";
     } else if (stockNum < 0) {
-      errors.stock = "Quantity cannot be negative.";
+      errors.stock = "Количеството не може да е отрицателно.";
     } else if (stockNum > 10000) {
-      errors.stock = "Quantity cannot exceed 10,000.";
+      errors.stock = "Количеството не може да надвишава 10 000.";
     }
 
     if (!formData.mainImageUrl.trim()) {
-      errors.mainImageUrl = "Main image URL is required.";
+      errors.mainImageUrl = "URL адресът на основното изображение е задължителен.";
     } else {
       try {
         new URL(formData.mainImageUrl);
       } catch {
-        errors.mainImageUrl = "Enter a valid URL.";
+        errors.mainImageUrl = "Въведи валиден URL адрес.";
       }
     }
 
@@ -273,7 +270,7 @@ const AdminProducts = () => {
           if (!errors.secondaryImages) {
             errors.secondaryImages = [];
           }
-          errors.secondaryImages[index] = "Enter a valid URL.";
+          errors.secondaryImages[index] = "Въведи валиден URL адрес.";
         }
       }
     });
@@ -350,7 +347,7 @@ const AdminProducts = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || "We could not save the product.");
+        throw new Error(errorData?.message || "Продуктът не можа да бъде запазен.");
       }
 
       await fetchProducts();
@@ -369,9 +366,9 @@ const AdminProducts = () => {
       setValidationErrors({});
       setEditingProduct(null);
     } catch (err) {
-      console.error("Error saving product:", err);
+      console.error("Грешка при запазване на продукта:", err);
       toast.error(
-        err instanceof Error ? err.message : "We could not save the product."
+        err instanceof Error ? err.message : "Продуктът не можа да бъде запазен."
       );
     }
   };
@@ -433,7 +430,7 @@ const AdminProducts = () => {
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         throw new Error(
-          errorData?.message || "We could not delete the product."
+          errorData?.message || "Продуктът не можа да бъде изтрит."
         );
       }
 
@@ -441,9 +438,9 @@ const AdminProducts = () => {
       setIsDeleteModalOpen(false);
       setProductToDelete(null);
     } catch (err) {
-      console.error("Error deleting product:", err);
+      console.error("Грешка при изтриване на продукта:", err);
       toast.error(
-        err instanceof Error ? err.message : "We could not delete the product."
+        err instanceof Error ? err.message : "Продуктът не можа да бъде изтрит."
       );
     }
   };
@@ -475,9 +472,7 @@ const AdminProducts = () => {
     if (selectedProductIds.length === 0) return;
 
     const confirmed = window.confirm(
-      `Delete ${selectedProductIds.length} selected product${
-        selectedProductIds.length === 1 ? "" : "s"
-      }?`
+      `Да се изтрият ли избраните ${selectedProductIds.length} продукта?`
     );
 
     if (!confirmed) return;
@@ -496,18 +491,18 @@ const AdminProducts = () => {
           );
 
           if (!response.ok) {
-            throw new Error("We could not delete one or more products.");
+            throw new Error("Един или повече продукти не можаха да бъдат изтрити.");
           }
         })
       );
 
-      toast.success("Selected products deleted.");
+      toast.success("Избраните продукти са изтрити.");
       setSelectedProductIds([]);
       await fetchProducts();
     } catch (err) {
-      console.error("Error deleting selected products:", err);
+      console.error("Грешка при изтриване на избраните продукти:", err);
       toast.error(
-        err instanceof Error ? err.message : "We could not delete selected products."
+        err instanceof Error ? err.message : "Избраните продукти не можаха да бъдат изтрити."
       );
     }
   };
@@ -527,11 +522,11 @@ const AdminProducts = () => {
     <div className="min-h-[calc(100vh-4rem)] px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Manage products</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Управление на продукти</h1>
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
               <label htmlFor="sortBy" className="text-sm text-gray-700">
-                Sort by:
+                Сортиране по:
               </label>
               <select
                 id="sortBy"
@@ -539,29 +534,29 @@ const AdminProducts = () => {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="block w-32 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
               >
-                <option value="title">Name</option>
-                <option value="regularPrice">Price</option>
-                <option value="quantity">Stock</option>
-                <option value="rating">Rating</option>
+                <option value="title">Име</option>
+                <option value="regularPrice">Цена</option>
+                <option value="quantity">Наличност</option>
+                <option value="rating">Рейтинг</option>
               </select>
             </div>
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
               <label htmlFor="sortOrder" className="text-sm text-gray-700">
-                Order:
+                Ред:
               </label>
               <select
                 id="sortOrder"
                 value={sortDescending ? "desc" : "asc"}
                 onChange={(e) => setSortDescending(e.target.value === "desc")}
-                className="block w-24 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                className="block w-28 rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
               >
-                <option value="desc">Descending</option>
-                <option value="asc">Ascending</option>
+                <option value="desc">Низходящ</option>
+                <option value="asc">Възходящ</option>
               </select>
             </div>
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
               <label htmlFor="itemsPerPage" className="text-sm text-gray-700">
-                Per page:
+                На страница:
               </label>
               <select
                 id="itemsPerPage"
@@ -585,7 +580,7 @@ const AdminProducts = () => {
                 className="flex items-center rounded-md bg-red-600 px-4 py-2 text-white transition hover:bg-red-700"
               >
                 <TrashIcon className="h-5 w-5 mr-2" />
-                Delete selected ({selectedProductIds.length})
+                Изтрий избраните ({selectedProductIds.length})
               </button>
             )}
             <button
@@ -593,7 +588,7 @@ const AdminProducts = () => {
               className="flex items-center rounded-md bg-[#18b99f] px-4 py-2 text-white transition hover:bg-[#149f8a]"
             >
               <PlusIcon className="h-5 w-5 mr-2" />
-              Add product
+              Добави продукт
             </button>
           </div>
         </div>
@@ -604,7 +599,7 @@ const AdminProducts = () => {
           </div>
         ) : !loading && products.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">No products to show.</p>
+            <p className="text-gray-500">Няма продукти за показване.</p>
           </div>
         ) : (
           <>
@@ -627,22 +622,22 @@ const AdminProducts = () => {
                         />
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Name
+                        Име
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Category
+                        Категория
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Price (EUR)
+                        Цена (EUR)
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Discount
+                        Отстъпка
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Stock
+                        Наличност
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
+                        Действия
                       </th>
                     </tr>
                   </thead>
@@ -662,7 +657,7 @@ const AdminProducts = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {categories.find((c) => c.id === product.categoryId)
-                            ?.name || "Uncategorized"}
+                            ?.name || "Без категория"}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {formatCurrency(
@@ -683,14 +678,14 @@ const AdminProducts = () => {
                           <button
                             onClick={() => handleEditProduct(product)}
                             className="text-white bg-yellow-600 hover:bg-yellow-700 p-1.5 rounded-md mr-2"
-                            title="Edit"
+                            title="Редактирай"
                           >
                             <PencilIcon className="w-5 h-5" />
                           </button>
                           <button
                             onClick={() => handleDeleteClick(product)}
                             className="text-white bg-red-600 hover:bg-red-700 p-1.5 rounded-md"
-                            title="Delete"
+                            title="Изтрий"
                           >
                             <TrashIcon className="w-5 h-5" />
                           </button>
@@ -715,7 +710,7 @@ const AdminProducts = () => {
                 <ChevronLeftIcon className="h-5 w-5" />
               </button>
               <span className="text-gray-700">
-                Page {currentPage} of {totalPages}
+                Страница {currentPage} от {totalPages}
               </span>
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
@@ -737,13 +732,13 @@ const AdminProducts = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4">
           <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-3 sm:p-6">
             <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">
-              {editingProduct ? "Edit product" : "Add product"}
+              {editingProduct ? "Редактирай продукт" : "Добави продукт"}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Name
+                    Име
                   </label>
                   <input
                     type="text"
@@ -765,7 +760,7 @@ const AdminProducts = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Category
+                    Категория
                   </label>
                   <select
                     name="categoryId"
@@ -777,7 +772,7 @@ const AdminProducts = () => {
                         : "border-gray-300"
                     }`}
                   >
-                    <option value="">Choose category</option>
+                    <option value="">Избери категория</option>
                     {categories.map((category) => (
                       <option key={category.id} value={category.id}>
                         {category.name}
@@ -793,7 +788,7 @@ const AdminProducts = () => {
 
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
+                    Описание
                   </label>
                   <div className="rich-text-shell">
                     <textarea
@@ -813,7 +808,7 @@ const AdminProducts = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Regular price (EUR)
+                    Редовна цена (EUR)
                   </label>
                   <input
                     type="number"
@@ -838,7 +833,7 @@ const AdminProducts = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Sale price (EUR)
+                    Промоционална цена (EUR)
                   </label>
                   <input
                     type="number"
@@ -863,7 +858,7 @@ const AdminProducts = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Stock
+                    Наличност
                   </label>
                   <input
                     type="number"
@@ -886,7 +881,7 @@ const AdminProducts = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Discount (%)
+                    Отстъпка (%)
                   </label>
                   <input
                     type="number"
@@ -910,7 +905,7 @@ const AdminProducts = () => {
 
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    Main image URL
+                    URL на основното изображение
                   </label>
                   <input
                     type="url"
@@ -933,14 +928,14 @@ const AdminProducts = () => {
                 <div className="sm:col-span-2">
                   <div className="flex justify-between items-center mb-2">
                     <label className="block text-sm font-medium text-gray-700">
-                      Secondary image URLs
+                      URL адреси на допълнителни изображения
                     </label>
                     <button
                       type="button"
                       onClick={addSecondaryImageField}
                       className="text-sm text-white bg-primary-600 hover:text-gray-900 hover:bg-primary-700"
                     >
-                      + Add image
+                      + Добави изображение
                     </button>
                   </div>
 
@@ -955,7 +950,7 @@ const AdminProducts = () => {
                         onChange={(e) =>
                           handleSecondaryImageChange(index, e.target.value)
                         }
-                        placeholder="Secondary image URL"
+                        placeholder="URL на допълнително изображение"
                         className={`flex-1 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500 ${
                           validationErrors.secondaryImages?.[index]
                             ? "border-red-300"
@@ -976,7 +971,7 @@ const AdminProducts = () => {
 
                   {validationErrors.secondaryImages?.some((error) => error) && (
                     <p className="mt-1 text-sm text-red-600">
-                      Enter valid image URLs.
+                      Въведи валидни URL адреси на изображения.
                     </p>
                   )}
                 </div>
@@ -1028,13 +1023,13 @@ const AdminProducts = () => {
                   }}
                   className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                 >
-                  Cancel
+                  Отказ
                 </button>
                 <button
                   type="submit"
                   className="rounded-md bg-[#18b99f] px-4 py-2 text-white hover:bg-[#149f8a]"
                 >
-                  {editingProduct ? "Save" : "Add"}
+                  {editingProduct ? "Запази" : "Добави"}
                 </button>
               </div>
             </form>
@@ -1046,23 +1041,23 @@ const AdminProducts = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4">
           <div className="w-full max-w-lg rounded-lg bg-white p-3 sm:p-6">
             <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">
-              Delete product
+              Изтриване на продукт
             </h2>
             <p className="mb-6 text-gray-600">
-              Delete the product "{productToDelete.title}"?
+              Да се изтрие ли продуктът „{productToDelete.title}“?
             </p>
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
                 className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
               >
-                Cancel
+                Отказ
               </button>
               <button
                 onClick={handleDeleteConfirm}
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
               >
-                Delete
+                Изтрий
               </button>
             </div>
           </div>
