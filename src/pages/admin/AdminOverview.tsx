@@ -47,6 +47,8 @@ const getOrderStatusTextBg = (status: OrderStatus) => {
       return "Чака потвърждение";
     case OrderStatus.Verified:
       return "Потвърдена";
+    case OrderStatus.Processing:
+      return "Обработва се";
     case OrderStatus.Shipped:
       return "Изпратена";
     case OrderStatus.Delivered:
