@@ -60,7 +60,6 @@ interface ValidationErrors {
   stock?: string;
   discountPercentage?: string;
   mainImageUrl?: string;
-  secondaryImages?: string[];
 }
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
@@ -75,7 +74,7 @@ const emptyForm = (): FormData => ({
   stock: "",
   discountPercentage: "0",
   mainImageUrl: "",
-  secondaryImages: [{ uri: "" }],
+  secondaryImages: [],
   isActive: true,
 });
 
@@ -240,8 +239,7 @@ const AdminProducts = () => {
       stock: (product.quantity || 0).toString(),
       discountPercentage: (product.discountPercentage || 0).toString(),
       mainImageUrl: product.mainImageUrl || "",
-      secondaryImages:
-        product.secondaryImages?.length > 0 ? product.secondaryImages : [{ uri: "" }],
+      secondaryImages: product.secondaryImages?.length > 0 ? product.secondaryImages : [],
       isActive: product.isActive !== false,
     });
     setCategorySearch(category?.name || product.categoryName || "");
@@ -269,29 +267,6 @@ const AdminProducts = () => {
     setFormData((previous) => ({ ...previous, categoryId: category.id }));
     setValidationErrors((previous) => ({ ...previous, categoryId: undefined }));
     setIsCategoryMenuOpen(false);
-  };
-
-  const handleSecondaryImageChange = (index: number, value: string) => {
-    setFormData((previous) => ({
-      ...previous,
-      secondaryImages: previous.secondaryImages.map((image, imageIndex) =>
-        imageIndex === index ? { ...image, uri: value } : image
-      ),
-    }));
-  };
-
-  const addSecondaryImageField = () => {
-    setFormData((previous) => ({
-      ...previous,
-      secondaryImages: [...previous.secondaryImages, { uri: "" }],
-    }));
-  };
-
-  const removeSecondaryImageField = (index: number) => {
-    setFormData((previous) => ({
-      ...previous,
-      secondaryImages: previous.secondaryImages.filter((_, imageIndex) => imageIndex !== index),
-    }));
   };
 
   const validateForm = () => {
@@ -324,24 +299,8 @@ const AdminProducts = () => {
     }
 
     if (!formData.mainImageUrl.trim()) {
-      errors.mainImageUrl = "Основното изображение е задължително.";
-    } else {
-      try {
-        new URL(formData.mainImageUrl);
-      } catch {
-        errors.mainImageUrl = "Въведи валиден URL адрес.";
-      }
+      errors.mainImageUrl = "Качи поне една снимка и избери основна.";
     }
-
-    formData.secondaryImages.forEach((image, index) => {
-      if (!image.uri.trim()) return;
-      try {
-        new URL(image.uri);
-      } catch {
-        errors.secondaryImages ??= [];
-        errors.secondaryImages[index] = "Невалиден URL.";
-      }
-    });
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -746,28 +705,6 @@ const AdminProducts = () => {
                 {validationErrors.discountPercentage && <p className="mt-1 text-sm text-red-600">{validationErrors.discountPercentage}</p>}
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-800">URL на основното изображение</label>
-                <input type="url" name="mainImageUrl" value={formData.mainImageUrl} onChange={handleInputChange} className={regularInputClass} />
-                {validationErrors.mainImageUrl && <p className="mt-1 text-sm text-red-600">{validationErrors.mainImageUrl}</p>}
-              </div>
-
-              <div>
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <label className="block text-sm font-semibold text-gray-800">URL адреси на допълнителни изображения</label>
-                  <button type="button" onClick={addSecondaryImageField} className="rounded-md bg-[#18b99f] px-3 py-1.5 text-sm text-white hover:bg-[#149f8a]">+ Добави изображение</button>
-                </div>
-                {formData.secondaryImages.map((image, index) => (
-                  <div key={index} className="mb-2 flex gap-2">
-                    <input type="url" value={image.uri} onChange={(event) => handleSecondaryImageChange(index, event.target.value)} placeholder="URL на допълнително изображение" className={`${regularInputClass} mt-0 flex-1`} />
-                    {formData.secondaryImages.length > 1 && (
-                      <button type="button" onClick={() => removeSecondaryImageField(index)} className="rounded-md bg-red-600 px-3 text-white hover:bg-red-700" title="Премахни"><TrashIcon className="h-5 w-5" /></button>
-                    )}
-                  </div>
-                ))}
-                {validationErrors.secondaryImages?.some(Boolean) && <p className="mt-1 text-sm text-red-600">Има невалиден URL адрес на изображение.</p>}
-              </div>
-
               <div className="space-y-5 rounded-lg border border-slate-300 bg-slate-50/50 p-4">
                 <ProductPricingAndUploadFields
                   key={editingProduct?.id ?? "new-product"}
@@ -779,9 +716,12 @@ const AdminProducts = () => {
                   currentSecondaryImages={formData.secondaryImages}
                   onImagesChange={(mainImageUrl, secondaryImages) => {
                     setFormData((previous) => ({ ...previous, mainImageUrl, secondaryImages }));
-                    setValidationErrors((previous) => ({ ...previous, mainImageUrl: undefined, secondaryImages: undefined }));
+                    setValidationErrors((previous) => ({ ...previous, mainImageUrl: undefined }));
                   }}
                 />
+                {validationErrors.mainImageUrl && (
+                  <p className="text-sm text-red-600">{validationErrors.mainImageUrl}</p>
+                )}
               </div>
 
               <div className="sticky bottom-0 -mx-4 mt-6 flex flex-col-reverse gap-3 border-t border-gray-200 bg-white px-4 py-4 sm:-mx-7 sm:flex-row sm:justify-end sm:px-7">
