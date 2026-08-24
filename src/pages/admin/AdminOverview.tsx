@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../store";
 import { OrderStatus } from "../../enums/OrderStatus";
 import { formatCurrency } from "../../utils/currency";
+import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 
 interface Category {
   id: string;
@@ -39,29 +40,31 @@ interface User {
 
 const LOW_STOCK_THRESHOLD = 10;
 
-const getOrderStatusTextBg = (status: OrderStatus) => {
+const getOrderStatusText = (status: OrderStatus, isBg: boolean) => {
   switch (status) {
     case OrderStatus.Created:
-      return "Създадена";
+      return isBg ? "Създадена" : "Created";
     case OrderStatus.PendingVerification:
-      return "Чака потвърждение";
+      return isBg ? "Чака потвърждение" : "Pending verification";
     case OrderStatus.Verified:
-      return "Потвърдена";
+      return isBg ? "Потвърдена" : "Verified";
     case OrderStatus.Processing:
-      return "Обработва се";
+      return isBg ? "Обработва се" : "Processing";
     case OrderStatus.Shipped:
-      return "Изпратена";
+      return isBg ? "Изпратена" : "Shipped";
     case OrderStatus.Delivered:
-      return "Доставена";
+      return isBg ? "Доставена" : "Delivered";
     case OrderStatus.Cancelled:
-      return "Отказана";
+      return isBg ? "Отказана" : "Cancelled";
     default:
-      return "Неизвестен статус";
+      return isBg ? "Неизвестен статус" : "Unknown status";
   }
 };
 
 const AdminOverview = () => {
   const token = useSelector((state: RootState) => state.auth.token);
+  const { language } = useLanguageTheme();
+  const isBg = language === "bg";
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -96,7 +99,7 @@ const AdminOverview = () => {
         setCategories(categoriesData);
         setUsers(usersData);
       } catch (error) {
-        console.error("Грешка при зареждане на администраторското табло:", error);
+        console.error("Admin overview load failed:", error);
       } finally {
         setIsLoading(false);
       }
@@ -169,78 +172,92 @@ const AdminOverview = () => {
     );
   }
 
+  const pendingCount = orders.filter((order) => order.status === OrderStatus.PendingVerification).length;
+
   return (
-    <div className="space-y-6">
-      <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_-55px_rgba(15,23,42,0.55)]">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-primary-600">Преглед на продажбите</p>
-        <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h2 className="font-display text-3xl font-bold tracking-tight text-slate-950">Оперативен преглед</h2>
-            <p className="mt-2 text-sm text-slate-600">
-              Днешните поръчки, текущите наличности и последното клиентско търсене в каталога.
+    <div className="space-y-5 sm:space-y-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_20px_70px_-55px_rgba(15,23,42,0.55)] sm:rounded-[2rem] sm:p-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-600 sm:text-sm sm:tracking-[0.28em]">
+          {isBg ? "Преглед на продажбите" : "Sales overview"}
+        </p>
+        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <h2 className="font-display text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+              {isBg ? "Оперативен преглед" : "Operational overview"}
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm text-slate-600">
+              {isBg
+                ? "Днешните поръчки, текущите наличности и последното клиентско търсене в каталога."
+                : "Today’s orders, current stock levels and the latest customer activity in the catalog."}
             </p>
           </div>
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
-            {lowStockProducts.length} продукта се нуждаят от зареждане
+            {isBg
+              ? `${lowStockProducts.length} продукта се нуждаят от зареждане`
+              : `${lowStockProducts.length} products need restocking`}
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
         {[
           {
-            label: "Поръчки днес",
+            label: isBg ? "Поръчки днес" : "Orders today",
             value: ordersToday.length,
-            detail: `${orders.filter((order) => order.status === OrderStatus.PendingVerification).length} чакат преглед`,
+            detail: isBg ? `${pendingCount} чакат преглед` : `${pendingCount} awaiting review`,
             icon: ShoppingBagIcon,
           },
           {
-            label: "Оборот тази седмица",
+            label: isBg ? "Оборот тази седмица" : "Revenue this week",
             value: formatCurrency(weeklyRevenue),
-            detail: "Последните 7 дни без отказаните поръчки",
+            detail: isBg ? "Последните 7 дни без отказаните поръчки" : "Last 7 days excluding cancelled orders",
             icon: BellAlertIcon,
           },
           {
-            label: "Ниски наличности",
+            label: isBg ? "Ниски наличности" : "Low stock",
             value: lowStockProducts.length,
-            detail: `Под ${LOW_STOCK_THRESHOLD} броя`,
+            detail: isBg ? `Под ${LOW_STOCK_THRESHOLD} броя` : `Under ${LOW_STOCK_THRESHOLD} units`,
             icon: CubeTransparentIcon,
           },
           {
-            label: "Активни клиенти",
+            label: isBg ? "Активни клиенти" : "Active customers",
             value: activeCustomers,
-            detail: `${users.length} акаунта, ${categories.length} категории`,
+            detail: isBg
+              ? `${users.length} акаунта, ${categories.length} категории`
+              : `${users.length} accounts, ${categories.length} categories`,
             icon: UserGroupIcon,
           },
         ].map((item) => (
-          <article key={item.label} className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-[0_20px_70px_-55px_rgba(15,23,42,0.55)]">
-            <div className="flex items-center justify-between">
+          <article key={item.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_20px_70px_-55px_rgba(15,23,42,0.55)] sm:rounded-[2rem] sm:p-5">
+            <div className="flex items-center justify-between gap-3">
               <p className="text-sm font-medium text-slate-500">{item.label}</p>
-              <item.icon className="h-8 w-8 rounded-2xl bg-primary-50 p-2 text-primary-600" />
+              <item.icon className="h-8 w-8 flex-none rounded-2xl bg-primary-50 p-2 text-primary-600" />
             </div>
-            <p className="mt-8 font-display text-4xl font-bold tracking-tight text-slate-950">{item.value}</p>
+            <p className="mt-6 font-display text-3xl font-bold tracking-tight text-slate-950 sm:mt-8 sm:text-4xl">{item.value}</p>
             <p className="mt-3 text-sm text-slate-500">{item.detail}</p>
           </article>
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-        <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_-55px_rgba(15,23,42,0.55)]">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600">Поръчки</p>
-              <h3 className="mt-3 font-display text-2xl font-bold text-slate-950">Разпределение по статус</h3>
-            </div>
-          </div>
+      <div className="grid gap-5 lg:grid-cols-[1.3fr_0.7fr] lg:gap-6">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_20px_70px_-55px_rgba(15,23,42,0.55)] sm:rounded-[2rem] sm:p-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary-600 sm:tracking-[0.24em]">
+            {isBg ? "Поръчки" : "Orders"}
+          </p>
+          <h3 className="mt-3 font-display text-xl font-bold text-slate-950 sm:text-2xl">
+            {isBg ? "Разпределение по статус" : "Status distribution"}
+          </h3>
 
-          <div className="mt-8 space-y-4">
+          <div className="mt-6 space-y-4 sm:mt-8">
             {orderStatusGroups.map(([status, count]) => {
               const percentage = orders.length === 0 ? 0 : (count / orders.length) * 100;
               return (
                 <div key={status} className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-slate-700">{getOrderStatusTextBg(status)}</span>
-                    <span className="text-slate-500">{count} поръчки</span>
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span className="font-medium text-slate-700">{getOrderStatusText(status, isBg)}</span>
+                    <span className="text-slate-500">
+                      {isBg ? `${count} поръчки` : `${count} orders`}
+                    </span>
                   </div>
                   <div className="h-3 rounded-full bg-slate-100">
                     <div
@@ -254,60 +271,74 @@ const AdminOverview = () => {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_-55px_rgba(15,23,42,0.55)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600">Наличности</p>
-          <h3 className="mt-3 font-display text-2xl font-bold text-slate-950">Продукти за зареждане</h3>
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_20px_70px_-55px_rgba(15,23,42,0.55)] sm:rounded-[2rem] sm:p-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary-600 sm:tracking-[0.24em]">
+            {isBg ? "Наличности" : "Inventory"}
+          </p>
+          <h3 className="mt-3 font-display text-xl font-bold text-slate-950 sm:text-2xl">
+            {isBg ? "Продукти за зареждане" : "Products to restock"}
+          </h3>
           <div className="mt-6 space-y-3">
             {lowStockProducts.slice(0, 6).map((product) => (
               <div key={product.id} className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold text-slate-900">{product.title}</p>
-                    <p className="text-xs text-slate-500">{product.categoryName ?? "Без категория"}</p>
+                    <p className="text-xs text-slate-500">{product.categoryName ?? (isBg ? "Без категория" : "Uncategorized")}</p>
                   </div>
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-amber-700">
-                    Остават {product.quantity}
+                  <span className="w-fit rounded-full bg-white px-3 py-1 text-xs font-semibold text-amber-700">
+                    {isBg ? `Остават ${product.quantity}` : `${product.quantity} left`}
                   </span>
                 </div>
               </div>
             ))}
-            {lowStockProducts.length === 0 && <p className="text-sm text-slate-500">Всички следени продукти са над прага за ниска наличност.</p>}
+            {lowStockProducts.length === 0 && (
+              <p className="text-sm text-slate-500">
+                {isBg
+                  ? "Всички следени продукти са над прага за ниска наличност."
+                  : "All tracked products are above the low-stock threshold."}
+              </p>
+            )}
           </div>
         </section>
       </div>
 
-      <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_20px_70px_-55px_rgba(15,23,42,0.55)]">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600">Последна активност</p>
-            <h3 className="mt-3 font-display text-2xl font-bold text-slate-950">Последни поръчки</h3>
-          </div>
-        </div>
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_20px_70px_-55px_rgba(15,23,42,0.55)] sm:rounded-[2rem] sm:p-6">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary-600 sm:tracking-[0.24em]">
+          {isBg ? "Последна активност" : "Latest activity"}
+        </p>
+        <h3 className="mt-3 font-display text-xl font-bold text-slate-950 sm:text-2xl">
+          {isBg ? "Последни поръчки" : "Recent orders"}
+        </h3>
 
-        <div className="mt-6 overflow-hidden rounded-[1.5rem] border border-slate-200">
+        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 sm:rounded-[1.5rem]">
           <div className="table-scroll">
             <table className="min-w-[36rem] divide-y divide-slate-200 text-sm">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">Клиент</th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">Артикули</th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-500">Статус</th>
-                  <th className="px-4 py-3 text-right font-medium text-slate-500">Общо</th>
+                  <th className="px-4 py-3 text-left font-medium text-slate-500">{isBg ? "Клиент" : "Customer"}</th>
+                  <th className="px-4 py-3 text-left font-medium text-slate-500">{isBg ? "Артикули" : "Items"}</th>
+                  <th className="px-4 py-3 text-left font-medium text-slate-500">{isBg ? "Статус" : "Status"}</th>
+                  <th className="px-4 py-3 text-right font-medium text-slate-500">{isBg ? "Общо" : "Total"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">
                 {recentOrders.map((order) => (
                   <tr key={order.id}>
-                    <td className="px-4 py-4 text-slate-900">{order.names ?? "Клиент"}</td>
-                    <td className="px-4 py-4 text-slate-600">{order.items.length} {order.items.length === 1 ? "артикул" : "артикула"}</td>
-                    <td className="px-4 py-4 text-slate-600">{getOrderStatusTextBg(order.status)}</td>
+                    <td className="px-4 py-4 text-slate-900">{order.names ?? (isBg ? "Клиент" : "Customer")}</td>
+                    <td className="px-4 py-4 text-slate-600">
+                      {order.items.length} {isBg
+                        ? order.items.length === 1 ? "артикул" : "артикула"
+                        : order.items.length === 1 ? "item" : "items"}
+                    </td>
+                    <td className="px-4 py-4 text-slate-600">{getOrderStatusText(order.status, isBg)}</td>
                     <td className="px-4 py-4 text-right font-semibold text-slate-900">{formatCurrency(order.orderTotalPrice)}</td>
                   </tr>
                 ))}
                 {recentOrders.length === 0 && (
                   <tr>
                     <td colSpan={4} className="px-4 py-10 text-center text-slate-500">
-                      Все още няма скорошни поръчки.
+                      {isBg ? "Все още няма скорошни поръчки." : "No recent orders yet."}
                     </td>
                   </tr>
                 )}
