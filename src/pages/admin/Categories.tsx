@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { useEffect, useState } from 'react';
+import { PencilIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useSelector } from 'react-redux';
+import { API_BASE_URL, readApiJson } from '../../config/api';
 import { RootState } from '../../store';
 
 interface Category {
@@ -8,6 +9,14 @@ interface Category {
   name: string;
   productCount: number;
   imageURI: string;
+}
+
+interface CategoryApiItem {
+  id: string;
+  name: string;
+  productCount?: number;
+  imageURI?: string;
+  imageUri?: string;
 }
 
 interface FormData {
@@ -26,61 +35,64 @@ const AdminCategories = () => {
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [formData, setFormData] = useState<FormData>({
-    name: '',
-    imageURI: ''
-  });
+  const [formData, setFormData] = useState<FormData>({ name: '', imageURI: '' });
   const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const { token } = useSelector((state: RootState) => state.auth);
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Categories`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      setError('');
+      const response = await fetch(`${API_BASE_URL}/Categories`, { cache: 'no-store' });
+      const data = await readApiJson<CategoryApiItem[]>(response);
 
-      if (!response.ok) {
-        throw new Error("We could not load categories.");
-      }
-
-      const data = await response.json();
-      setCategories(data);
+      setCategories(
+        Array.isArray(data)
+          ? data.map((category) => ({
+              id: category.id,
+              name: category.name,
+              productCount: category.productCount ?? 0,
+              imageURI: category.imageURI ?? category.imageUri ?? '',
+            }))
+          : [],
+      );
     } catch (err) {
-      console.error("Error loading categories:", err);
-      setError("We could not load categories.");
+      console.error('Error loading categories:', err);
+      setCategories([]);
+      setError(err instanceof Error ? err.message : 'We could not load categories.');
     }
   };
 
-  const validateForm = (): boolean => {
+  useEffect(() => {
+    void fetchCategories();
+  }, []);
+
+  const validateForm = () => {
     const errors: ValidationErrors = {};
 
     if (!formData.name.trim()) {
-      errors.name = "Category name is required.";
+      errors.name = 'Category name is required.';
     } else if (formData.name.length < 2) {
-      errors.name = "Use at least 2 characters.";
+      errors.name = 'Use at least 2 characters.';
     } else if (formData.name.length > 50) {
-      errors.name = "Use 50 characters or fewer.";
-    } else if (categories.some(cat =>
-      cat.name.toLowerCase() === formData.name.toLowerCase() &&
-      cat.id !== editingCategory?.id
-    )) {
-      errors.name = "A category with this name already exists.";
+      errors.name = 'Use 50 characters or fewer.';
+    } else if (
+      categories.some(
+        (category) =>
+          category.name.toLowerCase() === formData.name.toLowerCase() &&
+          category.id !== editingCategory?.id,
+      )
+    ) {
+      errors.name = 'A category with this name already exists.';
     }
 
     if (!formData.imageURI.trim()) {
-      errors.imageURI = "Category image URL is required.";
+      errors.imageURI = 'Category image URL is required.';
     } else {
       try {
         new URL(formData.imageURI);
       } catch {
-        errors.imageURI = "Enter a valid URL.";
+        errors.imageURI = 'Enter a valid URL.';
       }
     }
 
@@ -88,19 +100,10 @@ const AdminCategories = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    if (validationErrors[name as keyof ValidationErrors]) {
-      setValidationErrors(prev => ({
-        ...prev,
-        [name]: undefined
-      }));
-    }
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setFormData((current) => ({ ...current, [name]: value }));
+    setValidationErrors((current) => ({ ...current, [name]: undefined }));
   };
 
   const closeEditModal = () => {
@@ -110,41 +113,12 @@ const AdminCategories = () => {
     setValidationErrors({});
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setFormData({ name: category.name, imageURI: category.imageURI });
     setError('');
-
-    if (!validateForm()) {
-      return;
-    }
-
-    try {
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/Categories/`;
-
-      const response = await fetch(url, {
-        method: editingCategory ? "PUT" : "POST",
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          id: editingCategory?.id,
-          name: formData.name,
-          imageURI: formData.imageURI
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || "We could not save the category.");
-      }
-
-      await fetchCategories();
-      closeEditModal();
-    } catch (err) {
-      console.error("Error saving category:", err);
-      setError(err instanceof Error ? err.message : "We could not save the category.");
-    }
+    setValidationErrors({});
+    setIsModalOpen(true);
   };
 
   const handleAddCategory = () => {
@@ -155,43 +129,51 @@ const AdminCategories = () => {
     setIsModalOpen(true);
   };
 
-  const handleEditCategory = (category: Category) => {
-    setEditingCategory(category);
-    setFormData({
-      name: category.name,
-      imageURI: category.imageURI || ''
-    });
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError('');
-    setValidationErrors({});
-    setIsModalOpen(true);
-  };
 
-  const handleDeleteClick = (category: Category) => {
-    setCategoryToDelete(category);
-    setIsDeleteModalOpen(true);
+    if (!validateForm()) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/Categories`, {
+        method: editingCategory ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          id: editingCategory?.id,
+          name: formData.name.trim(),
+          imageURI: formData.imageURI.trim(),
+        }),
+      });
+
+      await readApiJson(response);
+      await fetchCategories();
+      closeEditModal();
+    } catch (err) {
+      console.error('Error saving category:', err);
+      setError(err instanceof Error ? err.message : 'We could not save the category.');
+    }
   };
 
   const handleDeleteConfirm = async () => {
     if (!categoryToDelete) return;
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Categories/${categoryToDelete.id}`, {
+      const response = await fetch(`${API_BASE_URL}/Categories/${categoryToDelete.id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
-      if (!response.ok) {
-        throw new Error("We could not delete the category.");
-      }
-
+      await readApiJson(response);
       await fetchCategories();
       setIsDeleteModalOpen(false);
       setCategoryToDelete(null);
     } catch (err) {
-      console.error("Error deleting category:", err);
-      setError("We could not delete the category.");
+      console.error('Error deleting category:', err);
+      setError(err instanceof Error ? err.message : 'We could not delete the category.');
     }
   };
 
@@ -200,16 +182,17 @@ const AdminCategories = () => {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Manage categories</h1>
         <button
+          type="button"
           onClick={handleAddCategory}
           className="flex items-center rounded-md bg-[#18b99f] px-4 py-2 text-white transition-colors hover:bg-[#149f8a]"
         >
-          <PlusIcon className="w-5 h-5 mr-2" />
+          <PlusIcon className="mr-2 h-5 w-5" />
           Add category
         </button>
       </div>
 
       {error && (
-        <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <div className="mb-4 rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700">
           {error}
         </div>
       )}
@@ -219,15 +202,11 @@ const AdminCategories = () => {
           <table className="min-w-[28rem] divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Name</th>
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 bg-white">
               {categories.map((category) => (
                 <tr key={category.id}>
                   <td className="px-6 py-3 text-sm text-gray-900">
@@ -237,7 +216,6 @@ const AdminCategories = () => {
                         onClick={() => handleEditCategory(category)}
                         className="flex-none rounded-md focus:outline-none focus:ring-2 focus:ring-[#18b99f] focus:ring-offset-2"
                         title="Edit category"
-                        aria-label={`Edit ${category.name}`}
                       >
                         {category.imageURI ? (
                           <img
@@ -246,26 +224,31 @@ const AdminCategories = () => {
                             className="h-12 w-12 rounded-md border border-gray-200 object-cover transition hover:opacity-80"
                           />
                         ) : (
-                          <div className="h-12 w-12 rounded-md border border-gray-200 bg-gray-100 transition hover:bg-gray-200" />
+                          <div className="h-12 w-12 rounded-md border border-gray-200 bg-gray-100" />
                         )}
                       </button>
                       <span>{category.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                     <button
+                      type="button"
                       onClick={() => handleEditCategory(category)}
-                      className="text-white bg-yellow-600 hover:bg-yellow-700 p-1.5 rounded-md mr-2"
+                      className="mr-2 rounded-md bg-yellow-600 p-1.5 text-white hover:bg-yellow-700"
                       title="Edit"
                     >
-                      <PencilIcon className="w-5 h-5" />
+                      <PencilIcon className="h-5 w-5" />
                     </button>
                     <button
-                      onClick={() => handleDeleteClick(category)}
-                      className="text-white bg-red-600 hover:bg-red-700 p-1.5 rounded-md"
+                      type="button"
+                      onClick={() => {
+                        setCategoryToDelete(category);
+                        setIsDeleteModalOpen(true);
+                      }}
+                      className="rounded-md bg-red-600 p-1.5 text-white hover:bg-red-700"
                       title="Delete"
                     >
-                      <TrashIcon className="w-5 h-5" />
+                      <TrashIcon className="h-5 w-5" />
                     </button>
                   </td>
                 </tr>
@@ -277,82 +260,46 @@ const AdminCategories = () => {
 
       {isModalOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              closeEditModal();
-            }
+            if (event.target === event.currentTarget) closeEditModal();
           }}
         >
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-6 text-gray-900">
-            <h2 className="text-xl font-bold mb-4">
-              {editingCategory ? "Edit category" : "Add category"}
-            </h2>
-            {error && (
-              <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                {error}
-              </div>
-            )}
+            <h2 className="mb-4 text-xl font-bold">{editingCategory ? 'Edit category' : 'Add category'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Name
-                </label>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Name</label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className={`mt-1 block w-full rounded-md bg-white text-gray-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 ${
-                    validationErrors.name ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`mt-1 block w-full rounded-md bg-white text-gray-900 shadow-sm ${validationErrors.name ? 'border-red-300' : 'border-gray-300'}`}
                 />
-                {validationErrors.name && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
-                )}
+                {validationErrors.name && <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>}
               </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Image URL
-                </label>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Image URL</label>
                 <input
                   type="url"
                   name="imageURI"
                   value={formData.imageURI}
                   onChange={handleInputChange}
-                  className={`mt-1 block w-full rounded-md bg-white text-gray-900 shadow-sm focus:border-primary-500 focus:ring-primary-500 ${
-                    validationErrors.imageURI ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                  className={`mt-1 block w-full rounded-md bg-white text-gray-900 shadow-sm ${validationErrors.imageURI ? 'border-red-300' : 'border-gray-300'}`}
                 />
-                {validationErrors.imageURI && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.imageURI}</p>
-                )}
+                {validationErrors.imageURI && <p className="mt-1 text-sm text-red-600">{validationErrors.imageURI}</p>}
                 {formData.imageURI.trim() && !validationErrors.imageURI && (
                   <div className="mt-3 overflow-hidden rounded-md border border-gray-200 bg-gray-50">
-                    <img
-                      src={formData.imageURI}
-                      alt={formData.name ? `${formData.name} preview` : 'Category preview'}
-                      className="h-44 w-full object-cover"
-                    />
+                    <img src={formData.imageURI} alt={`${formData.name || 'Category'} preview`} className="h-44 w-full object-cover" />
                   </div>
                 )}
               </div>
 
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  onClick={closeEditModal}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-md bg-[#18b99f] px-4 py-2 text-white hover:bg-[#149f8a]"
-                >
-                  {editingCategory ? "Save" : "Add"}
-                </button>
+                <button type="button" onClick={closeEditModal} className="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button type="submit" className="rounded-md bg-[#18b99f] px-4 py-2 text-white hover:bg-[#149f8a]">{editingCategory ? 'Save' : 'Add'}</button>
               </div>
             </form>
           </div>
@@ -360,30 +307,21 @@ const AdminCategories = () => {
       )}
 
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsDeleteModalOpen(false);
+              setCategoryToDelete(null);
+            }
+          }}
+        >
           <div className="w-full max-w-md rounded-lg bg-white p-6">
-            <h2 className="text-xl font-bold mb-4 text-gray-900">Delete category</h2>
-            <p className="mb-6 text-gray-600">
-              Delete the category "{categoryToDelete?.name}"?
-              {categoryToDelete && categoryToDelete.productCount > 0 && (
-                <span className="block mt-2 text-red-600">
-                  This category still contains {categoryToDelete.productCount} product{categoryToDelete.productCount === 1 ? "" : "s"}.
-                </span>
-              )}
-            </p>
+            <h2 className="mb-4 text-xl font-bold text-gray-900">Delete category</h2>
+            <p className="mb-6 text-gray-600">Delete the category "{categoryToDelete?.name}"?</p>
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <button
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-              >
-                Delete
-              </button>
+              <button type="button" onClick={() => setIsDeleteModalOpen(false)} className="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">Cancel</button>
+              <button type="button" onClick={handleDeleteConfirm} className="rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700">Delete</button>
             </div>
           </div>
         </div>
