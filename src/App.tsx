@@ -18,6 +18,7 @@ import Products from "./pages/Products";
 import ProductDetails from "./pages/ProductDetails";
 import Brands from "./pages/Brands";
 import NewProducts from "./pages/NewProducts";
+import Compare from "./pages/Compare";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Login from "./pages/auth/Login";
@@ -84,18 +85,7 @@ function App() {
               />
 
               <Route path="/brands" element={<Brands />} />
-
-              <Route
-                path="/compare"
-                element={
-                  <InfoPage
-                    titleBg="Сравни"
-                    titleEn="Compare"
-                    descriptionBg="Тук ще се показва сравнение между избрани продукти."
-                    descriptionEn="Selected product comparison will be shown here."
-                  />
-                }
-              />
+              <Route path="/compare" element={<Compare />} />
 
               <Route
                 path="/cart"
