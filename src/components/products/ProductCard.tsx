@@ -6,6 +6,7 @@ import { addItem } from "../../store/slices/cartSlice";
 import { RootState } from "../../store";
 import { formatCurrency } from "../../utils/currency";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
+import ProductActions from "./ProductActions";
 
 interface Product {
   id: string;
@@ -131,7 +132,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
             </div>
           </div>
 
-          <h3 className="mt-4 font-display text-xl font-semibold leading-tight text-slate-950 line-clamp-2">
+          <h3 className="mt-4 line-clamp-2 font-display text-xl font-semibold leading-tight text-slate-950">
             {product.title}
           </h3>
           <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-600">
@@ -154,11 +155,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
             </span>
           </div>
 
+          <div className="mt-5">
+            <ProductActions productId={product.id} showLabels />
+          </div>
+
           <button
             type="button"
             onClick={handleAddToCart}
             disabled={product.quantity === 0}
-            className={`mt-6 inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+            className={`mt-3 inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
               product.quantity === 0
                 ? "cursor-not-allowed bg-slate-100 text-slate-400"
                 : "bg-slate-950 text-white hover:bg-primary-600"
