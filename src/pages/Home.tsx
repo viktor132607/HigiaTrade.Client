@@ -9,14 +9,14 @@ import {
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import HomeHeroSlider from "../components/home/HomeHeroSlider";
+import ProductCard from "../components/products/ProductCard";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
-import { formatCurrency } from "../utils/currency";
 
 interface Category {
   id: string;
   name: string;
-  imageURI?: string;
-  imageUri?: string;
+  imageURI?: string | null;
+  imageUri?: string | null;
 }
 
 interface Product {
@@ -32,108 +32,40 @@ interface Product {
   discountedPrice?: number;
 }
 
-const fallbackCategories: Category[] = Array.from({ length: 10 }, (_, index) => ({
-  id: `placeholder-${index + 1}`,
-  name: `Категория ${index + 1}`,
-  imageUri: [
-    "https://images.unsplash.com/photo-1585421514738-01798e348b17?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1583947581924-860bda6a26df?auto=format&fit=crop&w=900&q=80",
-  ][index % 4],
-}));
-
-const HomeProductTile = ({ product, language }: { product: Product; language: "bg" | "en" }) => {
-  const displayPrice =
-    product.discountedPrice && product.discountedPrice > 0
-      ? product.discountedPrice
-      : product.regularPrice;
-
-  return (
-    <Link
-      to={`/products/${product.id}`}
-      className="group flex h-full flex-col overflow-hidden border border-slate-200 bg-white text-slate-950 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-black dark:text-white"
-    >
-      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-900">
-        <img
-          src={product.mainImageUrl || "/placeholder-image.jpg"}
-          alt={product.title}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-        />
-        {product.discountPercentage ? (
-          <span className="absolute right-2 top-2 rounded-full bg-red-500 px-2 py-1 text-xs font-bold text-white">
-            -{product.discountPercentage}%
-          </span>
-        ) : null}
-      </div>
-      <div className="flex flex-1 flex-col p-3">
-        <h3 className="line-clamp-2 min-h-10 text-sm font-bold leading-5 text-slate-950 dark:text-white">
-          {product.title}
-        </h3>
-        <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-300">
-          {product.quantity > 0
-            ? language === "bg"
-              ? "В наличност"
-              : "In stock"
-            : language === "bg"
-              ? "Изчерпан"
-              : "Out of stock"}
-        </p>
-        <div className="mt-3 flex items-end gap-2">
-          <p className="text-base font-black text-slate-950 dark:text-white">
-            {formatCurrency(displayPrice)}
-          </p>
-          {product.discountedPrice && product.discountedPrice > 0 ? (
-            <p className="text-xs text-slate-400 line-through">
-              {formatCurrency(product.regularPrice)}
-            </p>
-          ) : null}
-        </div>
-        <button
-          type="button"
-          className="mt-3 rounded bg-orange-500 px-3 py-2 text-xs font-bold uppercase text-white transition hover:bg-orange-600"
-        >
-          {language === "bg" ? "В количката" : "Add to cart"}
-        </button>
-      </div>
-    </Link>
-  );
-};
-
 const Home = () => {
   const { language } = useLanguageTheme();
+  const isBg = language === "bg";
   const [categories, setCategories] = useState<Category[]>([]);
   const [bestSellers, setBestSellers] = useState<Product[]>([]);
   const [latestProducts, setLatestProducts] = useState<Product[]>([]);
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
   const [activeProductTab, setActiveProductTab] = useState<"best" | "popular" | "rating">("best");
 
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        const [categoriesResponse, bestSellersResponse, latestProductsResponse] =
-          await Promise.all([
-            fetch(`${process.env.NEXT_PUBLIC_API_URL}/Categories`),
-            fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products/best-sellers?numOfBestSellers=6`),
-            fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products?PageNumber=1&PageSize=8&SortBy=createdOn&SortDescending=true`),
-          ]);
+        const [categoriesResponse, bestSellersResponse, latestResponse, catalogResponse] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/Categories`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products/best-sellers?numOfBestSellers=12`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products?PageNumber=1&PageSize=12&SortBy=createdOn&SortDescending=true`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products?PageNumber=1&PageSize=100&SortBy=title&SortDescending=false`),
+        ]);
 
         if (categoriesResponse.ok) {
-          const categoriesData = (await categoriesResponse.json()) as Category[];
-          setCategories(categoriesData);
+          const data = await categoriesResponse.json();
+          setCategories(Array.isArray(data) ? data : []);
         }
-
         if (bestSellersResponse.ok) {
-          const bestSellersData = (await bestSellersResponse.json()) as Product[];
-          setBestSellers(bestSellersData);
+          const data = await bestSellersResponse.json();
+          setBestSellers(Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : []);
         }
-
-        if (latestProductsResponse.ok) {
-          const latestProductsData = await latestProductsResponse.json();
-          setLatestProducts(
-            Array.isArray(latestProductsData)
-              ? latestProductsData
-              : latestProductsData.items ?? []
-          );
+        if (latestResponse.ok) {
+          const data = await latestResponse.json();
+          setLatestProducts(Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : []);
+        }
+        if (catalogResponse.ok) {
+          const data = await catalogResponse.json();
+          setCatalogProducts(Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : []);
         }
       } catch (error) {
         console.error("Home data fetch failed:", error);
@@ -143,107 +75,49 @@ const Home = () => {
     void fetchHomeData();
   }, []);
 
-  const visibleCategories = categories.length > 0 ? categories : fallbackCategories;
-  const visibleBestSellers = bestSellers;
-  const visibleLatestProducts = latestProducts;
+  const discountedProducts = useMemo(() =>
+    catalogProducts
+      .filter((product) => (product.discountPercentage ?? 0) > 0 && (product.discountedPrice ?? 0) > 0)
+      .sort((a, b) => (b.discountPercentage ?? 0) - (a.discountPercentage ?? 0))
+      .slice(0, 4),
+  [catalogProducts]);
 
   const tabProducts = useMemo(() => {
     if (activeProductTab === "rating") {
-      return [...visibleBestSellers].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+      return [...catalogProducts].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
     }
-
-    if (activeProductTab === "popular") {
-      return visibleLatestProducts;
-    }
-
-    return visibleBestSellers;
-  }, [activeProductTab, visibleBestSellers, visibleLatestProducts]);
+    if (activeProductTab === "popular") return latestProducts;
+    return bestSellers;
+  }, [activeProductTab, bestSellers, latestProducts, catalogProducts]);
 
   const text = {
-    startShopping:
-      language === "bg"
-        ? "Започнете да пазарувате в нашия магазин любимите си продукти!"
-        : "Start shopping in our store for your favorite products!",
-    register: language === "bg" ? "Регистрирайте се" : "Register",
-    registerText:
-      language === "bg"
-        ? "Регистрацията е безплатна и отнема секунди."
-        : "Registration is free and takes seconds.",
-    details: language === "bg" ? "Въведете Вашите данни" : "Enter your details",
-    detailsText:
-      language === "bg"
-        ? "Попълнете адрес и информация за доставка."
-        : "Add your address and delivery information.",
-    secure: language === "bg" ? "Пазарувайте сигурно" : "Shop securely",
-    secureText:
-      language === "bg"
-        ? "Вашата поръчка се обработва надеждно."
-        : "Your order is processed safely.",
-    startNow: language === "bg" ? "Започни сега" : "Start now",
-    latest: language === "bg" ? "Последно добавени артикули" : "Latest added products",
-    latestText:
-      language === "bg"
-        ? "Разгледайте новите продукти, промоциите и наличните артикули."
-        : "Browse new products, promotions and available items.",
-    best: language === "bg" ? "Най-продавани" : "Best sellers",
-    popular: language === "bg" ? "Най-популярни" : "Most popular",
-    rating: language === "bg" ? "Най-висок рейтинг" : "Highest rating",
-    viewAll: language === "bg" ? "Виж всички продукти" : "View all products",
-    promoTitle: language === "bg" ? "Седмични предложения" : "Weekly offers",
-    delivery: language === "bg" ? "Поръчка по телефон" : "Phone orders",
-    deliveryText: language === "bg" ? "Бърза връзка за наличности и заявки." : "Fast contact for stock and orders.",
-    freeDelivery: language === "bg" ? "Доставка" : "Delivery",
-    freeDeliveryText: language === "bg" ? "Удобна доставка според наличностите." : "Convenient delivery based on stock.",
-    productReturn: language === "bg" ? "Връщане на продукт" : "Product returns",
-    productReturnText: language === "bg" ? "Ясни условия за замяна и връщане." : "Clear exchange and return terms.",
-    warranty: language === "bg" ? "Гаранция" : "Guarantee",
-    warrantyText: language === "bg" ? "Поддръжка при въпроси за продукти." : "Support for product questions.",
-    clients: language === "bg" ? "Доволни клиенти" : "Happy clients",
-    clientsText: language === "bg" ? "Коректно обслужване и ясна информация." : "Reliable service and clear information.",
-    premium: language === "bg" ? "Качествени продукти" : "Quality products",
-    premiumText: language === "bg" ? "Подбрани препарати за ежедневна употреба." : "Selected products for everyday use.",
-    safe: language === "bg" ? "Сигурно пазаруване" : "Secure shopping",
-    safeText: language === "bg" ? "Поръчките се обработват внимателно." : "Orders are handled carefully.",
-    prices: language === "bg" ? "Конкурентни цени" : "Competitive prices",
-    pricesText: language === "bg" ? "Актуални цени и наличности." : "Current prices and stock levels.",
+    best: isBg ? "Най-продавани" : "Best sellers",
+    popular: isBg ? "Последно добавени" : "Latest added",
+    rating: isBg ? "Най-висок рейтинг" : "Highest rating",
+    products: isBg ? "Продукти" : "Products",
+    latest: isBg ? "Нови в каталога" : "New in the catalog",
+    latestText: isBg ? "Последно добавените реални продукти от каталога." : "The latest real products added to the catalog.",
+    promotions: isBg ? "Реални промоции" : "Current promotions",
+    promotionText: isBg ? "Показваме само продукти с реално зададена отстъпка." : "Only products with an actual configured discount are shown.",
+    categories: isBg ? "Категории" : "Categories",
+    viewAll: isBg ? "Виж всички продукти" : "View all products",
+    viewProducts: isBg ? "Виж продукти" : "View products",
+    noCategoryImage: isBg ? "Няма изображение" : "No image",
+    startShopping: isBg ? "Намери подходящите продукти за дома и бизнеса" : "Find the right products for home and business",
+    startNow: isBg ? "Към каталога" : "Open catalog",
   };
 
   const steps = [
-    { title: text.register, description: text.registerText, icon: BuildingStorefrontIcon },
-    { title: text.details, description: text.detailsText, icon: CreditCardIcon },
-    { title: text.secure, description: text.secureText, icon: ShieldCheckIcon },
+    { title: isBg ? "Избери продукти" : "Choose products", description: isBg ? "Търси по име, категория, марка, цена и рейтинг." : "Search by name, category, brand, price and rating.", icon: BuildingStorefrontIcon },
+    { title: isBg ? "Провери наличността" : "Check stock", description: isBg ? "Виж актуалната наличност и цената на продукта." : "See current stock and product pricing.", icon: CheckBadgeIcon },
+    { title: isBg ? "Завърши поръчката" : "Place the order", description: isBg ? "Въведи данните за доставка и потвърди поръчката." : "Enter delivery details and confirm the order.", icon: CreditCardIcon },
   ];
 
   const serviceItems = [
-    { title: text.delivery, description: text.deliveryText, icon: TruckIcon, color: "bg-emerald-500" },
-    { title: text.freeDelivery, description: text.freeDeliveryText, icon: ArrowRightIcon, color: "bg-rose-500" },
-    { title: text.productReturn, description: text.productReturnText, icon: CheckBadgeIcon, color: "bg-yellow-400" },
-    { title: text.warranty, description: text.warrantyText, icon: ShieldCheckIcon, color: "bg-sky-500" },
-  ];
-
-  const trustItems = [
-    { title: text.clients, description: text.clientsText, icon: CheckBadgeIcon },
-    { title: text.premium, description: text.premiumText, icon: BuildingStorefrontIcon },
-    { title: text.safe, description: text.safeText, icon: ShieldCheckIcon },
-    { title: text.prices, description: text.pricesText, icon: CreditCardIcon },
-  ];
-
-  const promos = [
-    {
-      title: language === "bg" ? "Black Friday оферти" : "Black Friday offers",
-      subtitle: language === "bg" ? "До -20% на подбрани артикули" : "Up to -20% on selected items",
-      image: "https://images.unsplash.com/photo-1607082349566-187342175e2f?auto=format&fit=crop&w=900&q=80",
-    },
-    {
-      title: language === "bg" ? "Професионални препарати" : "Professional detergents",
-      subtitle: language === "bg" ? "За бизнес и офис клиенти" : "For business and office clients",
-      image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=900&q=80",
-    },
-    {
-      title: language === "bg" ? "Чистота у дома" : "Clean home",
-      subtitle: language === "bg" ? "Ежедневни продукти на склад" : "Everyday products in stock",
-      image: "https://images.unsplash.com/photo-1585421514738-01798e348b17?auto=format&fit=crop&w=900&q=80",
-    },
+    { title: isBg ? "Поръчка по телефон" : "Phone orders", description: isBg ? "Бърза връзка за наличности и заявки." : "Fast contact for stock and orders.", icon: TruckIcon, color: "bg-emerald-500" },
+    { title: isBg ? "Доставка" : "Delivery", description: isBg ? "Доставка според наличностите и адреса." : "Delivery based on stock and destination.", icon: ArrowRightIcon, color: "bg-sky-500" },
+    { title: isBg ? "Актуални наличности" : "Current stock", description: isBg ? "Каталогът използва данните от системата за наличности." : "The catalog uses current inventory data.", icon: CheckBadgeIcon, color: "bg-yellow-400" },
+    { title: isBg ? "Сигурен профил" : "Secure account", description: isBg ? "Управление на профил, поръчки и лични данни." : "Manage account, orders and personal data.", icon: ShieldCheckIcon, color: "bg-violet-500" },
   ];
 
   return (
@@ -251,176 +125,91 @@ const Home = () => {
       <HomeHeroSlider />
 
       <section className="border-b border-slate-200 bg-slate-50 py-3 transition-colors dark:border-slate-800 dark:bg-black">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-3 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-3 pb-1 sm:flex-wrap sm:justify-center sm:px-6 sm:pb-0 lg:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {[
             { key: "best" as const, label: text.best },
             { key: "popular" as const, label: text.popular },
             { key: "rating" as const, label: text.rating },
           ].map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveProductTab(tab.key)}
-              className={`rounded-full px-6 py-2 text-xs font-bold uppercase tracking-wide transition ${
-                activeProductTab === tab.key
-                  ? "bg-orange-500 text-white"
-                  : "bg-slate-800 text-white hover:bg-slate-700 dark:bg-white dark:text-black dark:hover:bg-slate-200"
-              }`}
-            >
-              {tab.label}
-            </button>
+            <button key={tab.key} type="button" onClick={() => setActiveProductTab(tab.key)} className={`min-h-10 shrink-0 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wide transition sm:px-6 ${activeProductTab === tab.key ? "bg-orange-500 text-white" : "bg-slate-800 text-white hover:bg-slate-700 dark:bg-white dark:text-black"}`}>{tab.label}</button>
           ))}
         </div>
       </section>
 
       {tabProducts.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="grid gap-5 md:grid-cols-3 lg:grid-cols-6">
-            {tabProducts.slice(0, 6).map((product) => (
-              <HomeProductTile key={product.id} product={product} language={language} />
-            ))}
+        <section className="mx-auto max-w-7xl px-3 py-7 sm:px-6 sm:py-8 lg:px-8">
+          <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+            {tabProducts.slice(0, 10).map((product) => <ProductCard key={product.id} product={product} />)}
           </div>
         </section>
       )}
 
-      <section className="relative overflow-hidden bg-slate-900 py-14 text-white">
-        <div className="absolute inset-0 bg-cover bg-center opacity-35" style={{ backgroundImage: "url(https://images.unsplash.com/photo-1583947581924-860bda6a26df?auto=format&fit=crop&w=1600&q=80)" }} />
-        <div className="absolute inset-0 bg-slate-950/55" />
-        <div className="relative mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="font-display text-3xl font-bold sm:text-4xl">
-            {text.startShopping}
-          </h2>
-          <div className="mt-10 grid gap-6 md:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] md:items-center">
+      <section className="relative overflow-hidden bg-slate-900 py-10 text-white sm:py-14">
+        <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url(https://images.unsplash.com/photo-1583947581924-860bda6a26df?auto=format&fit=crop&w=1600&q=80)" }} />
+        <div className="absolute inset-0 bg-slate-950/60" />
+        <div className="relative mx-auto max-w-7xl px-3 text-center sm:px-6 lg:px-8">
+          <h2 className="font-display text-2xl font-bold sm:text-4xl">{text.startShopping}</h2>
+          <div className="mt-7 grid gap-4 sm:mt-10 md:grid-cols-3 md:gap-6">
             {steps.map((step) => (
-              <div key={step.title} className="contents">
-                <div className="rounded-full bg-white/90 p-8 text-slate-950 shadow-xl backdrop-blur dark:bg-slate-950/90 dark:text-white">
-                  <step.icon className="mx-auto h-9 w-9 text-orange-500" />
-                  <h3 className="mt-4 text-base font-bold">{step.title}</h3>
-                  <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-300">
-                    {step.description}
-                  </p>
-                </div>
-                <ArrowRightIcon className="mx-auto hidden h-8 w-8 text-white/80 md:block" />
+              <div key={step.title} className="rounded-2xl bg-white/95 p-5 text-slate-950 shadow-xl backdrop-blur sm:p-7 dark:bg-slate-950/90 dark:text-white">
+                <step.icon className="mx-auto h-9 w-9 text-orange-500" />
+                <h3 className="mt-4 text-base font-bold">{step.title}</h3>
+                <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-300">{step.description}</p>
               </div>
             ))}
-            <Link
-              to="/products"
-              className="flex min-h-40 items-center justify-center rounded-full bg-white/90 px-8 text-sm font-bold uppercase text-orange-500 shadow-xl transition hover:bg-orange-500 hover:text-white dark:bg-slate-950/90"
-            >
-              {text.startNow}
-            </Link>
           </div>
+          <Link to="/products" className="mt-7 inline-flex min-h-12 items-center justify-center rounded-full bg-orange-500 px-7 py-3 text-sm font-bold uppercase text-white hover:bg-orange-600 sm:mt-9">{text.startNow}</Link>
         </div>
       </section>
 
-      {visibleLatestProducts.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="font-display text-3xl font-bold text-slate-950 dark:text-white">
-              {text.latest}
-            </h2>
-            <p className="mx-auto mt-3 max-w-3xl text-sm text-slate-500 dark:text-slate-300">
-              {text.latestText}
-            </p>
-          </div>
-
-          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {visibleLatestProducts.slice(0, 8).map((product) => (
-              <HomeProductTile key={product.id} product={product} language={language} />
-            ))}
-          </div>
+      {latestProducts.length > 0 && (
+        <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6 sm:py-10 lg:px-8">
+          <div className="text-center"><h2 className="font-display text-2xl font-bold text-slate-950 sm:text-3xl dark:text-white">{text.latest}</h2><p className="mx-auto mt-3 max-w-3xl text-sm text-slate-500 dark:text-slate-300">{text.latestText}</p></div>
+          <div className="mt-6 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:mt-8 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">{latestProducts.slice(0, 8).map((product) => <ProductCard key={product.id} product={product} />)}</div>
         </section>
       )}
 
       <section className="border-y border-slate-200 bg-slate-50 transition-colors dark:border-slate-800 dark:bg-black">
-        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-6 sm:px-6 md:grid-cols-4 lg:px-8">
-          {serviceItems.map((item) => (
-            <div key={item.title} className="flex items-center gap-4">
-              <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${item.color} text-white`}>
-                <item.icon className="h-7 w-7" />
-              </div>
-              <div>
-                <h3 className="font-bold uppercase text-slate-950 dark:text-white">{item.title}</h3>
-                <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-300">{item.description}</p>
-              </div>
-            </div>
-          ))}
+        <div className="mx-auto grid max-w-7xl gap-4 px-3 py-6 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
+          {serviceItems.map((item) => <div key={item.title} className="flex items-center gap-3 sm:gap-4"><div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full sm:h-14 sm:w-14 ${item.color} text-white`}><item.icon className="h-6 w-6 sm:h-7 sm:w-7" /></div><div><h3 className="text-sm font-bold uppercase text-slate-950 dark:text-white">{item.title}</h3><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-300">{item.description}</p></div></div>)}
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <h2 className="mb-5 font-display text-2xl font-bold text-slate-950 dark:text-white">
-          {text.promoTitle}
-        </h2>
-        <div className="grid gap-4 md:grid-cols-3">
-          {promos.map((promo) => (
-            <Link
-              key={promo.title}
-              to="/products"
-              className="group relative min-h-56 overflow-hidden rounded-sm bg-slate-900 text-white shadow"
-            >
-              <img
-                src={promo.image}
-                alt={promo.title}
-                className="absolute inset-0 h-full w-full object-cover opacity-75 transition duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-              <div className="absolute bottom-5 left-5 right-5">
-                <h3 className="font-display text-2xl font-bold uppercase">{promo.title}</h3>
-                <p className="mt-2 text-sm text-white/85">{promo.subtitle}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {discountedProducts.length > 0 && (
+        <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6 sm:py-10 lg:px-8">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="font-display text-2xl font-bold text-slate-950 dark:text-white">{text.promotions}</h2><p className="mt-2 text-sm text-slate-500 dark:text-slate-300">{text.promotionText}</p></div><Link to="/products" className="text-sm font-semibold text-primary-600">{text.viewAll}</Link></div>
+          <div className="mt-6 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:gap-6 lg:grid-cols-4">{discountedProducts.map((product) => <ProductCard key={product.id} product={product} />)}</div>
+        </section>
+      )}
+
+      {categories.length > 0 && (
+        <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6 sm:py-10 lg:px-8">
+          <div className="flex items-center justify-between gap-4"><h2 className="font-display text-2xl font-bold text-slate-950 dark:text-white">{text.categories}</h2><Link to="/products" className="text-sm font-semibold text-primary-600 hover:text-primary-700">{text.viewAll}</Link></div>
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
+            {categories.slice(0, 10).map((category) => {
+              const image = category.imageUri ?? category.imageURI ?? "";
+              return (
+                <Link key={category.id} to={`/products?category=${encodeURIComponent(category.id)}`} className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-black">
+                  <div className="aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-900">{image ? <img src={image} alt={category.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center p-2 text-center text-xs text-slate-400">{text.noCategoryImage}</div>}</div>
+                  <div className="p-3 sm:p-4"><p className="line-clamp-2 text-sm font-bold text-slate-950 dark:text-white sm:text-base">{category.name}</p><p className="mt-1 text-xs text-slate-500 dark:text-slate-300">{text.viewProducts}</p></div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="border-t border-slate-200 bg-white transition-colors dark:border-slate-800 dark:bg-black">
-        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 md:grid-cols-4 lg:px-8">
-          {trustItems.map((item) => (
-            <div key={item.title} className="text-center">
-              <item.icon className="mx-auto h-12 w-12 text-slate-600 dark:text-white" />
-              <h3 className="mt-4 font-display text-xl font-bold text-slate-950 dark:text-white">
-                {item.title}
-              </h3>
-              <p className="mx-auto mt-2 max-w-xs text-xs leading-5 text-slate-500 dark:text-slate-300">
-                {item.description}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="font-display text-2xl font-bold text-slate-950 dark:text-white">
-            {language === "bg" ? "Категории" : "Categories"}
-          </h2>
-          <Link to="/products" className="text-sm font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-300">
-            {text.viewAll}
-          </Link>
-        </div>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {visibleCategories.slice(0, 10).map((category) => (
-            <Link
-              key={category.id}
-              to={`/products?category=${encodeURIComponent(category.id)}`}
-              className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-black"
-            >
-              <div className="aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-900">
-                <img
-                  src={category.imageUri ?? category.imageURI ?? fallbackCategories[0].imageUri}
-                  alt={category.name}
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                />
-              </div>
-              <div className="p-4">
-                <p className="font-bold text-slate-950 dark:text-white">{category.name}</p>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-300">
-                  {language === "bg" ? "Виж продукти" : "View products"}
-                </p>
-              </div>
-            </Link>
-          ))}
+        <div className="mx-auto grid max-w-7xl gap-5 px-3 py-8 text-center sm:grid-cols-2 sm:px-6 sm:py-10 lg:grid-cols-4 lg:px-8">
+          {[
+            [isBg ? "Коректно обслужване" : "Reliable service", isBg ? "Ясна информация за продукти и поръчки." : "Clear information about products and orders.", CheckBadgeIcon],
+            [isBg ? "Реални продукти" : "Real products", isBg ? "Каталогът идва от базата данни, без фиктивни артикули." : "Catalog data comes from the database without fake items.", BuildingStorefrontIcon],
+            [isBg ? "Сигурно пазаруване" : "Secure shopping", isBg ? "Профил и поръчки в една система." : "Account and orders in one system.", ShieldCheckIcon],
+            [isBg ? "Актуални цени" : "Current prices", isBg ? "Цени и наличности от текущите продуктови данни." : "Prices and stock from current product data.", CreditCardIcon],
+          ].map(([title, description, Icon]) => {
+            const ItemIcon = Icon as typeof CheckBadgeIcon;
+            return <div key={String(title)}><ItemIcon className="mx-auto h-11 w-11 text-slate-600 dark:text-white sm:h-12 sm:w-12" /><h3 className="mt-4 font-display text-lg font-bold text-slate-950 dark:text-white sm:text-xl">{String(title)}</h3><p className="mx-auto mt-2 max-w-xs text-xs leading-5 text-slate-500 dark:text-slate-300">{String(description)}</p></div>;
+          })}
         </div>
       </section>
     </div>
