@@ -49,7 +49,7 @@ const ProductSearchEnhancer = () => {
         if (!form || !wrapper) return;
 
         input.dataset.productSearchEnhanced = "true";
-        input.placeholder = isBg ? "Търси продукт..." : "Search product...";
+        input.placeholder = isBg ? "ТЪРСЕНЕ НА ПРОДУКТ" : "PRODUCT SEARCH";
         input.setAttribute("aria-label", isBg ? "Търсене на продукт" : "Product search");
 
         const mount = document.createElement("div");
