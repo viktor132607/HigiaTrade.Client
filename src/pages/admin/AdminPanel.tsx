@@ -24,10 +24,10 @@ const AdminPanel = ({ children }: AdminPanelProps) => {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-slate-100">
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-[1600px] lg:grid-cols-[280px_1fr]">
-        <aside className="border-b border-slate-200 bg-slate-950 px-4 py-6 text-slate-100 sm:px-6 sm:py-8 lg:border-b-0 lg:border-r">
-          <nav className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+    <div className="admin-shell min-h-[calc(100vh-4rem)] bg-slate-100">
+      <div className="mx-auto min-h-[calc(100vh-4rem)] max-w-[1600px] lg:grid lg:grid-cols-[260px_minmax(0,1fr)]">
+        <aside className="hidden border-r border-slate-800 bg-slate-950 px-5 py-6 text-slate-100 lg:block">
+          <nav className="sticky top-24 grid gap-2">
             {navigation.map((item) => (
               <NavLink
                 key={item.to}
@@ -41,17 +41,39 @@ const AdminPanel = ({ children }: AdminPanelProps) => {
                   }`
                 }
               >
-                <item.icon className="h-5 w-5" />
+                <item.icon className="h-5 w-5 flex-none" />
                 {item.label}
               </NavLink>
             ))}
           </nav>
         </aside>
 
-        <main className="px-4 py-6 sm:px-6 lg:px-8">
+        <main className="min-w-0 px-3 py-4 pb-24 sm:px-5 sm:py-6 lg:px-8 lg:py-8 lg:pb-8">
           {children ?? <Outlet />}
         </main>
       </div>
+
+      <nav className="admin-mobile-nav fixed inset-x-0 bottom-0 z-[55] border-t border-slate-800 bg-slate-950/95 px-1 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1.5 text-slate-100 shadow-[0_-12px_35px_rgba(15,23,42,0.25)] backdrop-blur lg:hidden">
+        <div className="mx-auto grid max-w-lg grid-cols-5 gap-1">
+          {navigation.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) =>
+                `flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[10px] font-medium leading-none transition ${
+                  isActive
+                    ? "bg-white text-slate-950"
+                    : "text-slate-300 active:bg-white/10 active:text-white"
+                }`
+              }
+            >
+              <item.icon className="h-5 w-5 flex-none" />
+              <span className="max-w-full truncate">{item.label}</span>
+            </NavLink>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 };
