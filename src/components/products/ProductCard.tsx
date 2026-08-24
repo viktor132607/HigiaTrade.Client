@@ -18,6 +18,7 @@ interface Product {
   rating?: number;
   discountPercentage?: number;
   discountedPrice?: number;
+  isNewProduct?: boolean;
 }
 
 interface ProductCardProps {
@@ -94,11 +95,18 @@ const ProductCard = ({ product }: ProductCardProps) => {
             alt={product.title}
             className="h-60 w-full object-cover transition duration-500 group-hover:scale-105 sm:h-64"
           />
-          {product.discountPercentage ? (
-            <span className="absolute left-4 top-4 rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
-              -{product.discountPercentage}%
-            </span>
-          ) : null}
+          <div className="absolute left-4 top-4 flex flex-col items-start gap-2">
+            {product.isNewProduct ? (
+              <span className="rounded-full bg-[#18b99f] px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
+                {isBg ? "Ново" : "New"}
+              </span>
+            ) : null}
+            {product.discountPercentage ? (
+              <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white">
+                -{product.discountPercentage}%
+              </span>
+            ) : null}
+          </div>
           <span
             className={`absolute right-4 top-4 rounded-full px-3 py-1 text-xs font-semibold ${
               product.quantity === 0
