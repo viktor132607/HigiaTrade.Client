@@ -56,14 +56,14 @@ const AdminUsers = () => {
       });
 
       if (!response.ok) {
-        throw new Error("We could not load customers.");
+        throw new Error('Клиентите не можаха да бъдат заредени.');
       }
 
       const data = await response.json();
       setUsers(data);
     } catch (err) {
-      console.error("Error loading customers:", err);
-      setError("We could not load customers.");
+      console.error('Грешка при зареждане на клиентите:', err);
+      setError('Клиентите не можаха да бъдат заредени.');
     }
   };
 
@@ -93,7 +93,7 @@ const AdminUsers = () => {
       );
 
       if (!response.ok) {
-        throw new Error('We could not load associated orders.');
+        throw new Error('Свързаните поръчки не можаха да бъдат заредени.');
       }
 
       const data = await response.json();
@@ -113,9 +113,9 @@ const AdminUsers = () => {
 
       setPreviewOrders(uniqueOrders);
     } catch (err) {
-      console.error('Error loading associated orders:', err);
+      console.error('Грешка при зареждане на свързаните поръчки:', err);
       setPreviewOrdersError(
-        err instanceof Error ? err.message : 'We could not load associated orders.'
+        err instanceof Error ? err.message : 'Свързаните поръчки не можаха да бъдат заредени.'
       );
     } finally {
       setPreviewOrdersLoading(false);
@@ -153,39 +153,39 @@ const AdminUsers = () => {
     const errors: ValidationErrors = {};
 
     if (!editFormData.names.trim()) {
-      errors.names = "Customer name is required.";
+      errors.names = 'Името на клиента е задължително.';
     } else if (editFormData.names.length < 2) {
-      errors.names = "Use at least 2 characters.";
+      errors.names = 'Използвай поне 2 символа.';
     } else if (editFormData.names.length > 50) {
-      errors.names = "Use 50 characters or fewer.";
+      errors.names = 'Използвай до 50 символа.';
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!editFormData.email.trim()) {
-      errors.email = "Email is required.";
+      errors.email = 'Имейлът е задължителен.';
     } else if (!emailRegex.test(editFormData.email)) {
-      errors.email = "Enter a valid email address.";
+      errors.email = 'Въведи валиден имейл адрес.';
     } else if (users.some(user =>
       user.email.toLowerCase() === editFormData.email.toLowerCase() &&
       user.id !== selectedUser?.id
     )) {
-      errors.email = "A customer with this email already exists.";
+      errors.email = 'Клиент с този имейл вече съществува.';
     }
 
     if (editFormData.phone.trim()) {
       const phoneRegex = /^[0-9]{10}$/;
       if (!phoneRegex.test(editFormData.phone.trim())) {
-        errors.phone = "Enter a valid 10-digit phone number.";
+        errors.phone = 'Въведи валиден 10-цифрен телефонен номер.';
       }
     }
 
     if (!selectedUser) {
       if (!editFormData.newPassword) {
-        errors.newPassword = "Password is required for new customers.";
+        errors.newPassword = 'Паролата е задължителна при добавяне на нов клиент.';
       } else if (editFormData.newPassword.length < 6) {
-        errors.newPassword = "Use at least 6 characters.";
+        errors.newPassword = 'Използвай поне 6 символа.';
       } else if (editFormData.newPassword.length > 100) {
-        errors.newPassword = "Use 100 characters or fewer.";
+        errors.newPassword = 'Използвай до 100 символа.';
       }
     }
 
@@ -225,7 +225,7 @@ const AdminUsers = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || "We could not save the customer.");
+        throw new Error(errorData?.message || 'Клиентът не можа да бъде запазен.');
       }
 
       await fetchUsers();
@@ -239,8 +239,8 @@ const AdminUsers = () => {
       setValidationErrors({});
       setSelectedUser(null);
     } catch (err) {
-      console.error("Error saving customer:", err);
-      setError(err instanceof Error ? err.message : "We could not save the customer.");
+      console.error('Грешка при запазване на клиента:', err);
+      setError(err instanceof Error ? err.message : 'Клиентът не можа да бъде запазен.');
     }
   };
 
@@ -261,15 +261,15 @@ const AdminUsers = () => {
       });
 
       if (!response.ok) {
-        throw new Error("We could not delete the customer.");
+        throw new Error('Клиентът не можа да бъде изтрит.');
       }
 
       await fetchUsers();
       setIsDeleteModalOpen(false);
       setSelectedUser(null);
     } catch (err) {
-      console.error("Error deleting customer:", err);
-      setError("We could not delete the customer.");
+      console.error('Грешка при изтриване на клиента:', err);
+      setError('Клиентът не можа да бъде изтрит.');
     }
   };
 
@@ -293,7 +293,7 @@ const AdminUsers = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || "We could not update the customer role.");
+        throw new Error(errorData?.message || 'Ролята на клиента не можа да бъде променена.');
       }
 
       await fetchUsers();
@@ -304,15 +304,15 @@ const AdminUsers = () => {
         }
       }
     } catch (err) {
-      console.error("Error changing role:", err);
-      setError(err instanceof Error ? err.message : "We could not update the customer role.");
+      console.error('Грешка при промяна на ролята:', err);
+      setError(err instanceof Error ? err.message : 'Ролята на клиента не можа да бъде променена.');
     }
   };
 
   return (
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Manage customers</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Управление на клиенти</h1>
         <button
           onClick={() => {
             setSelectedUser(null);
@@ -327,7 +327,7 @@ const AdminUsers = () => {
           className="flex items-center px-4 py-2 bg-primary-500 text-white rounded-md hover:text-gray-900 hover:bg-primary-600 transition-colors"
         >
           <PlusIcon className="w-5 h-5 mr-2" />
-          Add customer
+          Добави клиент
         </button>
       </div>
 
@@ -343,19 +343,19 @@ const AdminUsers = () => {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Name
+                Име
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Email
+                Имейл
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Phone
+                Телефон
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Role
+                Роля
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
+                Действия
               </th>
             </tr>
           </thead>
@@ -369,7 +369,7 @@ const AdminUsers = () => {
                   {user.email}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {user.phone || "Not provided"}
+                  {user.phone || 'Не е посочен'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <button
@@ -378,7 +378,7 @@ const AdminUsers = () => {
                       user.role === 'Admin' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'
                     } hover:bg-opacity-75 transition-colors`}
                   >
-                    {user.role === "Admin" ? "Admin" : "Customer"}
+                    {user.role === 'Admin' ? 'Админ' : 'Клиент'}
                   </button>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -386,8 +386,8 @@ const AdminUsers = () => {
                     type="button"
                     onClick={() => handlePreviewUser(user)}
                     className="text-white bg-blue-600 hover:bg-blue-700 p-1.5 rounded-md mr-2"
-                    title="More info"
-                    aria-label={`More info for ${user.names}`}
+                    title="Повече информация"
+                    aria-label={`Повече информация за ${user.names}`}
                   >
                     <InformationCircleIcon className="w-5 h-5" />
                   </button>
@@ -396,14 +396,14 @@ const AdminUsers = () => {
                       handleViewUser(user);
                     }}
                     className="text-white bg-yellow-600 hover:bg-yellow-700 p-1.5 rounded-md mr-2"
-                    title="Edit"
+                    title="Редактирай"
                   >
                     <PencilIcon className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => handleDeleteClick(user)}
                     className="text-white bg-red-600 hover:bg-red-700 p-1.5 rounded-md"
-                    title="Delete"
+                    title="Изтрий"
                   >
                     <TrashIcon className="w-5 h-5" />
                   </button>
@@ -423,23 +423,23 @@ const AdminUsers = () => {
           }}
         >
           <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold mb-4">Customer info</h2>
+            <h2 className="text-lg sm:text-xl font-bold mb-4">Информация за клиента</h2>
             <div className="space-y-3 text-sm">
               <div>
-                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Name</div>
+                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Име</div>
                 <div className="mt-1 text-gray-900">{previewUser.names}</div>
               </div>
               <div>
-                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Email</div>
+                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Имейл</div>
                 <div className="mt-1 break-all text-gray-900">{previewUser.email}</div>
               </div>
               <div>
-                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Phone</div>
-                <div className="mt-1 text-gray-900">{previewUser.phone || 'Not provided'}</div>
+                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Телефон</div>
+                <div className="mt-1 text-gray-900">{previewUser.phone || 'Не е посочен'}</div>
               </div>
               <div>
-                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Role</div>
-                <div className="mt-1 text-gray-900">{previewUser.role === 'Admin' ? 'Admin' : 'Customer'}</div>
+                <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Роля</div>
+                <div className="mt-1 text-gray-900">{previewUser.role === 'Admin' ? 'Админ' : 'Клиент'}</div>
               </div>
               <div>
                 <div className="text-xs font-medium uppercase tracking-wide text-gray-500">ID</div>
@@ -447,14 +447,14 @@ const AdminUsers = () => {
               </div>
               <div className="border-t border-gray-200 pt-3">
                 <div className="text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Associated orders
+                  Свързани поръчки
                 </div>
                 {previewOrdersLoading ? (
-                  <div className="mt-2 text-gray-500">Loading orders...</div>
+                  <div className="mt-2 text-gray-500">Зареждане на поръчките...</div>
                 ) : previewOrdersError ? (
                   <div className="mt-2 text-red-600">{previewOrdersError}</div>
                 ) : previewOrders.length === 0 ? (
-                  <div className="mt-2 text-gray-500">No associated orders.</div>
+                  <div className="mt-2 text-gray-500">Няма свързани поръчки.</div>
                 ) : (
                   <div className="mt-2 space-y-2">
                     {previewOrders.map((order) => (
@@ -462,7 +462,7 @@ const AdminUsers = () => {
                         key={order.id}
                         to={`/admin/orders?orderId=${encodeURIComponent(order.id)}`}
                         className="block break-all rounded-md border border-blue-100 bg-blue-50 px-3 py-2 font-mono text-xs text-blue-700 hover:border-blue-300 hover:bg-blue-100"
-                        title={`Open order ${order.id}`}
+                        title={`Отвори поръчка ${order.id}`}
                       >
                         {order.id}
                       </Link>
@@ -477,7 +477,7 @@ const AdminUsers = () => {
                 onClick={closePreviewModal}
                 className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
               >
-                Close
+                Затвори
               </button>
             </div>
           </div>
@@ -488,13 +488,13 @@ const AdminUsers = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4">
           <div className="bg-white rounded-lg p-3 sm:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">
-              {selectedUser ? "Edit customer" : "Add customer"}
+              {selectedUser ? 'Редактирай клиент' : 'Добави клиент'}
             </h2>
             <div className="space-y-3 sm:space-y-4">
               <form onSubmit={handleUpdateUser} className="space-y-3 sm:space-y-4">
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700">
-                    Name
+                    Име
                   </label>
                   <input
                     type="text"
@@ -512,7 +512,7 @@ const AdminUsers = () => {
 
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700">
-                    Email
+                    Имейл
                   </label>
                   <input
                     type="email"
@@ -530,7 +530,7 @@ const AdminUsers = () => {
 
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700">
-                    Phone
+                    Телефон
                   </label>
                   <input
                     type="tel"
@@ -550,7 +550,7 @@ const AdminUsers = () => {
                 {!selectedUser && (
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-700">
-                      Password
+                      Парола
                     </label>
                     <input
                       type="password"
@@ -582,13 +582,13 @@ const AdminUsers = () => {
                     }}
                     className="px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 text-xs sm:text-sm"
                   >
-                    Close
+                    Затвори
                   </button>
                   <button
                     type="submit"
                     className="px-3 py-1.5 sm:px-4 sm:py-2 bg-primary-500 text-white rounded-md hover:text-gray-900 hover:bg-primary-600 text-xs sm:text-sm"
                   >
-                    {selectedUser ? "Save" : "Add"}
+                    {selectedUser ? 'Запази' : 'Добави'}
                   </button>
                 </div>
               </form>
@@ -600,22 +600,22 @@ const AdminUsers = () => {
       {isDeleteModalOpen && selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4">
           <div className="bg-white rounded-lg p-3 sm:p-6 max-w-md w-full">
-            <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Delete customer</h2>
+            <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Изтриване на клиент</h2>
             <p className="mb-4 sm:mb-6 text-gray-600 text-xs sm:text-sm">
-              Delete the customer "{selectedUser.names}"?
+              Да се изтрие ли клиентът „{selectedUser.names}“?
             </p>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
               <button
                 onClick={() => setIsDeleteModalOpen(false)}
                 className="px-3 py-1.5 sm:px-4 sm:py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 text-xs sm:text-sm"
               >
-                Cancel
+                Отказ
               </button>
               <button
                 onClick={handleDeleteConfirm}
                 className="px-3 py-1.5 sm:px-4 sm:py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-xs sm:text-sm"
               >
-                Delete
+                Изтрий
               </button>
             </div>
           </div>
