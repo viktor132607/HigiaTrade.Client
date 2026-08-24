@@ -160,6 +160,9 @@ const Contact = () => {
               ? "Изпратете запитване за продукти, наличности, поръчки или бизнес доставки."
               : "Send an enquiry about products, availability, orders or business deliveries."}
           </p>
+          <p className="mx-auto mt-3 max-w-3xl text-sm leading-6 text-white/70 sm:text-base">
+            {isBg ? CONTACT_AREA_BG : CONTACT_AREA_EN}
+          </p>
         </div>
       </section>
 
@@ -209,9 +212,6 @@ const Contact = () => {
             >
               {isBg ? CONTACT_ADDRESS_BG : CONTACT_ADDRESS_EN}
             </a>
-            <p className="mt-3 text-xs leading-5 text-[#6f7f8c] dark:text-white/60">
-              {isBg ? CONTACT_AREA_BG : CONTACT_AREA_EN}
-            </p>
           </article>
 
           <article className={cardClass}>
@@ -232,11 +232,6 @@ const Contact = () => {
             <h2 className="text-2xl font-bold tracking-tight">
               {isBg ? "Форма за контакт" : "Contact form"}
             </h2>
-            <p className="mt-2 text-sm leading-6 text-[#4b5d6d] dark:text-white/70">
-              {isBg
-                ? "Попълнете формата и ще се свържем с вас възможно най-скоро."
-                : "Complete the form and we will contact you as soon as possible."}
-            </p>
 
             <form className="mt-7 space-y-5" onSubmit={handleSubmit}>
               <div className="grid gap-5 sm:grid-cols-2">
@@ -365,9 +360,6 @@ const Contact = () => {
             </h2>
             <p className="mt-2 text-sm leading-6 text-[#4b5d6d] dark:text-white/70">
               {isBg ? CONTACT_ADDRESS_BG : CONTACT_ADDRESS_EN}
-            </p>
-            <p className="mt-1 text-xs leading-5 text-[#6f7f8c] dark:text-white/60">
-              {isBg ? CONTACT_AREA_BG : CONTACT_AREA_EN}
             </p>
 
             <div className="mt-6 overflow-hidden border border-[#d6dde3] dark:border-white/20">
