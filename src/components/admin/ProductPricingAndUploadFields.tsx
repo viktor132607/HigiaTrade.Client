@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 
 type ProductImage = {
   id?: string | null;
@@ -38,6 +38,8 @@ const ProductPricingAndUploadFields = ({
     ),
   ];
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [retailPrice, setRetailPrice] = useState(
     defaultRetailPrice && defaultRetailPrice > 0
       ? defaultRetailPrice.toString()
@@ -56,6 +58,8 @@ const ProductPricingAndUploadFields = ({
   const [uploadError, setUploadError] = useState("");
   const [draggedImageIndex, setDraggedImageIndex] = useState<number | null>(null);
   const [dragOverImageIndex, setDragOverImageIndex] = useState<number | null>(null);
+  const [mobileOrdering, setMobileOrdering] = useState(false);
+  const [mobileOrderSelection, setMobileOrderSelection] = useState<string[]>([]);
 
   const retailBreakdown = useMemo(() => {
     const source = retailPrice.trim() !== "" ? retailPrice : regularPrice;
@@ -114,16 +118,49 @@ const ProductPricingAndUploadFields = ({
     return next;
   };
 
-  const moveUploadedImage = (index: number, direction: -1 | 1) => {
-    const target = index + direction;
-    if (target < 0 || target >= uploadedImages.length) return;
-    notifyImagesChange(moveItem(uploadedImages, index, target));
-  };
-
   const removeUploadedImage = (index: number) => {
+    const image = uploadedImages[index];
+    setMobileOrderSelection((previous) =>
+      previous.filter((uri) => uri !== image?.uri)
+    );
     notifyImagesChange(
       uploadedImages.filter((_, imageIndex) => imageIndex !== index)
     );
+  };
+
+  const toggleMobileOrderSelection = (image: ProductImage) => {
+    if (!mobileOrdering) return;
+
+    setMobileOrderSelection((previous) => {
+      if (previous.includes(image.uri)) {
+        return previous.filter((uri) => uri !== image.uri);
+      }
+
+      return [...previous, image.uri];
+    });
+  };
+
+  const applyMobileOrder = () => {
+    if (mobileOrderSelection.length === 0) {
+      setMobileOrdering(false);
+      return;
+    }
+
+    const selectedImages = mobileOrderSelection
+      .map((uri) => uploadedImages.find((image) => image.uri === uri))
+      .filter((image): image is ProductImage => Boolean(image));
+    const remainingImages = uploadedImages.filter(
+      (image) => !mobileOrderSelection.includes(image.uri)
+    );
+
+    notifyImagesChange([...selectedImages, ...remainingImages]);
+    setMobileOrderSelection([]);
+    setMobileOrdering(false);
+  };
+
+  const cancelMobileOrder = () => {
+    setMobileOrderSelection([]);
+    setMobileOrdering(false);
   };
 
   const uploadImages = async (files: File[]) => {
@@ -171,7 +208,17 @@ const ProductPricingAndUploadFields = ({
         uploaded.push({ uri: String(data.url) });
       }
 
-      notifyImagesChange([...uploadedImages, ...uploaded]);
+      const nextImages = [...uploadedImages, ...uploaded];
+      notifyImagesChange(nextImages);
+
+      if (
+        typeof window !== "undefined" &&
+        window.matchMedia("(max-width: 639px)").matches &&
+        nextImages.length > 1
+      ) {
+        setMobileOrderSelection([]);
+        setMobileOrdering(true);
+      }
     } catch (error) {
       setUploadError(
         error instanceof Error ? error.message : "Снимките не бяха качени."
@@ -273,11 +320,13 @@ const ProductPricingAndUploadFields = ({
         <label className="block text-sm font-medium text-gray-700">
           Снимки на продукта
         </label>
+
         <input
+          ref={fileInputRef}
           type="file"
           multiple
           disabled={uploading}
-          accept="image/jpeg,image/png,image/webp,image/gif"
+          accept="image/*"
           onChange={(event) => {
             const input = event.currentTarget;
             const files = Array.from(input.files ?? []);
@@ -285,48 +334,102 @@ const ProductPricingAndUploadFields = ({
             setUploadError("");
             void uploadImages(files);
           }}
-          className="mt-1 block min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm file:mr-3 file:rounded-md file:border-0 file:bg-gray-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-60"
+          className="hidden"
         />
+
+        <button
+          type="button"
+          disabled={uploading}
+          onClick={() => fileInputRef.current?.click()}
+          className="mt-1 flex min-h-12 w-full items-center justify-center rounded-lg border-2 border-dashed border-slate-400 bg-white px-4 py-3 text-sm font-semibold text-gray-800 transition hover:border-[#18b99f] hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {uploading ? "Качване..." : "Избери снимки от галерията"}
+        </button>
+
         <p className="mt-1 text-xs leading-5 text-gray-500">
-          JPEG, PNG, WEBP или GIF, до 10 MB на снимка. Снимките се качват автоматично веднага след избора.
+          До 10 MB на снимка. На телефон ще се отвори системната галерия/избор на снимки и файловете се качват веднага след избора.
         </p>
-        {uploading && (
-          <p className="mt-2 text-sm font-medium text-[#149f8a]">Качване...</p>
+
+        {uploadedImages.length > 1 && !mobileOrdering && (
+          <button
+            type="button"
+            onClick={() => {
+              setMobileOrderSelection([]);
+              setMobileOrdering(true);
+            }}
+            className="mt-3 w-full rounded-md border border-[#18b99f] px-3 py-2 text-sm font-semibold text-[#138b78] sm:hidden"
+          >
+            Подреди снимките чрез избор 1, 2, 3...
+          </button>
+        )}
+
+        {mobileOrdering && (
+          <div className="mt-3 rounded-lg border border-[#18b99f]/40 bg-emerald-50 p-3 sm:hidden">
+            <div className="text-sm font-semibold text-gray-900">
+              Натискай снимките в желания ред: 1, 2, 3...
+            </div>
+            <div className="mt-1 text-xs text-gray-600">
+              Номерът върху снимката показва избраната позиция.
+            </div>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={cancelMobileOrder}
+                className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
+              >
+                Отказ
+              </button>
+              <button
+                type="button"
+                onClick={applyMobileOrder}
+                disabled={mobileOrderSelection.length === 0}
+                className="flex-1 rounded-md bg-[#18b99f] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                Готово
+              </button>
+            </div>
+          </div>
         )}
 
         {uploadedImages.length > 0 && (
           <div className="mt-4">
-            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
-              Качени снимки — хвани карта и я пусни върху желаното място
+            <div className="mb-2 hidden text-xs font-medium uppercase tracking-wide text-gray-500 sm:block">
+              Качени снимки — плъзни карта върху желаното място
             </div>
-            <div className="grid grid-cols-1 gap-3 min-[390px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
               {uploadedImages.map((image, index) => {
                 const isMain = image.uri === mainImageUri;
                 const isDragging = draggedImageIndex === index;
                 const isDropTarget =
                   dragOverImageIndex === index && draggedImageIndex !== index;
+                const mobileRank = mobileOrderSelection.indexOf(image.uri) + 1;
 
                 return (
                   <div
                     key={`${image.uri}-${index}`}
-                    draggable
+                    draggable={!mobileOrdering}
+                    onClick={() => toggleMobileOrderSelection(image)}
                     onDragStart={(event) => {
+                      if (mobileOrdering) return;
                       setDraggedImageIndex(index);
                       setDragOverImageIndex(index);
                       event.dataTransfer.effectAllowed = "move";
                       event.dataTransfer.setData("text/plain", String(index));
                     }}
                     onDragEnter={(event) => {
+                      if (mobileOrdering) return;
                       event.preventDefault();
                       if (draggedImageIndex !== null) {
                         setDragOverImageIndex(index);
                       }
                     }}
                     onDragOver={(event) => {
+                      if (mobileOrdering) return;
                       event.preventDefault();
                       event.dataTransfer.dropEffect = "move";
                     }}
                     onDrop={(event) => {
+                      if (mobileOrdering) return;
                       event.preventDefault();
 
                       if (
@@ -349,6 +452,8 @@ const ProductPricingAndUploadFields = ({
                       setDragOverImageIndex(null);
                     }}
                     className={`relative overflow-hidden rounded-md border bg-white shadow-sm transition-all duration-150 sm:cursor-grab sm:active:cursor-grabbing ${
+                      mobileOrdering ? "cursor-pointer" : ""
+                    } ${
                       isMain
                         ? "border-[#18b99f] ring-2 ring-[#18b99f]/20"
                         : "border-gray-300"
@@ -359,31 +464,37 @@ const ProductPricingAndUploadFields = ({
                     } ${isDragging ? "opacity-45" : "opacity-100"}`}
                   >
                     {isDropTarget && (
-                      <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-emerald-50/75">
+                      <div className="pointer-events-none absolute inset-0 z-20 hidden items-center justify-center bg-emerald-50/75 sm:flex">
                         <span className="rounded-md bg-[#18b99f] px-3 py-1.5 text-xs font-semibold text-white shadow">
                           Пусни тук
                         </span>
                       </div>
                     )}
 
-                    <div className="flex select-none items-center justify-between border-b border-gray-200 bg-gray-50 px-2 py-1.5 text-xs text-gray-600">
-                      <span className="font-semibold text-gray-700">
-                        ☰ Плъзни за подреждане
-                      </span>
-                      <span className="rounded-full bg-gray-200 px-2 py-0.5 font-semibold text-gray-700">
-                        {index + 1}
-                      </span>
+                    <div className="absolute left-2 top-2 z-10 flex h-7 min-w-7 items-center justify-center rounded-full bg-black/75 px-2 text-xs font-bold text-white shadow">
+                      {mobileOrdering
+                        ? mobileRank > 0
+                          ? mobileRank
+                          : ""
+                        : index + 1}
+                    </div>
+
+                    <div className="hidden select-none items-center justify-center border-b border-gray-200 bg-gray-50 px-2 py-1.5 text-xs font-semibold text-gray-700 sm:flex">
+                      ☰ Плъзни за подреждане
                     </div>
 
                     <img
                       src={image.uri}
                       alt={`Снимка ${index + 1}`}
                       draggable={false}
-                      className="h-40 w-full select-none object-cover sm:h-32"
+                      className="aspect-square w-full select-none object-cover sm:h-32 sm:aspect-auto"
                     />
 
-                    <div className="flex items-center justify-between gap-2 border-t border-gray-200 px-2 py-2">
-                      <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-medium text-gray-800">
+                    <div
+                      className="flex items-center justify-between gap-2 border-t border-gray-200 px-2 py-2"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <label className="flex min-h-10 cursor-pointer items-center gap-2 text-xs font-medium text-gray-800 sm:text-sm">
                         <input
                           type="radio"
                           name="mainProductImage"
@@ -397,31 +508,10 @@ const ProductPricingAndUploadFields = ({
                       <button
                         type="button"
                         onClick={() => removeUploadedImage(index)}
-                        className="min-h-11 min-w-11 rounded px-2 text-red-600 hover:bg-red-50"
+                        className="min-h-10 min-w-10 rounded px-2 text-red-600 hover:bg-red-50"
                         title="Премахни снимката"
                       >
                         ×
-                      </button>
-                    </div>
-
-                    <div className="flex gap-2 px-2 pb-2">
-                      <button
-                        type="button"
-                        onClick={() => moveUploadedImage(index, -1)}
-                        disabled={index === 0}
-                        className="min-h-11 flex-1 rounded border border-gray-300 text-sm disabled:opacity-40"
-                        aria-label="Премести снимката наляво"
-                      >
-                        ←
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moveUploadedImage(index, 1)}
-                        disabled={index === uploadedImages.length - 1}
-                        className="min-h-11 flex-1 rounded border border-gray-300 text-sm disabled:opacity-40"
-                        aria-label="Премести снимката надясно"
-                      >
-                        →
                       </button>
                     </div>
                   </div>
