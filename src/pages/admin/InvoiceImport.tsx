@@ -46,7 +46,6 @@ const InvoiceImport = () => {
   const progressTimerRef = useRef<number | null>(null);
 
   const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState("");
   const [extracting, setExtracting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -55,37 +54,30 @@ const InvoiceImport = () => {
   const [result, setResult] = useState<ExtractResponse | null>(null);
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [rows, setRows] = useState<EditableItem[]>([]);
-  const [confirmedRows, setConfirmedRows] = useState<Set<number>>(new Set());
+  const [confirmedNames, setConfirmedNames] = useState<Set<number>>(new Set());
+  const [confirmedQuantities, setConfirmedQuantities] = useState<Set<number>>(new Set());
 
   const text = {
     title: isBg ? "Импорт от фактура" : "Invoice import",
-    subtitle: isBg ? "Качи фактура и провери всеки разчетен ред преди запис." : "Upload an invoice and verify every extracted row before saving.",
     choose: isBg ? "Избери файл" : "Choose file",
     analyze: isBg ? "Разчети фактурата" : "Read invoice",
     analyzing: isBg ? "Разчитане..." : "Reading...",
     invoiceNo: isBg ? "Фактура №" : "Invoice no.",
     date: isBg ? "Дата" : "Date",
-    items: isBg ? "Артикули" : "Items",
-    invoiceName: isBg ? "Ред от фактурата" : "Invoice row",
-    matched: isBg ? "Артикул в HygiaTrade" : "HygiaTrade product",
-    quantity: isBg ? "Брой" : "Qty",
-    confirm: isBg ? "Потвърден" : "Confirmed",
+    name: isBg ? "Име" : "Name",
+    quantity: isBg ? "Количество" : "Quantity",
+    confirmName: isBg ? "Потвърди име" : "Confirm name",
+    confirmQty: isBg ? "Потвърди количество" : "Confirm quantity",
     unmatched: isBg ? "Неразпознат продукт" : "Unmatched product",
-    import: isBg ? "Потвърди и добави в наличности" : "Confirm and add to stock",
+    import: isBg ? "Добави в наличности" : "Add to stock",
     importing: isBg ? "Добавяне..." : "Importing...",
     close: isBg ? "Затвори" : "Close",
-    review: isBg ? "Проверка на разчитането" : "OCR verification",
+    review: isBg ? "Проверка" : "Verification",
   };
 
-  useEffect(() => {
-    if (!file) {
-      setPreviewUrl("");
-      return;
-    }
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
+  useEffect(() => () => {
+    if (progressTimerRef.current) window.clearInterval(progressTimerRef.current);
+  }, []);
 
   useEffect(() => {
     if (!reviewOpen) return;
@@ -94,33 +86,48 @@ const InvoiceImport = () => {
     return () => { document.body.style.overflow = previous; };
   }, [reviewOpen]);
 
-  useEffect(() => () => {
-    if (progressTimerRef.current) window.clearInterval(progressTimerRef.current);
-  }, []);
-
-  const validRows = useMemo(() => rows.filter((row) => {
-    const qty = Number(row.editableQuantity);
-    return Boolean(row.selectedProductId) && Number.isInteger(qty) && qty > 0;
-  }), [rows]);
-
-  const allValidRowsConfirmed = useMemo(() => {
-    const validIndexes = rows.map((row, index) => ({ row, index })).filter(({ row }) => {
+  const validRowsWithIndexes = useMemo(() => rows
+    .map((row, index) => ({ row, index }))
+    .filter(({ row }) => {
       const qty = Number(row.editableQuantity);
       return Boolean(row.selectedProductId) && Number.isInteger(qty) && qty > 0;
-    }).map(({ index }) => index);
-    return validIndexes.length > 0 && validIndexes.every((index) => confirmedRows.has(index));
-  }, [rows, confirmedRows]);
+    }), [rows]);
+
+  const validRows = useMemo(() => validRowsWithIndexes.map(({ row }) => row), [validRowsWithIndexes]);
+
+  const allConfirmed = useMemo(() => validRowsWithIndexes.length > 0 && validRowsWithIndexes.every(({ index }) =>
+    confirmedNames.has(index) && confirmedQuantities.has(index)
+  ), [validRowsWithIndexes, confirmedNames, confirmedQuantities]);
 
   const isPdf = Boolean(file && (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")));
+
+  const clearConfirmation = (index: number, type: "name" | "qty") => {
+    if (type === "name") {
+      setConfirmedNames((current) => { const next = new Set(current); next.delete(index); return next; });
+    } else {
+      setConfirmedQuantities((current) => { const next = new Set(current); next.delete(index); return next; });
+    }
+  };
+
+  const toggleConfirmation = (index: number, type: "name" | "qty") => {
+    const setter = type === "name" ? setConfirmedNames : setConfirmedQuantities;
+    setter((current) => {
+      const next = new Set(current);
+      if (next.has(index)) next.delete(index); else next.add(index);
+      return next;
+    });
+  };
 
   const selectFile = (candidate: File | null) => {
     setError("");
     setResult(null);
     setRows([]);
-    setConfirmedRows(new Set());
+    setConfirmedNames(new Set());
+    setConfirmedQuantities(new Set());
     setInvoiceNumber("");
     setReviewOpen(false);
     setProgress(0);
+
     if (!candidate) { setFile(null); return; }
     const name = candidate.name.toLowerCase();
     if (!ACCEPTED_EXTENSIONS.some((ext) => name.endsWith(ext))) {
@@ -162,7 +169,8 @@ const InvoiceImport = () => {
         selectedProductId: item.matchedProductId ?? "",
         editableQuantity: String(item.quantity || ""),
       })));
-      setConfirmedRows(new Set());
+      setConfirmedNames(new Set());
+      setConfirmedQuantities(new Set());
       setProgress(100);
       setReviewOpen(true);
     } catch (e) {
@@ -175,9 +183,12 @@ const InvoiceImport = () => {
   };
 
   const commitImport = async () => {
-    if (!result || !allValidRowsConfirmed) return;
+    if (!result || !allConfirmed) return;
     const cleanInvoiceNumber = invoiceNumber.trim();
-    if (!cleanInvoiceNumber) { setError(isBg ? "Въведи номер на фактурата." : "Enter invoice number."); return; }
+    if (!cleanInvoiceNumber) {
+      setError(isBg ? "Въведи номер на фактурата." : "Enter invoice number.");
+      return;
+    }
 
     try {
       setImporting(true);
@@ -202,24 +213,15 @@ const InvoiceImport = () => {
     }
   };
 
-  const toggleConfirmed = (index: number) => {
-    setConfirmedRows((current) => {
-      const next = new Set(current);
-      if (next.has(index)) next.delete(index); else next.add(index);
-      return next;
-    });
-  };
-
   return (
     <div className="space-y-5">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#18b99f]">OCR · BG / EN</p>
         <h1 className="mt-2 text-3xl font-black text-slate-950">{text.title}</h1>
-        <p className="mt-2 text-sm text-slate-600">{text.subtitle}</p>
       </div>
 
       <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white p-8 text-center">
-        <input ref={fileInputRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" multiple className="hidden" onChange={(e) => { selectFile(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+        <input ref={fileInputRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" className="hidden" onChange={(e) => { selectFile(e.target.files?.[0] ?? null); e.target.value = ""; }} />
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-950 text-white">
           {isPdf ? <DocumentTextIcon className="h-8 w-8" /> : file ? <PhotoIcon className="h-8 w-8" /> : <CloudArrowUpIcon className="h-8 w-8" />}
         </div>
@@ -243,63 +245,74 @@ const InvoiceImport = () => {
         <div className="fixed inset-0 z-[100] bg-slate-950/80 p-1 backdrop-blur-sm sm:p-2">
           <div className="flex h-full w-full flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
             <header className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-              <div>
+              <div className="flex flex-wrap items-center gap-6">
                 <h2 className="text-2xl font-black text-slate-950">{text.review}</h2>
-                <p className="mt-1 text-sm text-slate-500">{isBg ? "Маркирай „Потвърден“ само след като сравниш реда с фактурата." : "Mark Confirmed only after comparing the row with the invoice."}</p>
+                <label className="flex items-center gap-2 text-sm font-bold text-slate-600">{text.invoiceNo}<input value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-base font-black text-slate-950" /></label>
+                <div className="text-sm font-bold text-slate-600">{text.date}: <span className="text-base font-black text-slate-950">{result.invoiceDate || "—"}</span></div>
               </div>
               <button onClick={() => setReviewOpen(false)} className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-300"><XMarkIcon className="h-6 w-6" /></button>
             </header>
 
-            <div className="grid min-h-0 flex-1 grid-cols-1 xl:grid-cols-[40%_60%]">
-              <section className="min-h-0 border-b border-slate-200 bg-slate-100 xl:border-b-0 xl:border-r">
-                <div className="flex h-full min-h-0 flex-col">
-                  <div className="border-b border-slate-200 bg-white px-4 py-3 text-sm font-black">{isBg ? "ОРИГИНАЛНА ФАКТУРА" : "ORIGINAL INVOICE"}</div>
-                  <div className="min-h-0 flex-1 overflow-auto p-2">
-                    {previewUrl && (isPdf ? <iframe src={previewUrl} title="invoice" className="h-full min-h-[700px] w-full bg-white" /> : <img src={previewUrl} alt="invoice" className="w-full bg-white" />)}
-                  </div>
-                </div>
-              </section>
-
-              <section className="flex min-h-0 flex-col bg-white">
-                <div className="grid flex-none grid-cols-3 gap-3 border-b border-slate-200 p-4">
-                  <label className="rounded-lg border border-slate-300 bg-slate-50 p-3"><span className="text-xs font-black uppercase text-slate-500">{text.invoiceNo}</span><input value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} className="mt-2 w-full rounded border border-slate-300 bg-white px-3 py-2 text-base font-black" /></label>
-                  <div className="rounded-lg border border-slate-300 bg-slate-50 p-3"><div className="text-xs font-black uppercase text-slate-500">{text.date}</div><div className="mt-2 text-base font-black">{result.invoiceDate || "—"}</div></div>
-                  <div className="rounded-lg border border-slate-300 bg-slate-50 p-3"><div className="text-xs font-black uppercase text-slate-500">{text.items}</div><div className="mt-2 text-base font-black">{rows.length}</div></div>
-                </div>
-
-                <div className="min-h-0 flex-1 overflow-auto">
-                  <table className="w-full min-w-[980px] text-sm">
-                    <thead className="sticky top-0 z-10 bg-slate-100 text-left text-xs font-black uppercase text-slate-600">
-                      <tr>
-                        <th className="w-[35%] px-4 py-3">{text.invoiceName}</th>
-                        <th className="w-[35%] px-4 py-3">{text.matched}</th>
-                        <th className="w-[12%] px-4 py-3 text-right">{text.quantity}</th>
-                        <th className="w-[18%] px-4 py-3 text-center">{text.confirm}</th>
+            <div className="min-h-0 flex-1 overflow-auto p-4">
+              <table className="w-full min-w-[900px] text-sm">
+                <thead className="sticky top-0 z-10 bg-slate-100 text-left text-xs font-black uppercase text-slate-600">
+                  <tr>
+                    <th className="w-[50%] px-4 py-3">{text.name}</th>
+                    <th className="w-[20%] px-4 py-3 text-center">{text.confirmName}</th>
+                    <th className="w-[15%] px-4 py-3 text-right">{text.quantity}</th>
+                    <th className="w-[15%] px-4 py-3 text-center">{text.confirmQty}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {rows.map((row, index) => {
+                    const qty = Number(row.editableQuantity);
+                    const productValid = Boolean(row.selectedProductId);
+                    const qtyValid = Number.isInteger(qty) && qty > 0;
+                    const nameConfirmed = confirmedNames.has(index);
+                    const qtyConfirmed = confirmedQuantities.has(index);
+                    return (
+                      <tr key={`${row.sourceLine}-${index}`} className={nameConfirmed && qtyConfirmed ? "bg-emerald-50/50" : "bg-white"}>
+                        <td className="px-4 py-4">
+                          <select value={row.selectedProductId} onChange={(e) => {
+                            const value = e.target.value;
+                            setRows((current) => current.map((item, i) => i === index ? { ...item, selectedProductId: value } : item));
+                            clearConfirmation(index, "name");
+                          }} className="min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-base font-semibold text-slate-950">
+                            <option value="">— {text.unmatched} —</option>
+                            {row.candidates.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}
+                          </select>
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          <button type="button" disabled={!productValid} onClick={() => toggleConfirmation(index, "name")} className={`min-h-11 rounded-lg border px-4 font-black ${nameConfirmed ? "border-emerald-500 bg-emerald-500 text-white" : productValid ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"}`}>
+                            {nameConfirmed ? (isBg ? "Потвърдено" : "Confirmed") : text.confirmName}
+                          </button>
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <input type="number" min="1" step="1" value={row.editableQuantity} onChange={(e) => {
+                            const value = e.target.value;
+                            setRows((current) => current.map((item, i) => i === index ? { ...item, editableQuantity: value } : item));
+                            clearConfirmation(index, "qty");
+                          }} className="min-h-12 w-28 rounded-lg border border-slate-300 px-3 text-right text-lg font-black text-slate-950" />
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          <button type="button" disabled={!qtyValid} onClick={() => toggleConfirmation(index, "qty")} className={`min-h-11 rounded-lg border px-4 font-black ${qtyConfirmed ? "border-emerald-500 bg-emerald-500 text-white" : qtyValid ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"}`}>
+                            {qtyConfirmed ? (isBg ? "Потвърдено" : "Confirmed") : text.confirmQty}
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200">
-                      {rows.map((row, index) => {
-                        const qty = Number(row.editableQuantity);
-                        const rowValid = Boolean(row.selectedProductId) && Number.isInteger(qty) && qty > 0;
-                        return (
-                          <tr key={`${row.sourceLine}-${index}`} className={confirmedRows.has(index) ? "bg-emerald-50/50" : "bg-white"}>
-                            <td className="px-4 py-4 align-top"><div className="text-base font-bold text-slate-950">{row.rawName}</div><div className="mt-2 rounded bg-slate-50 p-2 font-mono text-xs text-slate-500">{row.sourceLine}</div></td>
-                            <td className="px-4 py-4 align-top"><select value={row.selectedProductId} onChange={(e) => { const value = e.target.value; setRows((current) => current.map((item, i) => i === index ? { ...item, selectedProductId: value } : item)); setConfirmedRows((current) => { const next = new Set(current); next.delete(index); return next; }); }} className="min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-base font-semibold"><option value="">— {text.unmatched} —</option>{row.candidates.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name} ({Math.round(candidate.confidence * 100)}%)</option>)}</select></td>
-                            <td className="px-4 py-4 text-right align-top"><input type="number" min="1" step="1" value={row.editableQuantity} onChange={(e) => { const value = e.target.value; setRows((current) => current.map((item, i) => i === index ? { ...item, editableQuantity: value } : item)); setConfirmedRows((current) => { const next = new Set(current); next.delete(index); return next; }); }} className="min-h-12 w-24 rounded-lg border border-slate-300 px-3 text-right text-lg font-black" /></td>
-                            <td className="px-4 py-4 text-center align-top"><label className={`inline-flex min-h-12 cursor-pointer items-center gap-2 rounded-lg border px-4 font-black ${rowValid ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"}`}><input type="checkbox" disabled={!rowValid} checked={confirmedRows.has(index)} onChange={() => toggleConfirmed(index)} className="h-5 w-5" />{confirmedRows.has(index) ? (isBg ? "Да" : "Yes") : (isBg ? "Провери" : "Verify")}</label></td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                <footer className="flex flex-none items-center justify-between gap-4 border-t border-slate-200 bg-slate-50 px-5 py-4">
-                  <div className="text-sm font-bold text-slate-600">{confirmedRows.size} / {validRows.length} {isBg ? "валидни реда са потвърдени" : "valid rows confirmed"}</div>
-                  <div className="flex gap-2"><button onClick={() => setReviewOpen(false)} className="rounded-lg border border-slate-300 bg-white px-5 py-3 font-bold">{text.close}</button><button disabled={importing || !allValidRowsConfirmed || result.duplicateInvoice} onClick={() => void commitImport()} className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-6 py-3 font-black text-white disabled:cursor-not-allowed disabled:opacity-35"><CheckCircleIcon className="h-5 w-5" />{importing ? text.importing : text.import}</button></div>
-                </footer>
-              </section>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
+
+            <footer className="flex flex-none items-center justify-between gap-4 border-t border-slate-200 bg-slate-50 px-5 py-4">
+              <div className="text-sm font-bold text-slate-600">{validRowsWithIndexes.filter(({ index }) => confirmedNames.has(index) && confirmedQuantities.has(index)).length} / {validRowsWithIndexes.length}</div>
+              <div className="flex gap-2">
+                <button onClick={() => setReviewOpen(false)} className="rounded-lg border border-slate-300 bg-white px-5 py-3 font-bold">{text.close}</button>
+                <button disabled={importing || !allConfirmed || result.duplicateInvoice} onClick={() => void commitImport()} className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-6 py-3 font-black text-white disabled:cursor-not-allowed disabled:opacity-35"><CheckCircleIcon className="h-5 w-5" />{importing ? text.importing : text.import}</button>
+              </div>
+            </footer>
           </div>
         </div>
       )}
