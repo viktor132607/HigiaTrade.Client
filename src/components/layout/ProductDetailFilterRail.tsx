@@ -19,55 +19,28 @@ const ProductDetailFilterRail = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesReady, setCategoriesReady] = useState(false);
   const [productReady, setProductReady] = useState(false);
-
   const isProductDetails = /^\/products\/[^/]+$/i.test(location.pathname);
 
   useEffect(() => {
     setProductReady(false);
     if (!isProductDetails) return;
-
     let revealTimer: number | null = null;
-
     const checkProductReady = () => {
       const productTitle = document.querySelector("main h1");
-
-      if (!productTitle) {
-        if (revealTimer !== null) window.clearTimeout(revealTimer);
-        revealTimer = null;
-        setProductReady(false);
-        return;
-      }
-
+      if (!productTitle) { if (revealTimer !== null) window.clearTimeout(revealTimer); revealTimer = null; setProductReady(false); return; }
       if (revealTimer !== null) window.clearTimeout(revealTimer);
-      revealTimer = window.setTimeout(() => {
-        const stillReady = Boolean(document.querySelector("main h1"));
-        setProductReady(stillReady);
-      }, 120);
+      revealTimer = window.setTimeout(() => setProductReady(Boolean(document.querySelector("main h1"))), 120);
     };
-
     const observer = new MutationObserver(checkProductReady);
-    observer.observe(document.body, { childList: true, subtree: true });
-
+    observer.observe(document.body, { childList:true, subtree:true });
     const initialTimer = window.setTimeout(checkProductReady, 0);
-
-    return () => {
-      window.clearTimeout(initialTimer);
-      if (revealTimer !== null) window.clearTimeout(revealTimer);
-      observer.disconnect();
-      setProductReady(false);
-    };
+    return () => { window.clearTimeout(initialTimer); if (revealTimer !== null) window.clearTimeout(revealTimer); observer.disconnect(); setProductReady(false); };
   }, [isProductDetails, location.pathname]);
 
   useEffect(() => {
-    if (!isProductDetails) {
-      setCategories([]);
-      setCategoriesReady(false);
-      return;
-    }
-
+    if (!isProductDetails) { setCategories([]); setCategoriesReady(false); return; }
     let cancelled = false;
     setCategoriesReady(false);
-
     (async () => {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Categories`);
@@ -75,13 +48,9 @@ const ProductDetailFilterRail = () => {
         const data = await response.json();
         const list = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
         if (!cancelled) setCategories(list);
-      } catch {
-        if (!cancelled) setCategories([]);
-      } finally {
-        if (!cancelled) setCategoriesReady(true);
-      }
+      } catch { if (!cancelled) setCategories([]); }
+      finally { if (!cancelled) setCategoriesReady(true); }
     })();
-
     return () => { cancelled = true; };
   }, [isProductDetails, location.pathname]);
 
@@ -97,19 +66,7 @@ const ProductDetailFilterRail = () => {
     navigate(`/products${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
-  return (
-    <div className="fixed left-3 top-32 z-20 hidden w-72 2xl:block">
-      <FilterSidebar
-        categories={categories}
-        selectedCategory={null}
-        searchQuery=""
-        selectedMinPrice={null}
-        selectedMaxPrice={null}
-        selectedRating={null}
-        onApplyFilters={applyFilters}
-      />
-    </div>
-  );
+  return <div className="fixed left-3 top-32 z-20 hidden w-72 2xl:block"><FilterSidebar categories={categories} selectedCategory={null} searchQuery="" selectedMinPrice={null} selectedMaxPrice={null} selectedRating={null} suppressInitialAutoApply onApplyFilters={applyFilters}/></div>;
 };
 
 export default ProductDetailFilterRail;
