@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { MapPinIcon, ShieldCheckIcon, TruckIcon } from "@heroicons/react/24/outline";
 import ProductCard from "../components/products/ProductCard";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
 
-const SERVICE_AREAS_BG = ["Русе", "Силистра", "Разград", "Свищов", "Бяла", "Търговище"];
-const SERVICE_AREAS_EN = ["Ruse", "Silistra", "Razgrad", "Svishtov", "Byala", "Targovishte"];
+const SERVICE_AREAS = [
+  { slug: "ruse", bg: "Русе", en: "Ruse" },
+  { slug: "silistra", bg: "Силистра", en: "Silistra" },
+  { slug: "razgrad", bg: "Разград", en: "Razgrad" },
+  { slug: "svishtov", bg: "Свищов", en: "Svishtov" },
+  { slug: "byala", bg: "Бяла", en: "Byala" },
+  { slug: "targovishte", bg: "Търговище", en: "Targovishte" },
+] as const;
+
 const SANO_DISTRIBUTOR_SOURCE = "https://sanobg.com/buy/";
 
 type Product = {
@@ -24,7 +31,12 @@ type Product = {
 const SanoDistributor = () => {
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
-  const areas = isBg ? SERVICE_AREAS_BG : SERVICE_AREAS_EN;
+  const { region } = useParams<{ region?: string }>();
+  const selectedRegion = region
+    ? SERVICE_AREAS.find((item) => item.slug === region.toLowerCase())
+    : undefined;
+  const selectedRegionName = selectedRegion ? (isBg ? selectedRegion.bg : selectedRegion.en) : null;
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,7 +47,7 @@ const SanoDistributor = () => {
         const query = new URLSearchParams({
           Brand: "SANO",
           PageNumber: "1",
-          PageSize: "12",
+          PageSize: "100",
           SortBy: "title",
           SortDescending: "false",
         });
@@ -53,44 +65,97 @@ const SanoDistributor = () => {
     void load();
   }, []);
 
+  const heroTitle = selectedRegionName
+    ? isBg
+      ? `SANO дистрибутор за ${selectedRegionName}`
+      : `SANO distributor for ${selectedRegionName}`
+    : isBg
+      ? "Дистрибутор на SANO за Русе, Силистра, Разград, Свищов, Бяла и Търговище"
+      : "SANO distributor for Ruse, Silistra, Razgrad, Svishtov, Byala and Targovishte";
+
+  const heroDescription = selectedRegionName
+    ? isBg
+      ? `Хигия Трейд ООД доставя перилни и почистващи препарати SANO за дома, магазини, офиси и бизнес клиенти в ${selectedRegionName}. Свържете се с нас за наличности, количества и търговски условия.`
+      : `Hygia Trade Ltd. supplies SANO laundry and cleaning products for households, shops, offices and business customers in ${selectedRegionName}. Contact us for availability, quantities and commercial terms.`
+    : isBg
+      ? "Хигия Трейд ООД доставя перилни и почистващи препарати SANO за дома, магазини, офиси и бизнес клиенти в обслужвания район. За количества, наличности и търговски условия изпратете запитване директно към нас."
+      : "Hygia Trade Ltd. supplies SANO laundry and cleaning products for households, shops, offices and business customers throughout the service area. Contact us for stock, quantities and commercial terms.";
+
   return (
     <main className="bg-slate-50 text-slate-900">
       <section className="border-b border-slate-200 bg-[linear-gradient(135deg,#0f172a_0%,#1d5260_58%,#18b99f_135%)] text-white">
         <div className="site-container py-12 sm:py-16 lg:py-20">
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-[#8be4d5]">SANO · HygiaTrade</p>
+          <p className="text-xs font-black uppercase tracking-[0.24em] text-[#8be4d5]">
+            SANO · HygiaTrade{selectedRegionName ? ` · ${selectedRegionName}` : ""}
+          </p>
           <h1 className="mt-4 max-w-5xl text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
-            {isBg
-              ? "Дистрибутор на SANO за Русе, Силистра, Разград, Свищов, Бяла и Търговище"
-              : "SANO distributor for Ruse, Silistra, Razgrad, Svishtov, Byala and Targovishte"}
+            {heroTitle}
           </h1>
           <p className="mt-5 max-w-4xl text-base leading-7 text-white/85 sm:text-lg">
-            {isBg
-              ? "Хигия Трейд ООД доставя перилни и почистващи препарати SANO за дома, магазини, офиси и бизнес клиенти в обслужвания район. За количества, наличности и търговски условия изпратете запитване директно към нас."
-              : "Hygia Trade Ltd. supplies SANO laundry and cleaning products for households, shops, offices and business customers throughout the service area. Contact us for stock, quantities and commercial terms."}
+            {heroDescription}
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link to="/contact" className="inline-flex min-h-12 items-center justify-center bg-[#18b99f] px-6 py-3 text-sm font-bold text-white hover:bg-[#14a990]">
-              {isBg ? "Запитване за SANO" : "Enquire about SANO"}
+              {selectedRegionName
+                ? isBg ? `Запитване за SANO в ${selectedRegionName}` : `SANO enquiry for ${selectedRegionName}`
+                : isBg ? "Запитване за SANO" : "Enquire about SANO"}
             </Link>
-            <Link to="/brands" className="inline-flex min-h-12 items-center justify-center border border-white/50 px-6 py-3 text-sm font-bold text-white hover:bg-white/10">
-              {isBg ? "Всички марки" : "All brands"}
-            </Link>
+            {selectedRegion ? (
+              <Link to="/sano" className="inline-flex min-h-12 items-center justify-center border border-white/50 px-6 py-3 text-sm font-bold text-white hover:bg-white/10">
+                {isBg ? "Целият район" : "Full distribution area"}
+              </Link>
+            ) : (
+              <Link to="/brands" className="inline-flex min-h-12 items-center justify-center border border-white/50 px-6 py-3 text-sm font-bold text-white hover:bg-white/10">
+                {isBg ? "Всички марки" : "All brands"}
+              </Link>
+            )}
           </div>
         </div>
       </section>
+
+      {region && !selectedRegion && (
+        <section className="site-container pt-8">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800">
+            {isBg
+              ? "Посоченият район не е част от публикувания SANO район за дистрибуция на Хигия Трейд."
+              : "The requested area is not part of Hygia Trade's published SANO distribution area."}
+          </div>
+        </section>
+      )}
 
       <section className="site-container py-10 sm:py-14">
         <div className="grid gap-5 lg:grid-cols-3">
           <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <MapPinIcon className="h-9 w-9 text-[#18b99f]" />
-            <h2 className="mt-4 text-xl font-bold">{isBg ? "Район на дистрибуция" : "Distribution area"}</h2>
+            <h2 className="mt-4 text-xl font-bold">
+              {selectedRegionName
+                ? isBg ? `SANO доставки за ${selectedRegionName}` : `SANO deliveries for ${selectedRegionName}`
+                : isBg ? "Район на дистрибуция" : "Distribution area"}
+            </h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              {isBg ? "Обслужваме директно района на:" : "We directly serve:"}
+              {selectedRegionName
+                ? isBg
+                  ? `${selectedRegionName} е част от обслужвания от Хигия Трейд район за SANO.`
+                  : `${selectedRegionName} is part of the SANO area served by Hygia Trade.`
+                : isBg ? "Обслужваме директно района на:" : "We directly serve:"}
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              {areas.map((area) => (
-                <span key={area} className="rounded-full bg-[#18b99f]/10 px-3 py-1.5 text-sm font-semibold text-[#148f7c]">{area}</span>
-              ))}
+              {SERVICE_AREAS.map((area) => {
+                const active = selectedRegion?.slug === area.slug;
+                return (
+                  <Link
+                    key={area.slug}
+                    to={`/sano/${area.slug}`}
+                    className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                      active
+                        ? "bg-slate-950 text-white"
+                        : "bg-[#18b99f]/10 text-[#148f7c] hover:bg-[#18b99f]/20"
+                    }`}
+                  >
+                    {isBg ? area.bg : area.en}
+                  </Link>
+                );
+              })}
             </div>
           </article>
 
@@ -123,7 +188,11 @@ const SanoDistributor = () => {
         <div className="site-container py-10 sm:py-14">
           <div className="max-w-4xl">
             <p className="text-xs font-black uppercase tracking-[0.22em] text-[#18b99f]">{isBg ? "SANO продукти" : "SANO products"}</p>
-            <h2 className="mt-2 text-2xl font-black sm:text-3xl">{isBg ? "Продукти SANO в каталога" : "SANO products in the catalogue"}</h2>
+            <h2 className="mt-2 text-2xl font-black sm:text-3xl">
+              {selectedRegionName
+                ? isBg ? `SANO продукти с доставка за ${selectedRegionName}` : `SANO products supplied in ${selectedRegionName}`
+                : isBg ? "Продукти SANO в каталога" : "SANO products in the catalogue"}
+            </h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
               {isBg
                 ? "Наличностите се обновяват от каталога. Ако конкретен SANO продукт не е показан, свържете се с нас за заявка или срок за доставка."
@@ -151,11 +220,19 @@ const SanoDistributor = () => {
         <h2 className="text-2xl font-black sm:text-3xl">{isBg ? "Често задавани въпроси" : "Frequently asked questions"}</h2>
         <div className="mt-6 grid gap-3">
           <details className="rounded-xl border border-slate-200 bg-white p-5">
-            <summary className="cursor-pointer font-bold">{isBg ? "Кой е дистрибуторът на SANO за Русе?" : "Who is the SANO distributor for Ruse?"}</summary>
+            <summary className="cursor-pointer font-bold">
+              {selectedRegionName
+                ? isBg ? `Кой е дистрибуторът на SANO за ${selectedRegionName}?` : `Who is the SANO distributor for ${selectedRegionName}?`
+                : isBg ? "Кой е дистрибуторът на SANO за Русе?" : "Who is the SANO distributor for Ruse?"}
+            </summary>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              {isBg
-                ? "Хигия Трейд ООД е посочена от SANO България като дистрибутор за Русе, Силистра, Разград, Свищов, Бяла и Търговище."
-                : "SANO Bulgaria lists Hygia Trade Ltd. as distributor for Ruse, Silistra, Razgrad, Svishtov, Byala and Targovishte."}
+              {selectedRegionName
+                ? isBg
+                  ? `Хигия Трейд ООД обслужва ${selectedRegionName} като част от публикувания от SANO България район на дистрибуция.`
+                  : `Hygia Trade Ltd. serves ${selectedRegionName} as part of the distribution area published by SANO Bulgaria.`
+                : isBg
+                  ? "Хигия Трейд ООД е посочена от SANO България като дистрибутор за Русе, Силистра, Разград, Свищов, Бяла и Търговище."
+                  : "SANO Bulgaria lists Hygia Trade Ltd. as distributor for Ruse, Silistra, Razgrad, Svishtov, Byala and Targovishte."}
             </p>
           </details>
           <details className="rounded-xl border border-slate-200 bg-white p-5">
@@ -168,7 +245,9 @@ const SanoDistributor = () => {
           </details>
           <details className="rounded-xl border border-slate-200 bg-white p-5">
             <summary className="cursor-pointer font-bold">{isBg ? "За кои градове е районът на дистрибуция?" : "Which cities are in the distribution area?"}</summary>
-            <p className="mt-3 text-sm leading-6 text-slate-600">{areas.join(", ")}.</p>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              {SERVICE_AREAS.map((area) => isBg ? area.bg : area.en).join(", ")}.
+            </p>
           </details>
         </div>
       </section>
