@@ -17,6 +17,18 @@ const PRIVATE_PREFIXES = [
   "/reset-password",
 ];
 
+const REGION_NAMES: Record<string, { bg: string; en: string }> = {
+  ruse: { bg: "Русе", en: "Ruse" },
+  silistra: { bg: "Силистра", en: "Silistra" },
+  razgrad: { bg: "Разград", en: "Razgrad" },
+  svishtov: { bg: "Свищов", en: "Svishtov" },
+  byala: { bg: "Бяла", en: "Byala" },
+  targovishte: { bg: "Търговище", en: "Targovishte" },
+};
+
+const normalizePath = (path: string) =>
+  path === "/" ? "/" : `/${path.replace(/^\/+|\/+$/g, "")}/`;
+
 const setMeta = (name: string, content: string) => {
   let element = document.head.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
   if (!element) {
@@ -54,6 +66,31 @@ const SeoManager = () => {
 
   useEffect(() => {
     const path = location.pathname || "/";
+    const normalizedPath = normalizePath(path);
+    const currentCanonical = `${SITE_URL}${normalizedPath}`;
+
+    // Build-time SEO pages already contain exact Product/Offer/Brand schemas and
+    // route-specific metadata in the initial HTML. Keep those tags intact on the
+    // first direct visit so hydration cannot replace them with generic SPA data.
+    // If the visitor navigates elsewhere without a reload, remove the stale
+    // generated JSON-LD and let the SPA manager own the new route metadata.
+    const generatedScripts = Array.from(
+      document.head.querySelectorAll<HTMLScriptElement>('script[data-generated-seo="true"]')
+    );
+    const canonicalElement = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    const generatedCanonicalMatches =
+      generatedScripts.length > 0 && canonicalElement?.href === currentCanonical;
+
+    document.documentElement.lang = isBg ? "bg" : "en";
+
+    if (generatedCanonicalMatches) {
+      return;
+    }
+
+    if (generatedScripts.length > 0) {
+      generatedScripts.forEach((script) => script.remove());
+    }
+
     const isPrivate = PRIVATE_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
 
     let title = isBg
@@ -63,7 +100,18 @@ const SeoManager = () => {
       ? "Хигия Трейд ООД е дистрибутор на SANO за Русе, Силистра, Разград, Свищов, Бяла и Търговище. Перилни и почистващи препарати, консумативи и доставки за дома и бизнеса."
       : "Hygia Trade Ltd. is the SANO distributor for Ruse, Silistra, Razgrad, Svishtov, Byala and Targovishte. Laundry and cleaning products, supplies and business deliveries.";
 
-    if (path === "/sano" || path === "/sano-distributor") {
+    const regionMatch = path.match(/^\/sano\/([^/]+)\/?$/);
+    const region = regionMatch ? REGION_NAMES[regionMatch[1].toLowerCase()] : undefined;
+
+    if (region) {
+      const regionName = isBg ? region.bg : region.en;
+      title = isBg
+        ? `SANO дистрибутор за ${regionName} | HygiaTrade`
+        : `SANO distributor for ${regionName} | HygiaTrade`;
+      description = isBg
+        ? `Хигия Трейд ООД доставя SANO перилни и почистващи препарати за ${regionName} за дома, магазини, офиси и бизнес клиенти.`
+        : `Hygia Trade Ltd. supplies SANO laundry and cleaning products in ${regionName} for households, shops, offices and business customers.`;
+    } else if (path === "/sano" || path === "/sano-distributor") {
       title = isBg
         ? "SANO дистрибутор за Русе, Силистра, Разград, Свищов, Бяла и Търговище | HygiaTrade"
         : "SANO distributor for Ruse, Silistra, Razgrad, Svishtov, Byala and Targovishte | HygiaTrade";
@@ -80,6 +128,12 @@ const SeoManager = () => {
       description = isBg
         ? "Разгледайте марките в HygiaTrade, включително SANO, и наличните перилни, почистващи и професионални хигиенни продукти."
         : "Browse HygiaTrade brands including SANO and available laundry, cleaning and professional hygiene products.";
+    } else if (path.startsWith("/brands/")) {
+      const brandSlug = decodeURIComponent(path.split("/")[2] || "").replace(/-/g, " ");
+      title = isBg ? `${brandSlug} - продукти | HygiaTrade` : `${brandSlug} products | HygiaTrade`;
+      description = isBg
+        ? `Продукти от марка ${brandSlug} в каталога на HygiaTrade за дома, офиса и бизнеса.`
+        : `${brandSlug} products in the HygiaTrade catalogue for home, office and business use.`;
     } else if (path === "/contact") {
       title = isBg ? "Контакти и дистрибуция за Русе и региона | HygiaTrade" : "Contacts and distribution for Ruse region | HygiaTrade";
     } else if (path === "/about") {
@@ -91,19 +145,18 @@ const SeoManager = () => {
         : "Product from the HygiaTrade catalogue of cleaning products, laundry detergents and hygiene supplies.";
     }
 
-    document.documentElement.lang = isBg ? "bg" : "en";
     document.title = title;
     setMeta("description", description);
     setMeta("robots", isPrivate ? "noindex,nofollow" : "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1");
     setPropertyMeta("og:title", title);
     setPropertyMeta("og:description", description);
     setPropertyMeta("og:type", "website");
-    setPropertyMeta("og:url", `${SITE_URL}${path === "/" ? "/" : `${path.replace(/\/$/, "")}/`}`);
+    setPropertyMeta("og:url", currentCanonical);
     setPropertyMeta("og:site_name", "HygiaTrade");
     setMeta("twitter:card", "summary_large_image");
     setMeta("twitter:title", title);
     setMeta("twitter:description", description);
-    setCanonical(`${SITE_URL}${path === "/" ? "/" : `${path.replace(/\/$/, "")}/`}`);
+    setCanonical(currentCanonical);
 
     let script = document.head.querySelector<HTMLScriptElement>('#route-seo-jsonld');
     if (!script) {
@@ -113,30 +166,21 @@ const SeoManager = () => {
       document.head.appendChild(script);
     }
 
-    const jsonLd = path === "/sano" || path === "/sano-distributor"
+    const jsonLd = region
       ? {
           "@context": "https://schema.org",
           "@type": "WebPage",
           name: title,
-          url: `${SITE_URL}/sano/`,
+          url: currentCanonical,
           description,
-          about: {
-            "@type": "Brand",
-            name: "SANO",
-          },
+          about: { "@type": "Brand", name: "SANO" },
           mainEntity: {
             "@type": "Organization",
             name: "Хигия Трейд ООД",
             alternateName: "HygiaTrade",
             telephone: "+359888822861",
             email: "higiatrade@abv.bg",
-            address: {
-              "@type": "PostalAddress",
-              streetAddress: "ул. Акад. Михаил Арнаудов №3",
-              addressLocality: "Русе",
-              addressCountry: "BG",
-            },
-            areaServed: SERVICE_AREAS,
+            areaServed: { "@type": "City", name: region.bg },
             brand: { "@type": "Brand", name: "SANO" },
             subjectOf: {
               "@type": "WebPage",
@@ -145,13 +189,45 @@ const SeoManager = () => {
             },
           },
         }
-      : {
-          "@context": "https://schema.org",
-          "@type": "WebPage",
-          name: title,
-          url: `${SITE_URL}${path === "/" ? "/" : `${path.replace(/\/$/, "")}/`}`,
-          description,
-        };
+      : path === "/sano" || path === "/sano-distributor"
+        ? {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            name: title,
+            url: `${SITE_URL}/sano/`,
+            description,
+            about: {
+              "@type": "Brand",
+              name: "SANO",
+            },
+            mainEntity: {
+              "@type": "Organization",
+              name: "Хигия Трейд ООД",
+              alternateName: "HygiaTrade",
+              telephone: "+359888822861",
+              email: "higiatrade@abv.bg",
+              address: {
+                "@type": "PostalAddress",
+                streetAddress: "ул. Акад. Михаил Арнаудов №3",
+                addressLocality: "Русе",
+                addressCountry: "BG",
+              },
+              areaServed: SERVICE_AREAS,
+              brand: { "@type": "Brand", name: "SANO" },
+              subjectOf: {
+                "@type": "WebPage",
+                url: "https://sanobg.com/buy/",
+                name: "SANO България - дистрибутори",
+              },
+            },
+          }
+        : {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            name: title,
+            url: currentCanonical,
+            description,
+          };
 
     script.textContent = JSON.stringify(jsonLd);
   }, [isBg, location.pathname]);
