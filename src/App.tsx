@@ -12,7 +12,7 @@ import Layout from "./components/layout/Layout";
 import PrivateRoute from "./routes/PrivateRoute";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
-import ProductDetails from "./pages/ProductDetails";
+import ProductDetailsWithFilters from "./pages/ProductDetailsWithFilters";
 import Brands from "./pages/Brands";
 import SanoDistributor from "./pages/SanoDistributor";
 import CompanyInfo from "./pages/CompanyInfo";
@@ -58,7 +58,7 @@ function App() {
               <Route path="/products" element={<Products />} />
               <Route path="/categories/:categorySlug" element={<Products />} />
               <Route path="/category/:categoryId" element={<Products />} />
-              <Route path="/products/:id" element={<ProductDetails />} />
+              <Route path="/products/:id" element={<ProductDetailsWithFilters />} />
               <Route path="/about" element={<About />} />
               <Route path="/company-info" element={<CompanyInfo />} />
               <Route path="/contact" element={<Contact />} />
