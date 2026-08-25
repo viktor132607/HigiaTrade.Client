@@ -7,7 +7,6 @@ import ProductSearchEnhancer from "./ProductSearchEnhancer";
 import CompareNavbarEnhancer from "./CompareNavbarEnhancer";
 import ProductBreadcrumb from "./ProductBreadcrumb";
 import CookieBanner from "./CookieBanner";
-import BrandSpellingFixer from "./BrandSpellingFixer";
 import CompareTray from "../products/CompareTray";
 import SeoManager from "../seo/SeoManager";
 
@@ -18,7 +17,6 @@ type LayoutProps = {
 const Layout = ({ children }: LayoutProps) => {
   return (
     <div className="flex min-h-screen flex-col overflow-x-clip">
-      <BrandSpellingFixer />
       <SeoManager />
       <Navbar />
       <ProductSearchEnhancer />
