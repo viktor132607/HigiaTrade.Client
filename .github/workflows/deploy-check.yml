@@ -33,4 +33,5 @@ jobs:
           test -s out/sano/ruse/index.html
           test -s out/sano/silistra/index.html
           test -s out/sano/razgrad/index.html
-          node -e 'const fs=require("fs"); const m=JSON.parse(fs.readFileSync("out/seo-manifest.json","utf8")); if(m.regionalPages!==6) process.exit(1); if(!Array.isArray(m.feeds)||m.feeds.length<5) process.exit(1); console.log(m)'
+          test -s out/company-info/index.html
+          node -e 'const fs=require("fs"); const m=JSON.parse(fs.readFileSync("out/seo-manifest.json","utf8")); if(m.regionalPages!==6) process.exit(1); if(!Array.isArray(m.feeds)||m.feeds.length<5) process.exit(1); if(m.companyInfoPage!==true) process.exit(1); if(typeof m.faqBlocks!=="number"||typeof m.internalLinkBlocks!=="number") process.exit(1); if(!m.indexNowKeyLocation) process.exit(1); const keyFile="out/"+m.indexNowKeyLocation.split("/").pop(); if(!fs.existsSync(keyFile)) process.exit(1); console.log(m)'
