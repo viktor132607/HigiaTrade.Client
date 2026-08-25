@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import {
   ChartBarSquareIcon,
   CubeIcon,
+  DocumentArrowUpIcon,
   DocumentChartBarIcon,
   QueueListIcon,
   Squares2X2Icon,
@@ -17,6 +18,7 @@ const navigation = [
   { to: "/admin", labelBg: "Табло", labelEn: "Overview", icon: Squares2X2Icon, end: true },
   { to: "/admin/orders", labelBg: "Поръчки", labelEn: "Orders", icon: QueueListIcon },
   { to: "/admin/products", labelBg: "Продукти", labelEn: "Products", icon: CubeIcon },
+  { to: "/admin/invoice-import", labelBg: "Фактури", labelEn: "Invoices", icon: DocumentArrowUpIcon },
   { to: "/admin/categories", labelBg: "Категории", labelEn: "Categories", icon: ChartBarSquareIcon },
   { to: "/admin/brands", labelBg: "Марки", labelEn: "Brands", icon: TagIcon },
   { to: "/admin/users", labelBg: "Клиенти", labelEn: "Customers", icon: UsersIcon },
