@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ProductCard from "../components/products/ProductCard";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
+import { brandSeoPath, seoImageUrl, slugifySeo } from "../utils/seo";
 
 type Brand = {
   id: string;
@@ -23,24 +24,6 @@ type Product = {
   discountPercentage?: number;
   discountedPrice?: number;
 };
-
-const CYRILLIC: Record<string, string> = {
-  а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ж: "zh", з: "z", и: "i", й: "y",
-  к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u",
-  ф: "f", х: "h", ц: "ts", ч: "ch", ш: "sh", щ: "sht", ъ: "a", ь: "y", ю: "yu", я: "ya",
-};
-
-const brandSlug = (value: string) =>
-  value
-    .toLowerCase()
-    .split("")
-    .map((char) => CYRILLIC[char] ?? char)
-    .join("")
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 100) || "brand";
 
 const Brands = () => {
   const { language } = useLanguageTheme();
@@ -80,7 +63,7 @@ const Brands = () => {
       return;
     }
 
-    const matchingBrand = brands.find((brand) => brandSlug(brand.name) === routeBrandSlug.toLowerCase());
+    const matchingBrand = brands.find((brand) => slugifySeo(brand.name, 100) === routeBrandSlug.toLowerCase());
     setSelectedBrand(matchingBrand ?? null);
   }, [brands, routeBrandSlug]);
 
@@ -121,7 +104,7 @@ const Brands = () => {
       return;
     }
 
-    navigate(`/brands/${brandSlug(brand.name)}`);
+    navigate(brandSeoPath(brand.name));
   };
 
   return (
@@ -167,8 +150,12 @@ const Brands = () => {
                   <div className="aspect-[16/9] overflow-hidden bg-slate-100">
                     {brand.thumbnailImageUrl ? (
                       <img
-                        src={brand.thumbnailImageUrl}
-                        alt={brand.name}
+                        src={seoImageUrl(brand.thumbnailImageUrl, `${brand.name}-logo`)}
+                        alt={`${brand.name} ${isBg ? "марка" : "brand"}`}
+                        width={640}
+                        height={360}
+                        loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                       />
                     ) : (
