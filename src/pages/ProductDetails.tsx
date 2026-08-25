@@ -9,9 +9,10 @@ import { RootState } from "../store";
 import { formatCurrency } from "../utils/currency";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
 import ProductActions from "../components/products/ProductActions";
+import ProductCard from "../components/products/ProductCard";
 
 type ProductImage = { id: string | null; uri: string };
-type Product = { id:string; title:string; description:string; regularPrice:number; mainImageUrl:string; secondaryImages?:ProductImage[]; categoryId:string; categoryName?:string; brand?:string; quantity:number; rating?:number; discountPercentage?:number; discountedPrice?:number; };
+type Product = { id:string; title:string; description:string; regularPrice:number; mainImageUrl:string; secondaryImages?:ProductImage[]; categoryId:string; categoryName?:string; brand?:string; quantity:number; rating?:number; discountPercentage?:number; discountedPrice?:number; isNewProduct?:boolean; };
 type ReviewItem = { id:string; content:string; rating:number; createdOn:string; userId:string; userNames:string; };
 
 const ProductDetails = () => {
@@ -26,6 +27,7 @@ const ProductDetails = () => {
   const [selectedImage,setSelectedImage]=useState(0);
   const [quantity,setQuantity]=useState(1);
   const [reviews,setReviews]=useState<ReviewItem[]>([]);
+  const [similarProducts,setSimilarProducts]=useState<Product[]>([]);
   const [reviewRating,setReviewRating]=useState(0);
   const [reviewText,setReviewText]=useState("");
   const [sendingReview,setSendingReview]=useState(false);
@@ -35,6 +37,8 @@ const ProductDetails = () => {
 
   const loadReviews=async(productId:string)=>{try{const q=new URLSearchParams({ProductId:productId,PageNumber:"1",PageSize:"20",SortBy:"createdOn",SortDescending:"true"});const r=await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Reviews?${q}`);if(!r.ok)return;const d=await r.json();setReviews(Array.isArray(d.items)?d.items:[]);}catch{}};
   useEffect(()=>{if(product?.id)void loadReviews(product.id);},[product?.id]);
+
+  useEffect(()=>{if(!product?.id||!product.categoryId){setSimilarProducts([]);return;}let cancelled=false;(async()=>{try{const r=await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products?PageNumber=1&PageSize=500`);if(!r.ok)return;const d=await r.json();const list:Product[]=Array.isArray(d)?d:Array.isArray(d?.items)?d.items:[];const sameCategory=list.filter(p=>p.id!==product.id&&p.categoryId===product.categoryId);const fallback=list.filter(p=>p.id!==product.id&&p.categoryId!==product.categoryId);if(!cancelled)setSimilarProducts([...sameCategory,...fallback].slice(0,4));}catch{if(!cancelled)setSimilarProducts([]);}})();return()=>{cancelled=true;};},[product?.id,product?.categoryId]);
 
   const addToCart=async()=>{if(!product)return;if(!token){toast.error(tr("Влез в профила си, за да добавиш продукта в количката.","Sign in to add this product to your cart."));return;}try{const r=await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Orders`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({productId:product.id,quantity})});if(!r.ok)throw 0;toast.success(tr("Продуктът е добавен в количката.","Product added to cart."));}catch{toast.error(tr("Продуктът не можа да бъде добавен в количката.","We could not add this product to your cart."));}};
 
@@ -51,6 +55,8 @@ const ProductDetails = () => {
       <section><div className="relative aspect-square overflow-hidden rounded-[2rem] border bg-white"><img src={images[selectedImage]||"/placeholder-image.jpg"} alt={product.title} className="h-full w-full object-contain p-6"/></div></section>
       <section className="rounded-[2rem] border bg-white p-6 lg:p-8"><div className="text-xs font-semibold uppercase text-slate-500">{product.brand}{product.categoryName?` • ${product.categoryName}`:""}</div><h1 className="mt-3 text-4xl font-bold">{product.title}</h1><div className="mt-4 flex">{[1,2,3,4,5].map(s=><StarIcon key={s} className={`h-5 w-5 ${s<=Math.round(rating)?"text-yellow-400":"text-slate-200"}`}/>)}</div><div className="mt-6 text-3xl font-black">{formatCurrency(displayPrice)}</div><div className="mt-6 border-y py-4"><strong className={product.quantity>0?"text-emerald-700":"text-rose-600"}>{product.quantity>0?tr("В наличност","In stock"):tr("Няма наличност","Out of stock")}</strong> · {product.quantity} {tr("бр.","pcs")}</div><div className="prose prose-sm mt-6" dangerouslySetInnerHTML={{__html:product.description||""}}/>{product.quantity>0&&<div className="mt-6 flex items-center gap-3"><button onClick={()=>setQuantity(Math.max(1,quantity-1))}>−</button><input type="number" min={1} max={product.quantity} value={quantity} onChange={e=>setQuantity(Math.min(product.quantity,Math.max(1,Number(e.target.value)||1)))} className="w-20 rounded border p-2 text-center"/><button onClick={()=>setQuantity(Math.min(product.quantity,quantity+1))}>+</button></div>}<button onClick={()=>void addToCart()} disabled={product.quantity<=0} className="mt-6 w-full rounded-xl bg-slate-950 px-5 py-3 font-bold text-white disabled:opacity-40">{tr("Добави в количката","Add to cart")}</button><ProductActions productId={product.id} showLabels /></section>
     </div>
+
+    {similarProducts.length>0&&<section className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-5 sm:p-7"><h2 className="text-2xl font-black text-slate-950">{tr("Подобни продукти","Similar products")}</h2><div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{similarProducts.map(item=><ProductCard key={item.id} product={item}/>)}</div></section>}
 
     <section className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-5 sm:p-7">
       <h2 className="text-2xl font-black text-slate-950">{tr("Оценки и ревюта","Ratings & reviews")}</h2>
