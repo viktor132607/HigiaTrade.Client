@@ -50,10 +50,10 @@ const ProductActions = ({ productId, showLabels = false, compact = false }: Prop
 
   const baseClass = compact
     ? "inline-flex h-9 items-center justify-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition"
-    : "inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-medium transition";
+    : "flex h-11 w-full items-center justify-center gap-2 rounded-lg border px-4 text-sm font-semibold transition";
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className={compact ? "flex flex-wrap items-center gap-2" : "mt-3 grid grid-cols-2 gap-3"}>
       <button
         type="button"
         onClick={handleCompare}
