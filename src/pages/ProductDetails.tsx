@@ -15,6 +15,9 @@ type ProductImage = { id: string | null; uri: string };
 type Product = { id:string; title:string; description:string; regularPrice:number; mainImageUrl:string; secondaryImages?:ProductImage[]; categoryId:string; categoryName?:string; brand?:string; quantity:number; rating?:number; discountPercentage?:number; discountedPrice?:number; isNewProduct?:boolean; };
 type ReviewItem = { id:string; content:string; rating:number; createdOn:string; userId:string; userNames:string; };
 
+const VIEW_HISTORY_KEY = "higiatrade_recently_viewed_products";
+const MAX_VIEW_HISTORY = 12;
+
 const ProductDetails = () => {
   const { id } = useParams<{ id: string }>();
   const token = useSelector((state: RootState) => state.auth.token);
@@ -28,6 +31,7 @@ const ProductDetails = () => {
   const [quantity,setQuantity]=useState(1);
   const [reviews,setReviews]=useState<ReviewItem[]>([]);
   const [similarProducts,setSimilarProducts]=useState<Product[]>([]);
+  const [recentlyViewed,setRecentlyViewed]=useState<Product[]>([]);
   const [reviewRating,setReviewRating]=useState(0);
   const [reviewText,setReviewText]=useState("");
   const [sendingReview,setSendingReview]=useState(false);
@@ -38,7 +42,19 @@ const ProductDetails = () => {
   const loadReviews=async(productId:string)=>{try{const q=new URLSearchParams({ProductId:productId,PageNumber:"1",PageSize:"20",SortBy:"createdOn",SortDescending:"true"});const r=await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Reviews?${q}`);if(!r.ok)return;const d=await r.json();setReviews(Array.isArray(d.items)?d.items:[]);}catch{}};
   useEffect(()=>{if(product?.id)void loadReviews(product.id);},[product?.id]);
 
-  useEffect(()=>{if(!product?.id||!product.categoryId){setSimilarProducts([]);return;}let cancelled=false;(async()=>{try{const r=await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products?PageNumber=1&PageSize=500`);if(!r.ok)return;const d=await r.json();const list:Product[]=Array.isArray(d)?d:Array.isArray(d?.items)?d.items:[];const sameCategory=list.filter(p=>p.id!==product.id&&p.categoryId===product.categoryId);const fallback=list.filter(p=>p.id!==product.id&&p.categoryId!==product.categoryId);if(!cancelled)setSimilarProducts([...sameCategory,...fallback].slice(0,4));}catch{if(!cancelled)setSimilarProducts([]);}})();return()=>{cancelled=true;};},[product?.id,product?.categoryId]);
+  useEffect(()=>{
+    if(!product?.id)return;
+    try{
+      const stored=JSON.parse(localStorage.getItem(VIEW_HISTORY_KEY)||"[]");
+      const ids=Array.isArray(stored)?stored.filter((x):x is string=>typeof x==="string"):[];
+      const next=[product.id,...ids.filter(x=>x!==product.id)].slice(0,MAX_VIEW_HISTORY);
+      localStorage.setItem(VIEW_HISTORY_KEY,JSON.stringify(next));
+    }catch{}
+  },[product?.id]);
+
+  useEffect(()=>{if(!product?.id||!product.categoryId){setSimilarProducts([]);setRecentlyViewed([]);return;}let cancelled=false;(async()=>{try{const r=await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products?PageNumber=1&PageSize=500`);if(!r.ok)return;const d=await r.json();const list:Product[]=Array.isArray(d)?d:Array.isArray(d?.items)?d.items:[];const sameCategory=list.filter(p=>p.id!==product.id&&p.categoryId===product.categoryId);const fallback=list.filter(p=>p.id!==product.id&&p.categoryId!==product.categoryId);if(!cancelled)setSimilarProducts([...sameCategory,...fallback].slice(0,4));
+      try{const stored=JSON.parse(localStorage.getItem(VIEW_HISTORY_KEY)||"[]");const ids:string[]=Array.isArray(stored)?stored.filter((x):x is string=>typeof x==="string"):[];const map=new Map(list.map(p=>[p.id,p]));const history=ids.filter(x=>x!==product.id).map(x=>map.get(x)).filter((x):x is Product=>Boolean(x)).slice(0,4);if(!cancelled)setRecentlyViewed(history);}catch{if(!cancelled)setRecentlyViewed([]);}
+    }catch{if(!cancelled){setSimilarProducts([]);setRecentlyViewed([]);}}})();return()=>{cancelled=true;};},[product?.id,product?.categoryId]);
 
   const addToCart=async()=>{if(!product)return;if(!token){toast.error(tr("Влез в профила си, за да добавиш продукта в количката.","Sign in to add this product to your cart."));return;}try{const r=await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Orders`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({productId:product.id,quantity})});if(!r.ok)throw 0;toast.success(tr("Продуктът е добавен в количката.","Product added to cart."));}catch{toast.error(tr("Продуктът не можа да бъде добавен в количката.","We could not add this product to your cart."));}};
 
@@ -57,6 +73,8 @@ const ProductDetails = () => {
     </div>
 
     {similarProducts.length>0&&<section className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-5 sm:p-7"><h2 className="text-2xl font-black text-slate-950">{tr("Подобни продукти","Similar products")}</h2><div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{similarProducts.map(item=><ProductCard key={item.id} product={item}/>)}</div></section>}
+
+    {recentlyViewed.length>0&&<section className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-5 sm:p-7"><h2 className="text-2xl font-black text-slate-950">{tr("Последно разглеждани","Recently viewed")}</h2><div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{recentlyViewed.map(item=><ProductCard key={item.id} product={item}/>)}</div></section>}
 
     <section className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-5 sm:p-7">
       <h2 className="text-2xl font-black text-slate-950">{tr("Оценки и ревюта","Ratings & reviews")}</h2>
