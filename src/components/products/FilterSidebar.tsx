@@ -181,17 +181,17 @@ const FilterSidebar = ({
           </div>
 
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{isBg ? "Категории" : "Categories"}</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{isBg ? "Рейтинг" : "Rating"}</h3>
             <div className="space-y-2">
-              <button type="button" onClick={() => handleCategoryChange(null)} className={optionClass(!selectedCategory)}>{isBg ? "Всички категории" : "All categories"}</button>
-              {categories.map(category => <button type="button" key={category.id} onClick={() => handleCategoryChange(category.id)} className={optionClass(selectedCategory === category.id)}>{category.name}</button>)}
+              {ratingBuckets.map(rating => <button type="button" key={rating} onClick={() => handleRatingChange(rating)} className={optionClass(selectedRating === rating)}><span className="text-base tracking-[0.08em] text-amber-500">{"★".repeat(rating)}</span></button>)}
             </div>
           </div>
 
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{isBg ? "Рейтинг" : "Rating"}</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{isBg ? "Категории" : "Categories"}</h3>
             <div className="space-y-2">
-              {ratingBuckets.map(rating => <button type="button" key={rating} onClick={() => handleRatingChange(rating)} className={optionClass(selectedRating === rating)}><span className="text-base tracking-[0.08em] text-amber-500">{"★".repeat(rating)}</span></button>)}
+              <button type="button" onClick={() => handleCategoryChange(null)} className={optionClass(!selectedCategory)}>{isBg ? "Всички категории" : "All categories"}</button>
+              {categories.map(category => <button type="button" key={category.id} onClick={() => handleCategoryChange(category.id)} className={optionClass(selectedCategory === category.id)}>{category.name}</button>)}
             </div>
           </div>
         </div>
