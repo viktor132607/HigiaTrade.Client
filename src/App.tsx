@@ -20,6 +20,8 @@ import Products from "./pages/Products";
 import ProductDetails from "./pages/ProductDetails";
 import Brands from "./pages/Brands";
 import SanoDistributor from "./pages/SanoDistributor";
+import CompanyInfo from "./pages/CompanyInfo";
+import RegionalCategory from "./pages/RegionalCategory";
 import NewProducts from "./pages/NewProducts";
 import Compare from "./pages/Compare";
 import Cart from "./pages/Cart";
@@ -62,6 +64,7 @@ function App() {
               <Route path="/category/:categoryId" element={<Products />} />
               <Route path="/products/:id" element={<ProductDetails />} />
               <Route path="/about" element={<About />} />
+              <Route path="/company-info" element={<CompanyInfo />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/sano" element={<SanoDistributor />} />
               <Route path="/sano/:region" element={<SanoDistributor />} />
@@ -176,6 +179,7 @@ function App() {
                 <Route path="*" element={<Navigate to="/admin" replace />} />
               </Route>
 
+              <Route path="/:categorySlug/:region" element={<RegionalCategory />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
