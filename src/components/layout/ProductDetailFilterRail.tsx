@@ -26,16 +26,36 @@ const ProductDetailFilterRail = () => {
     setProductReady(false);
     if (!isProductDetails) return;
 
+    let revealTimer: number | null = null;
+
     const checkProductReady = () => {
       const productTitle = document.querySelector("main h1");
-      if (productTitle) setProductReady(true);
+
+      if (!productTitle) {
+        if (revealTimer !== null) window.clearTimeout(revealTimer);
+        revealTimer = null;
+        setProductReady(false);
+        return;
+      }
+
+      if (revealTimer !== null) window.clearTimeout(revealTimer);
+      revealTimer = window.setTimeout(() => {
+        const stillReady = Boolean(document.querySelector("main h1"));
+        setProductReady(stillReady);
+      }, 120);
     };
 
-    checkProductReady();
     const observer = new MutationObserver(checkProductReady);
     observer.observe(document.body, { childList: true, subtree: true });
 
-    return () => observer.disconnect();
+    const initialTimer = window.setTimeout(checkProductReady, 0);
+
+    return () => {
+      window.clearTimeout(initialTimer);
+      if (revealTimer !== null) window.clearTimeout(revealTimer);
+      observer.disconnect();
+      setProductReady(false);
+    };
   }, [isProductDetails, location.pathname]);
 
   useEffect(() => {
@@ -78,7 +98,7 @@ const ProductDetailFilterRail = () => {
   };
 
   return (
-    <div className="fixed left-3 top-32 z-20 hidden w-72 animate-[fadeIn_.18s_ease-out] 2xl:block">
+    <div className="fixed left-3 top-32 z-20 hidden w-72 2xl:block">
       <FilterSidebar
         categories={categories}
         selectedCategory={null}
