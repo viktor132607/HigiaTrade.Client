@@ -26,7 +26,8 @@ const InvoiceImport = () => {
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [extracting, setExtracting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -38,6 +39,7 @@ const InvoiceImport = () => {
   const [confirmedNames, setConfirmedNames] = useState<Set<number>>(new Set());
   const [confirmedQuantities, setConfirmedQuantities] = useState<Set<number>>(new Set());
 
+  const file = files[activeFileIndex] ?? null;
   const validRowsWithIndexes = useMemo(() => rows.map((row, index) => ({ row, index })).filter(({ row }) => Boolean(row.selectedProductId) && Number.isInteger(Number(row.editableQuantity)) && Number(row.editableQuantity) > 0), [rows]);
   const allConfirmed = validRowsWithIndexes.length > 0 && validRowsWithIndexes.every(({ index }) => confirmedNames.has(index) && confirmedQuantities.has(index));
   const isPdf = Boolean(file && (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")));
@@ -51,12 +53,14 @@ const InvoiceImport = () => {
     setter((current) => { const next = new Set(current); next.has(index) ? next.delete(index) : next.add(index); return next; });
   };
 
-  const selectFile = (candidate: File | null) => {
+  const selectFiles = (selected: FileList | null) => {
     setError(""); setResult(null); setRows([]); setConfirmedNames(new Set()); setConfirmedQuantities(new Set()); setInvoiceNumber(""); setReviewOpen(false); setProgress(0);
-    if (!candidate) { setFile(null); return; }
-    if (!ACCEPTED_EXTENSIONS.some((ext) => candidate.name.toLowerCase().endsWith(ext))) { setError(isBg ? "Неподдържан файл." : "Unsupported file."); return; }
-    if (candidate.size > MAX_FILE_SIZE) { setError(isBg ? "Файлът е над 15 MB." : "File exceeds 15 MB."); return; }
-    setFile(candidate);
+    if (!selected?.length) { setFiles([]); setActiveFileIndex(0); return; }
+    const incoming = Array.from(selected);
+    const invalid = incoming.find((candidate) => !ACCEPTED_EXTENSIONS.some((ext) => candidate.name.toLowerCase().endsWith(ext)) || candidate.size > MAX_FILE_SIZE);
+    if (invalid) { setError(isBg ? `Невалиден файл: ${invalid.name}` : `Invalid file: ${invalid.name}`); return; }
+    setFiles(incoming);
+    setActiveFileIndex(0);
   };
 
   const extractInvoice = async () => {
@@ -95,11 +99,12 @@ const InvoiceImport = () => {
   return <div className="space-y-5">
     <div><p className="text-xs font-bold uppercase tracking-[0.22em] text-[#18b99f]">OCR · BG / EN</p><h1 className="mt-2 text-3xl font-black text-slate-950">{isBg ? "Импорт от фактура" : "Invoice import"}</h1></div>
     <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white p-8 text-center">
-      <input ref={fileInputRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" className="hidden" onChange={(e) => { selectFile(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+      <input ref={fileInputRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp" className="hidden" onChange={(e) => { selectFiles(e.target.files); e.target.value = ""; }} />
       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-950 text-white">{isPdf ? <DocumentTextIcon className="h-8 w-8" /> : file ? <PhotoIcon className="h-8 w-8" /> : <CloudArrowUpIcon className="h-8 w-8" />}</div>
-      <div className="mt-4 text-lg font-black">{file?.name || (isBg ? "Избери фактура" : "Choose invoice")}</div>
-      <div className="mt-5 flex justify-center gap-2"><button onClick={() => fileInputRef.current?.click()} className="rounded-lg border px-5 py-3 font-bold">{isBg ? "Избери файл" : "Choose file"}</button><button disabled={!file || extracting} onClick={() => void extractInvoice()} className="rounded-lg bg-[#18b99f] px-5 py-3 font-bold text-white disabled:opacity-40">{extracting ? (isBg ? "Разчитане..." : "Reading...") : (isBg ? "Разчети фактурата" : "Read invoice")}</button></div>
-      {(extracting || progress > 0) && <div className="mx-auto mt-5 max-w-3xl"><div className="mb-1 text-right text-xs font-bold">{progress}%</div><div className="h-3 overflow-hidden rounded-full bg-slate-200"><div className="h-full bg-[#18b99f]" style={{ width: `${progress}%` }} /></div></div>}
+      <div className="mt-4 text-lg font-black">{files.length ? `${files.length} ${isBg ? "фактури избрани" : "invoices selected"}` : (isBg ? "Избери фактури" : "Choose invoices")}</div>
+      {files.length > 0 && <div className="mx-auto mt-4 grid max-w-4xl gap-2 sm:grid-cols-2 lg:grid-cols-3">{files.map((candidate, index) => <button key={`${candidate.name}-${candidate.lastModified}-${index}`} type="button" onClick={() => { setActiveFileIndex(index); setResult(null); setRows([]); setReviewOpen(false); setProgress(0); }} className={`rounded-xl border px-4 py-3 text-left ${index === activeFileIndex ? "border-[#18b99f] bg-[#18b99f]/10" : "border-slate-200 bg-slate-50"}`}><div className="truncate font-black text-slate-950">{candidate.name}</div><div className="mt-1 text-xs text-slate-500">{(candidate.size / 1024 / 1024).toFixed(2)} MB</div></button>)}</div>}
+      <div className="mt-5 flex justify-center gap-2"><button onClick={() => fileInputRef.current?.click()} className="rounded-lg border px-5 py-3 font-bold">{isBg ? "Избери файлове" : "Choose files"}</button><button disabled={!file || extracting} onClick={() => void extractInvoice()} className="rounded-lg bg-[#18b99f] px-5 py-3 font-bold text-white disabled:opacity-40">{extracting ? (isBg ? "Разчитане..." : "Reading...") : (isBg ? `Разчети ${file?.name ?? "фактурата"}` : `Read ${file?.name ?? "invoice"}`)}</button></div>
+      {(extracting || progress > 0) && <div className="mx-auto mt-5 max-w-3xl"><div className="mb-1 flex justify-between text-xs font-bold"><span className="truncate pr-4">{file?.name}</span><span>{progress}%</span></div><div className="h-3 overflow-hidden rounded-full bg-slate-200"><div className="h-full bg-[#18b99f]" style={{ width: `${progress}%` }} /></div></div>}
     </div>
     {error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 font-semibold text-rose-700"><ExclamationTriangleIcon className="mr-2 inline h-5 w-5" />{error}</div>}
 
