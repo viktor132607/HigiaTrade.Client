@@ -11,6 +11,14 @@ services:
         value: https://higiatrade-server.onrender.com/api
       - key: NEXT_PUBLIC_SITE_URL
         value: https://higiatrade.com
+      - key: NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+        sync: false
+      - key: NEXT_PUBLIC_BING_SITE_VERIFICATION
+        sync: false
+      - key: SEO_MIN_REGIONAL_CATEGORY_PRODUCTS
+        value: "4"
+      - key: SEO_MAX_REGIONAL_CATEGORIES
+        value: "6"
       - key: SEO_STRICT
         value: "1"
     routes:
