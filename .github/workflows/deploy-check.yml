@@ -24,10 +24,13 @@ jobs:
           test -s out/index.html
           test -d out/_next
           test -s out/sitemap.xml
+          test -s out/image-sitemap.xml
+          test -s out/google-merchant.xml
+          test -s out/google-merchant.csv
           test -s out/llms.txt
           test -s out/seo-manifest.json
           test -s out/sano/index.html
           test -s out/sano/ruse/index.html
           test -s out/sano/silistra/index.html
           test -s out/sano/razgrad/index.html
-          node -e 'const fs=require("fs"); const m=JSON.parse(fs.readFileSync("out/seo-manifest.json","utf8")); if(m.regionalPages!==6) process.exit(1); console.log(m)'
+          node -e 'const fs=require("fs"); const m=JSON.parse(fs.readFileSync("out/seo-manifest.json","utf8")); if(m.regionalPages!==6) process.exit(1); if(!Array.isArray(m.feeds)||m.feeds.length<5) process.exit(1); console.log(m)'
