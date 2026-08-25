@@ -14,7 +14,7 @@ import ProductActions from "../components/products/ProductActions";
 import ProductCard from "../components/products/ProductCard";
 
 type ProductImage = { id: string | null; uri: string };
-type Product = { id:string; title:string; description:string; regularPrice:number; mainImageUrl:string; secondaryImages?:ProductImage[]; categoryId:string; categoryName?:string; brand?:string; quantity:number; rating?:number; discountPercentage?:number; discountedPrice?:number; isNewProduct?:boolean; };
+type Product = { id:string; title:string; description:string; regularPrice:number; mainImageUrl:string; secondaryImages?:ProductImage[]; categoryId:string; categoryName?:string; brand?:string; quantity:number; rating?:number; discountPercentage?:number; discountedPrice?:number; wholesalePrice?:number; wholesaleMinQuantity?:number; isNewProduct?:boolean; };
 type ReviewItem = { id:string; content:string; rating:number; createdOn:string; userId:string; userNames:string; };
 
 const VIEW_HISTORY_KEY = "higiatrade_recently_viewed_products";
@@ -68,6 +68,8 @@ const ProductDetails = () => {
   if(error||!product)return <div className="flex min-h-[55vh] items-center justify-center px-4 text-center text-red-600">{error||tr("Продуктът не е намерен.","Product not found.")}</div>;
   const images=Array.from(new Set([product.mainImageUrl,...(product.secondaryImages??[]).map(x=>x.uri)].filter(Boolean)));
   const displayPrice=product.discountedPrice&&product.discountedPrice>0?product.discountedPrice:product.regularPrice;
+  const wholesalePrice=Number(product.wholesalePrice??0);
+  const wholesaleMinQuantity=Number(product.wholesaleMinQuantity??0);
   const rating=Number(product.rating??0);
   const previousImage=()=>setSelectedImage(index=>index===0?images.length-1:index-1);
   const nextImage=()=>setSelectedImage(index=>index===images.length-1?0:index+1);
@@ -85,7 +87,17 @@ const ProductDetails = () => {
         <h1 className="mt-3 text-4xl font-bold">{product.title}</h1>
         {product.brand&&<div className="mt-3 inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-bold text-slate-700">{tr("Марка","Brand")}: {product.brand}</div>}
         <div className="mt-4 flex">{[1,2,3,4,5].map(s=><StarIcon key={s} className={`h-5 w-5 ${s<=Math.round(rating)?"text-yellow-400":"text-slate-200"}`}/>)}</div>
-        <div className="mt-6 text-3xl font-black">{formatCurrency(displayPrice)}</div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="text-xs font-bold uppercase tracking-wide text-slate-500">{tr("Цена на дребно","Retail price")}</div>
+            <div className="mt-1 text-3xl font-black">{formatCurrency(displayPrice)}</div>
+          </div>
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+            <div className="text-xs font-bold uppercase tracking-wide text-emerald-700">{tr("Цена на едро","Wholesale price")}</div>
+            <div className="mt-1 text-3xl font-black text-emerald-800">{wholesalePrice>0?formatCurrency(wholesalePrice):tr("Не е зададена","Not set")}</div>
+            {wholesalePrice>0&&wholesaleMinQuantity>0&&<div className="mt-1 text-xs text-emerald-700">{tr(`При минимум ${wholesaleMinQuantity} бр.`,`From ${wholesaleMinQuantity} pcs.`)}</div>}
+          </div>
+        </div>
         <div className="mt-6 border-y py-4"><strong className={`inline-flex items-center gap-2 ${product.quantity>0?"text-emerald-700":"text-rose-600"}`}>{product.quantity>0?<><CheckCircleIcon className="h-5 w-5"/>{tr("В наличност","In stock")}</>:tr("Изчерпан продукт","Out of stock")}</strong></div>
         <div className="prose prose-sm mt-6" dangerouslySetInnerHTML={{__html:product.description||""}}/>
         {product.quantity>0&&<div className="mt-6 flex items-center gap-3"><button onClick={()=>setQuantity(Math.max(1,quantity-1))}>−</button><input type="number" min={1} max={product.quantity} value={quantity} onChange={e=>setQuantity(Math.min(product.quantity,Math.max(1,Number(e.target.value)||1)))} className="w-20 rounded border p-2 text-center"/><button onClick={()=>setQuantity(Math.min(product.quantity,quantity+1))}>+</button></div>}
