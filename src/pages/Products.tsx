@@ -14,6 +14,7 @@ interface FilterState {
   minPrice: number | null;
   maxPrice: number | null;
   rating: number | null;
+  inStockOnly: boolean;
   pageSize: number;
   pageNumber: number;
   sortBy: string;
@@ -57,6 +58,7 @@ const Products = () => {
     minPrice: null,
     maxPrice: null,
     rating: null,
+    inStockOnly: false,
     pageSize: getInitialPageSize(),
     pageNumber: 1,
     sortBy: "rating",
@@ -92,6 +94,7 @@ const Products = () => {
       minPrice: searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : null,
       maxPrice: searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : null,
       rating: searchParams.get("rating") ? Number(searchParams.get("rating")) : null,
+      inStockOnly: searchParams.get("inStock") === "true",
       pageSize: [20, 50, 100].includes(pageSize) ? pageSize : previous.pageSize,
       pageNumber: pageNumber > 0 ? pageNumber : 1,
       sortBy: searchParams.get("sortBy") || previous.sortBy,
@@ -130,6 +133,7 @@ const Products = () => {
         if (filters.minPrice !== null) params.set("MinPrice", filters.minPrice.toString());
         if (filters.maxPrice !== null) params.set("MaxPrice", filters.maxPrice.toString());
         if (filters.rating !== null) params.set("MinRating", filters.rating.toString());
+        if (filters.inStockOnly) params.set("InStockOnly", "true");
         params.set("PageSize", filters.pageSize.toString());
         params.set("PageNumber", filters.pageNumber.toString());
         params.set("SortBy", filters.sortBy);
@@ -167,6 +171,7 @@ const Products = () => {
     if (next.minPrice !== null) params.set("minPrice", next.minPrice.toString());
     if (next.maxPrice !== null) params.set("maxPrice", next.maxPrice.toString());
     if (next.rating !== null) params.set("rating", next.rating.toString());
+    if (next.inStockOnly) params.set("inStock", "true");
     params.set("pageSize", next.pageSize.toString());
     params.set("page", next.pageNumber.toString());
     params.set("sortBy", next.sortBy);
@@ -260,6 +265,7 @@ const Products = () => {
             selectedMinPrice={filters.minPrice}
             selectedMaxPrice={filters.maxPrice}
             selectedRating={filters.rating}
+            selectedInStockOnly={filters.inStockOnly}
             onApplyFilters={handleApplyFilters}
           />
 
