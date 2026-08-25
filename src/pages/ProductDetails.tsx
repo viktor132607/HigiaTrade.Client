@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { CheckCircleIcon, ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { StarIcon } from "@heroicons/react/24/solid";
 import { toast } from "react-toastify";
 import { RootState } from "../store";
@@ -60,7 +60,7 @@ const ProductDetails = () => {
       try{const stored=JSON.parse(localStorage.getItem(VIEW_HISTORY_KEY)||"[]");const ids:string[]=Array.isArray(stored)?stored.filter((x):x is string=>typeof x==="string"):[];const map=new Map(list.map(p=>[p.id,p]));const history=ids.filter(x=>x!==product.id).map(x=>map.get(x)).filter((x):x is Product=>Boolean(x)).slice(0,4);if(!cancelled)setRecentlyViewed(history);}catch{if(!cancelled)setRecentlyViewed([]);}
     }catch{if(!cancelled){setSimilarProducts([]);setRecentlyViewed([]);}}})();return()=>{cancelled=true;};},[product?.id,product?.categoryId]);
 
-  const addToCart=async()=>{if(!product||product.quantity<=0)return;try{if(token){const r=await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Orders`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({productId:product.id,quantity})});if(!r.ok)throw 0;}dispatch(addItem({id:product.id,title:product.title,regularPrice:product.regularPrice,quantity,imageUrl:product.mainImageUrl,mainImageUrl:product.mainImageUrl,discountPercentage:product.discountPercentage,discountedPrice:product.discountedPrice}));toast.success(tr("Продуктът е добавен в количката.","Product added to cart."));}catch{toast.error(tr("Продуктът не можа да бъде добавен в количката.","We could not add this product to your cart."));}};
+  const addToCart=async()=>{if(!product||product.quantity<=0)return;try{dispatch(addItem({id:product.id,title:product.title,regularPrice:product.regularPrice,quantity,imageUrl:product.mainImageUrl,mainImageUrl:product.mainImageUrl,discountPercentage:product.discountPercentage,discountedPrice:product.discountedPrice}));toast.success(tr("Продуктът е добавен в количката.","Product added to cart."));if(token){void fetch(`${process.env.NEXT_PUBLIC_API_URL}/Orders`,{method:"PUT",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({productId:product.id,quantity})}).catch(()=>undefined);}}catch{toast.error(tr("Продуктът не е добавен в количката.","The product was not added to your cart."));}};
 
   const submitReview=async()=>{if(!product||!token||reviewRating<1)return;try{setSendingReview(true);const r=await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Reviews`,{method:"POST",headers:{"Content-Type":"application/json",Authorization:`Bearer ${token}`},body:JSON.stringify({productId:product.id,rating:reviewRating,content:reviewText.trim()||null})});const payload=await r.json().catch(()=>null);if(!r.ok)throw new Error(payload?.message||tr("Можеш да оставиш ревю само след потвърдена покупка на този продукт.","You can review this product only after a confirmed purchase."));setReviewRating(0);setReviewText("");await loadReviews(product.id);toast.success(tr("Оценката е добавена.","Review added."));}catch(e){toast.error(e instanceof Error?e.message:tr("Ревюто не можа да бъде добавено.","Review could not be added."));}finally{setSendingReview(false);}};
 
@@ -86,7 +86,7 @@ const ProductDetails = () => {
         {product.brand&&<div className="mt-3 inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-bold text-slate-700">{tr("Марка","Brand")}: {product.brand}</div>}
         <div className="mt-4 flex">{[1,2,3,4,5].map(s=><StarIcon key={s} className={`h-5 w-5 ${s<=Math.round(rating)?"text-yellow-400":"text-slate-200"}`}/>)}</div>
         <div className="mt-6 text-3xl font-black">{formatCurrency(displayPrice)}</div>
-        <div className="mt-6 border-y py-4"><strong className={product.quantity>0?"text-emerald-700":"text-rose-600"}>{product.quantity>0?tr("В наличност","In stock"):tr("Изчерпан продукт","Out of stock")}</strong></div>
+        <div className="mt-6 border-y py-4"><strong className={`inline-flex items-center gap-2 ${product.quantity>0?"text-emerald-700":"text-rose-600"}`}>{product.quantity>0?<><CheckCircleIcon className="h-5 w-5"/>{tr("В наличност","In stock")}</>:tr("Изчерпан продукт","Out of stock")}</strong></div>
         <div className="prose prose-sm mt-6" dangerouslySetInnerHTML={{__html:product.description||""}}/>
         {product.quantity>0&&<div className="mt-6 flex items-center gap-3"><button onClick={()=>setQuantity(Math.max(1,quantity-1))}>−</button><input type="number" min={1} max={product.quantity} value={quantity} onChange={e=>setQuantity(Math.min(product.quantity,Math.max(1,Number(e.target.value)||1)))} className="w-20 rounded border p-2 text-center"/><button onClick={()=>setQuantity(Math.min(product.quantity,quantity+1))}>+</button></div>}
         <button onClick={()=>void addToCart()} disabled={product.quantity<=0} className="mt-6 w-full rounded-xl bg-slate-950 px-5 py-3 font-bold text-white disabled:opacity-40">{product.quantity>0?tr("Добави в количката","Add to cart"):tr("Изчерпан продукт","Unavailable")}</button>
