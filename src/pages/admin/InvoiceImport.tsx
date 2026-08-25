@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { RootState } from "../../store";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
+import { invoiceFileKey, loadPendingInvoiceFiles, persistPendingInvoiceFiles, removePendingInvoiceFile } from "./invoiceQueueStorage";
 
 type ProductCandidate = { id: string; name: string; confidence: number };
 type CatalogProduct = { id: string; name: string };
@@ -15,7 +16,6 @@ type EditableItem = ExtractedItem & { selectedProductId: string; editableProduct
 const ACCEPTED_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg", ".webp"];
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
 const INCOMPLETE_MARKER = "[INVOICE_IMPORT_INCOMPLETE]";
-const fileKey = (file: File) => `${file.name}|${file.size}|${file.lastModified}`;
 
 const isRealItem = (item: ExtractedItem) => {
   const text = `${item.rawName} ${item.sourceLine}`.toLowerCase().trim();
@@ -45,6 +45,7 @@ const InvoiceImport = () => {
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const queueLoadedRef = useRef(false);
   const [files, setFiles] = useState<File[]>([]);
   const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [catalog, setCatalog] = useState<CatalogProduct[]>([]);
@@ -77,6 +78,24 @@ const InvoiceImport = () => {
 
   useEffect(() => { void loadCatalog(); }, [token]);
   useEffect(() => {
+    const restoreQueue = async () => {
+      try {
+        const stored = await loadPendingInvoiceFiles();
+        setFiles((current) => {
+          const merged = new Map<string, File>();
+          stored.forEach((pending) => merged.set(invoiceFileKey(pending), pending));
+          current.forEach((pending) => merged.set(invoiceFileKey(pending), pending));
+          return Array.from(merged.values());
+        });
+      } catch {
+        // IndexedDB persistence is best-effort; the live queue still works if storage is blocked.
+      } finally {
+        queueLoadedRef.current = true;
+      }
+    };
+    void restoreQueue();
+  }, []);
+  useEffect(() => {
     const loadCategories = async () => {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Categories`, { headers: authHeaders });
@@ -100,8 +119,10 @@ const InvoiceImport = () => {
     const invalid = incoming.find((candidate) => !ACCEPTED_EXTENSIONS.some((ext) => candidate.name.toLowerCase().endsWith(ext)) || candidate.size > MAX_FILE_SIZE);
     if (invalid) { setError(isBg ? `Невалиден файл: ${invalid.name}` : `Invalid file: ${invalid.name}`); return; }
     setFiles((current) => {
-      const existing = new Set(current.map(fileKey));
-      return [...current, ...incoming.filter((candidate) => !existing.has(fileKey(candidate)))];
+      const existing = new Set(current.map(invoiceFileKey));
+      const additions = incoming.filter((candidate) => !existing.has(invoiceFileKey(candidate)));
+      if (additions.length) void persistPendingInvoiceFiles(additions);
+      return [...current, ...additions];
     });
     if (files.length === 0) setActiveFileIndex(0);
     setError("");
@@ -164,6 +185,8 @@ const InvoiceImport = () => {
       if (created.length) toast.warning(isBg ? `${created.length} нови продукта са добавени като чернови и чакат допълване в Продукти.` : `${created.length} new products were added as drafts and need completion in Products.`);
       toast.success(isBg ? "Фактурата е въведена и махната от опашката." : "Invoice imported and removed from queue.");
       const removedIndex = activeFileIndex;
+      const completedFile = file;
+      await removePendingInvoiceFile(completedFile).catch(() => undefined);
       setFiles((current) => current.filter((_, index) => index !== removedIndex));
       setActiveFileIndex((current) => Math.max(0, current - (removedIndex > 0 ? 1 : 0)));
       await loadCatalog();
@@ -178,7 +201,7 @@ const InvoiceImport = () => {
       <input ref={fileInputRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp" className="hidden" onChange={(e) => { selectFiles(e.target.files); e.target.value = ""; }} />
       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-950 text-white">{isPdf ? <DocumentTextIcon className="h-8 w-8" /> : file ? <PhotoIcon className="h-8 w-8" /> : <CloudArrowUpIcon className="h-8 w-8" />}</div>
       <div className="mt-4 text-lg font-black">{files.length ? `${files.length} ${isBg ? "фактури чакат обработка" : "invoices pending"}` : (isBg ? "Избери фактури" : "Choose invoices")}</div>
-      {files.length > 0 && <div className="mx-auto mt-4 grid max-w-4xl gap-2 sm:grid-cols-2 lg:grid-cols-3">{files.map((candidate, index) => <button key={fileKey(candidate)} type="button" onClick={() => { setActiveFileIndex(index); resetReview(); }} className={`rounded-xl border px-4 py-3 text-left ${index === activeFileIndex ? "border-[#18b99f] bg-[#18b99f]/10" : "border-slate-200 bg-slate-50"}`}><div className="truncate font-black text-slate-950">{candidate.name}</div><div className="mt-1 text-xs text-slate-500">{(candidate.size / 1024 / 1024).toFixed(2)} MB · {isBg ? "чака потвърждение" : "pending"}</div></button>)}</div>}
+      {files.length > 0 && <div className="mx-auto mt-4 grid max-w-4xl gap-2 sm:grid-cols-2 lg:grid-cols-3">{files.map((candidate, index) => <button key={invoiceFileKey(candidate)} type="button" onClick={() => { setActiveFileIndex(index); resetReview(); }} className={`rounded-xl border px-4 py-3 text-left ${index === activeFileIndex ? "border-[#18b99f] bg-[#18b99f]/10" : "border-slate-200 bg-slate-50"}`}><div className="truncate font-black text-slate-950">{candidate.name}</div><div className="mt-1 text-xs text-slate-500">{(candidate.size / 1024 / 1024).toFixed(2)} MB · {isBg ? "запазена · чака потвърждение" : "saved · pending"}</div></button>)}</div>}
       <div className="mt-5 flex justify-center gap-2"><button onClick={() => fileInputRef.current?.click()} className="rounded-lg border px-5 py-3 font-bold">{isBg ? "Добави още фактури" : "Add more invoices"}</button><button disabled={!file || extracting} onClick={() => void extractInvoice()} className="rounded-lg bg-[#18b99f] px-5 py-3 font-bold text-white disabled:opacity-40">{extracting ? (isBg ? "Разчитане..." : "Reading...") : (isBg ? `Разчети ${file?.name ?? "фактурата"}` : `Read ${file?.name ?? "invoice"}`)}</button></div>
       {(extracting || progress > 0) && <div className="mx-auto mt-5 max-w-3xl"><div className="mb-1 flex justify-between text-xs font-bold"><span className="truncate pr-4">{file?.name}</span><span>{progress}%</span></div><div className="h-3 overflow-hidden rounded-full bg-slate-200"><div className="h-full bg-[#18b99f]" style={{ width: `${progress}%` }} /></div></div>}
     </div>
