@@ -17,12 +17,37 @@ const ProductDetailFilterRail = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesReady, setCategoriesReady] = useState(false);
+  const [productReady, setProductReady] = useState(false);
 
   const isProductDetails = /^\/products\/[^/]+$/i.test(location.pathname);
 
   useEffect(() => {
+    setProductReady(false);
     if (!isProductDetails) return;
+
+    const checkProductReady = () => {
+      const productTitle = document.querySelector("main h1");
+      if (productTitle) setProductReady(true);
+    };
+
+    checkProductReady();
+    const observer = new MutationObserver(checkProductReady);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => observer.disconnect();
+  }, [isProductDetails, location.pathname]);
+
+  useEffect(() => {
+    if (!isProductDetails) {
+      setCategories([]);
+      setCategoriesReady(false);
+      return;
+    }
+
     let cancelled = false;
+    setCategoriesReady(false);
+
     (async () => {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Categories`);
@@ -32,12 +57,15 @@ const ProductDetailFilterRail = () => {
         if (!cancelled) setCategories(list);
       } catch {
         if (!cancelled) setCategories([]);
+      } finally {
+        if (!cancelled) setCategoriesReady(true);
       }
     })();
-    return () => { cancelled = true; };
-  }, [isProductDetails]);
 
-  if (!isProductDetails) return null;
+    return () => { cancelled = true; };
+  }, [isProductDetails, location.pathname]);
+
+  if (!isProductDetails || !productReady || !categoriesReady) return null;
 
   const applyFilters = (filters: Filters) => {
     const params = new URLSearchParams();
@@ -50,7 +78,7 @@ const ProductDetailFilterRail = () => {
   };
 
   return (
-    <div className="fixed left-3 top-32 z-20 hidden w-72 2xl:block">
+    <div className="fixed left-3 top-32 z-20 hidden w-72 animate-[fadeIn_.18s_ease-out] 2xl:block">
       <FilterSidebar
         categories={categories}
         selectedCategory={null}
