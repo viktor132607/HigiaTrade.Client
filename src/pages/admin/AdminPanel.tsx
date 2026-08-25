@@ -4,6 +4,7 @@ import {
   CubeIcon,
   DocumentArrowUpIcon,
   DocumentChartBarIcon,
+  GlobeAltIcon,
   QueueListIcon,
   Squares2X2Icon,
   TagIcon,
@@ -23,6 +24,7 @@ const navigation = [
   { to: "/admin/brands", labelBg: "Марки", labelEn: "Brands", icon: TagIcon },
   { to: "/admin/users", labelBg: "Клиенти", labelEn: "Customers", icon: UsersIcon },
   { to: "/admin/reports", labelBg: "Справки", labelEn: "Reports", icon: DocumentChartBarIcon },
+  { to: "/admin/seo", labelBg: "SEO", labelEn: "SEO", icon: GlobeAltIcon },
 ];
 
 type AdminPanelProps = {
