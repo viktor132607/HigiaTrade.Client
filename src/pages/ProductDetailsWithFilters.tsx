@@ -60,22 +60,24 @@ const ProductDetailsWithFilters = () => {
   }
 
   return (
-    <div className="bg-slate-50">
-      <div className="mx-auto grid max-w-[1720px] items-start gap-6 px-3 py-5 sm:px-6 sm:py-8 2xl:grid-cols-[288px_minmax(0,1fr)] 2xl:gap-8">
-        <div className="hidden 2xl:block">
-          <FilterSidebar
-            categories={categories}
-            selectedCategory={null}
-            searchQuery=""
-            selectedMinPrice={null}
-            selectedMaxPrice={null}
-            selectedRating={null}
-            suppressInitialAutoApply
-            onApplyFilters={applyFilters}
-          />
-        </div>
-        <div className="min-w-0 [&>main]:bg-transparent [&>main]:px-0 [&>main]:py-0 [&>main>div]:max-w-none">
-          <ProductDetails />
+    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-5 sm:py-8 lg:py-10">
+      <div className="site-container">
+        <div className="flex flex-col gap-5 sm:gap-8 xl:flex-row xl:items-start">
+          <div className="hidden w-72 shrink-0 xl:block">
+            <FilterSidebar
+              categories={categories}
+              selectedCategory={null}
+              searchQuery=""
+              selectedMinPrice={null}
+              selectedMaxPrice={null}
+              selectedRating={null}
+              suppressInitialAutoApply
+              onApplyFilters={applyFilters}
+            />
+          </div>
+          <div className="min-w-0 flex-1 [&>main]:bg-transparent [&>main]:px-0 [&>main]:py-0 [&>main>div]:max-w-none">
+            <ProductDetails />
+          </div>
         </div>
       </div>
     </div>
