@@ -46,9 +46,16 @@ type EditableItem = ExtractedItem & {
   editableQuantity: string;
 };
 
+type LiveRow = {
+  rawName: string;
+  matchedName: string;
+  quantity: string;
+};
+
 const ACCEPTED_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg", ".webp"];
 const ACCEPTED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
+const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
 const confidenceLabel = (value: number, isBg: boolean) => {
   if (value >= 0.85) return isBg ? "висока" : "high";
@@ -83,12 +90,14 @@ const InvoiceImport = () => {
   const [previewUrl, setPreviewUrl] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [extracting, setExtracting] = useState(false);
+  const [revealing, setRevealing] = useState(false);
   const [importing, setImporting] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<ExtractResponse | null>(null);
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [rows, setRows] = useState<EditableItem[]>([]);
+  const [liveRows, setLiveRows] = useState<LiveRow[]>([]);
 
   const text = {
     title: isBg ? "Импорт от фактура" : "Invoice import",
@@ -185,6 +194,7 @@ const InvoiceImport = () => {
     setError("");
     setResult(null);
     setRows([]);
+    setLiveRows([]);
     setInvoiceNumber("");
     setReviewOpen(false);
 
@@ -227,9 +237,12 @@ const InvoiceImport = () => {
 
     try {
       setExtracting(true);
+      setRevealing(false);
       setError("");
       setResult(null);
       setRows([]);
+      setLiveRows([]);
+      setReviewOpen(false);
 
       const formData = new FormData();
       formData.append("file", file);
@@ -246,20 +259,41 @@ const InvoiceImport = () => {
       }
 
       const data = payload as ExtractResponse;
+      const editableRows = (data.items ?? []).map((item) => ({
+        ...item,
+        selectedProductId: item.matchedProductId ?? "",
+        editableQuantity: String(item.quantity || ""),
+      }));
+
+      setExtracting(false);
+      setRevealing(true);
       setResult(data);
       setInvoiceNumber(data.invoiceNumber ?? "");
-      setRows(
-        (data.items ?? []).map((item) => ({
-          ...item,
-          selectedProductId: item.matchedProductId ?? "",
-          editableQuantity: String(item.quantity || ""),
-        }))
-      );
+
+      for (const row of editableRows) {
+        const rowIndex = await new Promise<number>((resolve) => {
+          setLiveRows((current) => {
+            resolve(current.length);
+            return [...current, { rawName: "", matchedName: "", quantity: "" }];
+          });
+        });
+
+        await sleep(90);
+        setLiveRows((current) => current.map((item, index) => index === rowIndex ? { ...item, rawName: row.rawName } : item));
+        await sleep(90);
+        setLiveRows((current) => current.map((item, index) => index === rowIndex ? { ...item, matchedName: row.matchedProductName || text.unmatched } : item));
+        await sleep(90);
+        setLiveRows((current) => current.map((item, index) => index === rowIndex ? { ...item, quantity: row.editableQuantity } : item));
+        setRows((current) => [...current, row]);
+      }
+
+      setRevealing(false);
       setReviewOpen(true);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : isBg ? "Фактурата не можа да бъде разчетена." : "The invoice could not be read.");
     } finally {
       setExtracting(false);
+      setRevealing(false);
     }
   };
 
@@ -342,42 +376,20 @@ const InvoiceImport = () => {
               <tr key={`${row.sourceLine}-${index}`} className="align-top">
                 <td className="px-4 py-4">
                   <div className="font-semibold leading-5 text-slate-950">{row.rawName}</div>
-                  <div className="mt-2 rounded-md bg-slate-50 p-2 font-mono text-[11px] leading-4 text-slate-500">
-                    {row.sourceLine}
-                  </div>
+                  <div className="mt-2 rounded-md bg-slate-50 p-2 font-mono text-[11px] leading-4 text-slate-500">{row.sourceLine}</div>
                 </td>
                 <td className="px-4 py-4">
-                  <select
-                    value={row.selectedProductId}
-                    onChange={(event) => updateSelectedProduct(index, event.target.value)}
-                    className="min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-[#18b99f]"
-                  >
+                  <select value={row.selectedProductId} onChange={(event) => updateSelectedProduct(index, event.target.value)} className="min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-[#18b99f]">
                     <option value="">— {text.unmatched} —</option>
-                    {row.candidates.map((candidate) => (
-                      <option key={candidate.id} value={candidate.id}>
-                        {candidate.name} ({Math.round(candidate.confidence * 100)}%)
-                      </option>
-                    ))}
+                    {row.candidates.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name} ({Math.round(candidate.confidence * 100)}%)</option>)}
                   </select>
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${confidenceClass(row.matchConfidence)}`}>
-                      {isBg ? "артикул" : "product"}: {confidenceLabel(row.matchConfidence, isBg)} {Math.round(row.matchConfidence * 100)}%
-                    </span>
-                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${confidenceClass(row.quantityConfidence)}`}>
-                      {isBg ? "брой" : "qty"}: {confidenceLabel(row.quantityConfidence, isBg)} {Math.round(row.quantityConfidence * 100)}%
-                    </span>
+                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${confidenceClass(row.matchConfidence)}`}>{isBg ? "артикул" : "product"}: {confidenceLabel(row.matchConfidence, isBg)} {Math.round(row.matchConfidence * 100)}%</span>
+                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${confidenceClass(row.quantityConfidence)}`}>{isBg ? "брой" : "qty"}: {confidenceLabel(row.quantityConfidence, isBg)} {Math.round(row.quantityConfidence * 100)}%</span>
                   </div>
                 </td>
                 <td className="px-4 py-4 text-right">
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    inputMode="numeric"
-                    value={row.editableQuantity}
-                    onChange={(event) => updateQuantity(index, event.target.value)}
-                    className="min-h-11 w-24 rounded-md border border-slate-300 px-3 text-right text-base font-bold text-slate-950 outline-none focus:border-[#18b99f]"
-                  />
+                  <input type="number" min="0" step="1" inputMode="numeric" value={row.editableQuantity} onChange={(event) => updateQuantity(index, event.target.value)} className="min-h-11 w-24 rounded-md border border-slate-300 px-3 text-right text-base font-bold text-slate-950 outline-none focus:border-[#18b99f]" />
                 </td>
               </tr>
             ))}
@@ -395,116 +407,70 @@ const InvoiceImport = () => {
         <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">{text.subtitle}</p>
       </div>
 
-      <div
-        tabIndex={0}
-        onPaste={handlePaste}
-        onDragEnter={(event) => {
-          event.preventDefault();
-          setDragActive(true);
-        }}
-        onDragOver={(event) => event.preventDefault()}
-        onDragLeave={(event) => {
-          if (event.currentTarget === event.target) setDragActive(false);
-        }}
-        onDrop={(event) => {
-          event.preventDefault();
-          setDragActive(false);
-          selectFile(event.dataTransfer.files?.[0] ?? null);
-        }}
-        className={`rounded-2xl border-2 border-dashed bg-white p-5 outline-none transition sm:p-8 ${
-          dragActive ? "border-[#18b99f] bg-[#18b99f]/5" : "border-slate-300 focus:border-[#18b99f]"
-        }`}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"
-          className="hidden"
-          onChange={(event) => {
-            selectFile(event.target.files?.[0] ?? null);
-            event.target.value = "";
-          }}
-        />
-        <input
-          ref={cameraInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(event) => {
-            handleCameraCapture(event.target.files?.[0] ?? null);
-            event.target.value = "";
-          }}
-        />
+      <div tabIndex={0} onPaste={handlePaste} onDragEnter={(event) => { event.preventDefault(); setDragActive(true); }} onDragOver={(event) => event.preventDefault()} onDragLeave={(event) => { if (event.currentTarget === event.target) setDragActive(false); }} onDrop={(event) => { event.preventDefault(); setDragActive(false); selectFile(event.dataTransfer.files?.[0] ?? null); }} className={`rounded-2xl border-2 border-dashed bg-white p-5 outline-none transition sm:p-8 ${dragActive ? "border-[#18b99f] bg-[#18b99f]/5" : "border-slate-300 focus:border-[#18b99f]"}`}>
+        <input ref={fileInputRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp" className="hidden" onChange={(event) => { selectFile(event.target.files?.[0] ?? null); event.target.value = ""; }} />
+        <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => { handleCameraCapture(event.target.files?.[0] ?? null); event.target.value = ""; }} />
 
         <div className="flex flex-col items-center text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-950 text-white">
-            {isPdf ? <DocumentTextIcon className="h-8 w-8" /> : file ? <PhotoIcon className="h-8 w-8" /> : <CloudArrowUpIcon className="h-8 w-8" />}
-          </div>
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-950 text-white">{isPdf ? <DocumentTextIcon className="h-8 w-8" /> : file ? <PhotoIcon className="h-8 w-8" /> : <CloudArrowUpIcon className="h-8 w-8" />}</div>
           <h2 className="mt-4 break-all text-lg font-bold text-slate-950">{file ? file.name : text.dropTitle}</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : text.dropText}
-          </p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : text.dropText}</p>
 
           <div className="mt-5 flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-center">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="min-h-11 rounded-lg border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 hover:border-[#18b99f] hover:text-[#148f7c]"
-            >
-              {text.choose}
-            </button>
-            <button
-              type="button"
-              onClick={() => cameraInputRef.current?.click()}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[#18b99f] bg-[#18b99f]/10 px-5 py-2 text-sm font-semibold text-[#148f7c] hover:bg-[#18b99f] hover:text-white sm:hidden"
-              title={text.cameraHint}
-            >
-              <CameraIcon className="h-5 w-5" />
-              {text.camera}
-            </button>
-            <button
-              type="button"
-              disabled={!file || extracting}
-              onClick={() => void extractInvoice()}
-              className="min-h-11 rounded-lg bg-[#18b99f] px-5 py-2 text-sm font-semibold text-white hover:bg-[#149f8a] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {extracting ? text.analyzing : text.analyze}
-            </button>
+            <button type="button" onClick={() => fileInputRef.current?.click()} className="min-h-11 rounded-lg border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 hover:border-[#18b99f] hover:text-[#148f7c]">{text.choose}</button>
+            <button type="button" onClick={() => cameraInputRef.current?.click()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[#18b99f] bg-[#18b99f]/10 px-5 py-2 text-sm font-semibold text-[#148f7c] hover:bg-[#18b99f] hover:text-white sm:hidden" title={text.cameraHint}><CameraIcon className="h-5 w-5" />{text.camera}</button>
+            <button type="button" disabled={!file || extracting || revealing} onClick={() => void extractInvoice()} className="min-h-11 rounded-lg bg-[#18b99f] px-5 py-2 text-sm font-semibold text-white hover:bg-[#149f8a] disabled:cursor-not-allowed disabled:opacity-40">{extracting || revealing ? text.analyzing : text.analyze}</button>
           </div>
           <p className="mt-2 text-xs text-slate-400 sm:hidden">{text.cameraHint}</p>
         </div>
       </div>
 
-      {error && (
-        <div className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-          <ExclamationTriangleIcon className="mt-0.5 h-5 w-5 flex-none" />
-          <span>{error}</span>
-        </div>
+      {(extracting || revealing || liveRows.length > 0) && (
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+            <div>
+              <div className="text-sm font-black text-slate-950">{isBg ? "Разчитане в реално време" : "Live OCR reading"}</div>
+              <div className="mt-0.5 text-xs text-slate-500">{extracting ? (isBg ? "OCR обработва фактурата..." : "OCR is processing the invoice...") : revealing ? (isBg ? "Попълване на разпознатите клетки..." : "Filling recognized cells...") : (isBg ? "Разчитането приключи." : "Reading complete.")}</div>
+            </div>
+            <div className="text-sm font-black text-[#18b99f]">{liveRows.filter((row) => row.quantity).length}</div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead className="bg-slate-100 text-left text-[11px] uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="w-[42%] px-4 py-3">{text.invoiceName}</th>
+                  <th className="w-[42%] px-4 py-3">{text.matched}</th>
+                  <th className="w-[16%] px-4 py-3 text-right">{text.quantity}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {liveRows.map((row, index) => (
+                  <tr key={index} className="h-14">
+                    <td className="px-4 py-3 font-semibold text-slate-950">{row.rawName || <span className="animate-pulse text-slate-300">•••</span>}</td>
+                    <td className="px-4 py-3 text-slate-700">{row.matchedName || <span className="animate-pulse text-slate-300">•••</span>}</td>
+                    <td className="px-4 py-3 text-right font-black text-slate-950">{row.quantity || <span className="animate-pulse text-slate-300">•••</span>}</td>
+                  </tr>
+                ))}
+                {extracting && liveRows.length === 0 && (
+                  <tr className="h-16"><td className="px-4 py-4 text-slate-400" colSpan={3}><span className="animate-pulse">{isBg ? "Търся първия продуктов ред..." : "Looking for the first product row..."}</span></td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
 
-      {result && (
+      {error && <div className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700"><ExclamationTriangleIcon className="mt-0.5 h-5 w-5 flex-none" /><span>{error}</span></div>}
+
+      {result && !revealing && (
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
-              <div className="flex items-center gap-2 text-sm font-bold text-slate-950">
-                <DocumentMagnifyingGlassIcon className="h-5 w-5 text-[#18b99f]" />
-                {text.reviewTitle}
-              </div>
-              <p className="mt-1 text-xs leading-5 text-slate-500">
-                {rows.length} {isBg ? "реда са разчетени. Отвори проверката, за да сравниш всичко с оригинала." : "rows were extracted. Open verification to compare everything with the original."}
-              </p>
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-950"><DocumentMagnifyingGlassIcon className="h-5 w-5 text-[#18b99f]" />{text.reviewTitle}</div>
+              <p className="mt-1 text-xs leading-5 text-slate-500">{rows.length} {isBg ? "реда са разчетени. Отвори проверката, за да сравниш всичко с оригинала." : "rows were extracted. Open verification to compare everything with the original."}</p>
             </div>
-            <button
-              type="button"
-              onClick={() => setReviewOpen(true)}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-5 py-2 text-sm font-semibold text-white hover:bg-[#18b99f]"
-            >
-              <DocumentMagnifyingGlassIcon className="h-5 w-5" />
-              {text.reopen}
-            </button>
+            <button type="button" onClick={() => setReviewOpen(true)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-5 py-2 text-sm font-semibold text-white hover:bg-[#18b99f]"><DocumentMagnifyingGlassIcon className="h-5 w-5" />{text.reopen}</button>
           </div>
-
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-xl bg-slate-50 p-3 text-sm"><div className="text-[11px] font-semibold uppercase text-slate-500">{text.invoiceNo}</div><div className="mt-1 truncate font-bold text-slate-950">{invoiceNumber || "—"}</div></div>
             <div className="rounded-xl bg-slate-50 p-3 text-sm"><div className="text-[11px] font-semibold uppercase text-slate-500">{text.date}</div><div className="mt-1 font-bold text-slate-950">{result.invoiceDate || "—"}</div></div>
@@ -514,54 +480,21 @@ const InvoiceImport = () => {
         </section>
       )}
 
-      {result && (
-        <details className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-          <summary className="cursor-pointer text-sm font-bold text-slate-800">{text.rawText}</summary>
-          <pre className="mt-4 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-4 text-xs leading-5 text-slate-200">{result.textPreview}</pre>
-        </details>
-      )}
+      {result && !revealing && <details className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5"><summary className="cursor-pointer text-sm font-bold text-slate-800">{text.rawText}</summary><pre className="mt-4 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-4 text-xs leading-5 text-slate-200">{result.textPreview}</pre></details>}
 
       {result && reviewOpen && (
         <div className="fixed inset-0 z-[100] bg-slate-950/75 p-0 backdrop-blur-sm sm:p-3 lg:p-5">
           <div className="mx-auto flex h-full max-w-[1900px] flex-col overflow-hidden bg-white shadow-2xl sm:rounded-2xl">
             <header className="flex flex-none items-start justify-between gap-4 border-b border-slate-200 bg-white px-4 py-3 sm:px-5">
-              <div className="min-w-0">
-                <h2 className="text-lg font-black text-slate-950 sm:text-xl">{text.reviewTitle}</h2>
-                <p className="mt-1 max-w-5xl text-xs leading-5 text-slate-500 sm:text-sm">{text.reviewSubtitle}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setReviewOpen(false)}
-                className="flex h-10 w-10 flex-none items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-950"
-                aria-label={text.close}
-                title={text.close}
-              >
-                <XMarkIcon className="h-5 w-5" />
-              </button>
+              <div className="min-w-0"><h2 className="text-lg font-black text-slate-950 sm:text-xl">{text.reviewTitle}</h2><p className="mt-1 max-w-5xl text-xs leading-5 text-slate-500 sm:text-sm">{text.reviewSubtitle}</p></div>
+              <button type="button" onClick={() => setReviewOpen(false)} className="flex h-10 w-10 flex-none items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-950" aria-label={text.close} title={text.close}><XMarkIcon className="h-5 w-5" /></button>
             </header>
 
             <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(520px,0.95fr)]">
               <section className="flex min-h-[46vh] min-w-0 flex-col border-b border-slate-200 bg-slate-100 lg:min-h-0 lg:border-b-0 lg:border-r">
-                <div className="flex flex-none items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2.5">
-                  <div className="text-xs font-black uppercase tracking-wide text-slate-700">{text.original}</div>
-                  <div className="max-w-[60%] truncate text-xs text-slate-500" title={file?.name}>{file?.name}</div>
-                </div>
+                <div className="flex flex-none items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2.5"><div className="text-xs font-black uppercase tracking-wide text-slate-700">{text.original}</div><div className="max-w-[60%] truncate text-xs text-slate-500" title={file?.name}>{file?.name}</div></div>
                 <div className="min-h-0 flex-1 overflow-auto p-2 sm:p-3">
-                  {previewUrl ? (
-                    isPdf ? (
-                      <iframe
-                        src={previewUrl}
-                        title={text.original}
-                        className="h-full min-h-[600px] w-full border-0 bg-white shadow-sm"
-                      />
-                    ) : (
-                      <div className="flex min-h-full items-start justify-center">
-                        <img src={previewUrl} alt={text.original} className="max-h-none max-w-full bg-white object-contain shadow-sm" />
-                      </div>
-                    )
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-sm text-slate-500">{isBg ? "Няма визуализация." : "No preview available."}</div>
-                  )}
+                  {previewUrl ? (isPdf ? <iframe src={previewUrl} title={text.original} className="h-full min-h-[600px] w-full border-0 bg-white shadow-sm" /> : <div className="flex min-h-full items-start justify-center"><img src={previewUrl} alt={text.original} className="max-h-none max-w-full bg-white object-contain shadow-sm" /></div>) : <div className="flex h-full items-center justify-center text-sm text-slate-500">{isBg ? "Няма визуализация." : "No preview available."}</div>}
                 </div>
               </section>
 
@@ -569,58 +502,17 @@ const InvoiceImport = () => {
                 <div className="flex-none border-b border-slate-200 bg-white p-4">
                   <div className="mb-3 text-xs font-black uppercase tracking-wide text-slate-700">{text.extracted}</div>
                   <div className="grid gap-2 sm:grid-cols-3">
-                    <label className="rounded-lg border border-slate-200 bg-slate-50 p-2.5">
-                      <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">{text.invoiceNo}</span>
-                      <input
-                        value={invoiceNumber}
-                        onChange={(event) => setInvoiceNumber(event.target.value)}
-                        className="mt-1 min-h-9 w-full rounded border border-slate-300 bg-white px-2 text-sm font-bold text-slate-950 outline-none focus:border-[#18b99f]"
-                        placeholder={isBg ? "Въведи номер" : "Enter number"}
-                      />
-                    </label>
+                    <label className="rounded-lg border border-slate-200 bg-slate-50 p-2.5"><span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">{text.invoiceNo}</span><input value={invoiceNumber} onChange={(event) => setInvoiceNumber(event.target.value)} className="mt-1 min-h-9 w-full rounded border border-slate-300 bg-white px-2 text-sm font-bold text-slate-950 outline-none focus:border-[#18b99f]" placeholder={isBg ? "Въведи номер" : "Enter number"} /></label>
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5"><div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{text.date}</div><div className="mt-1 text-sm font-bold text-slate-950">{result.invoiceDate || "—"}</div></div>
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5"><div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{text.items}</div><div className="mt-1 text-sm font-bold text-slate-950">{rows.length}</div></div>
                   </div>
-                  {result.duplicateInvoice && (
-                    <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-                      <ExclamationTriangleIcon className="h-4 w-4 flex-none" />
-                      <span>{text.duplicate}</span>
-                    </div>
-                  )}
-                  {error && (
-                    <div className="mt-3 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
-                      <ExclamationTriangleIcon className="h-4 w-4 flex-none" />
-                      <span>{error}</span>
-                    </div>
-                  )}
+                  {result.duplicateInvoice && <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800"><ExclamationTriangleIcon className="h-4 w-4 flex-none" /><span>{text.duplicate}</span></div>}
+                  {error && <div className="mt-3 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700"><ExclamationTriangleIcon className="h-4 w-4 flex-none" /><span>{error}</span></div>}
                 </div>
-
                 <div className="min-h-0 flex-1 overflow-auto">{renderReviewRows()}</div>
-
                 <footer className="flex flex-none flex-col gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="text-xs leading-5 text-slate-500">
-                    {isBg
-                      ? `${validImportRows.length} от ${rows.length} реда са готови за импорт. Провери визуално всеки ред преди потвърждение.`
-                      : `${validImportRows.length} of ${rows.length} rows are ready to import. Visually verify every row before confirming.`}
-                  </div>
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <button
-                      type="button"
-                      onClick={() => setReviewOpen(false)}
-                      className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
-                    >
-                      {text.close}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={importing || validImportRows.length === 0 || result.duplicateInvoice}
-                      onClick={() => void commitImport()}
-                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#18b99f] disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <CheckCircleIcon className="h-5 w-5" />
-                      {importing ? text.importing : text.import}
-                    </button>
-                  </div>
+                  <div className="text-xs leading-5 text-slate-500">{isBg ? `${validImportRows.length} от ${rows.length} реда са готови за импорт. Провери визуално всеки ред преди потвърждение.` : `${validImportRows.length} of ${rows.length} rows are ready to import. Visually verify every row before confirming.`}</div>
+                  <div className="flex flex-col gap-2 sm:flex-row"><button type="button" onClick={() => setReviewOpen(false)} className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">{text.close}</button><button type="button" disabled={importing || validImportRows.length === 0 || result.duplicateInvoice} onClick={() => void commitImport()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#18b99f] disabled:cursor-not-allowed disabled:opacity-40"><CheckCircleIcon className="h-5 w-5" />{importing ? text.importing : text.import}</button></div>
                 </footer>
               </section>
             </div>
