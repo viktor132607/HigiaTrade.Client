@@ -30,6 +30,7 @@ import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import InfoPage from "./pages/InfoPage";
+import LegalPage from "./pages/LegalPage";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import CheckoutConfirmation from "./pages/CheckoutConfirmation";
@@ -61,6 +62,9 @@ function App() {
               <Route path="/about" element={<About />} />
               <Route path="/company-info" element={<CompanyInfo />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/privacy" element={<LegalPage kind="privacy" />} />
+              <Route path="/security" element={<LegalPage kind="security" />} />
+              <Route path="/cookies" element={<LegalPage kind="cookies" />} />
               <Route path="/sano" element={<SanoDistributor />} />
               <Route path="/sano/:region" element={<SanoDistributor />} />
               <Route path="/sano-distributor" element={<Navigate to="/sano" replace />} />
