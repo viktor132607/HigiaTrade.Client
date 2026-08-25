@@ -63,6 +63,7 @@ function App() {
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/sano" element={<SanoDistributor />} />
+              <Route path="/sano/:region" element={<SanoDistributor />} />
               <Route path="/sano-distributor" element={<Navigate to="/sano" replace />} />
 
               <Route
@@ -92,6 +93,7 @@ function App() {
               />
 
               <Route path="/brands" element={<Brands />} />
+              <Route path="/brands/:brandSlug" element={<Brands />} />
               <Route path="/compare" element={<Compare />} />
 
               <Route
