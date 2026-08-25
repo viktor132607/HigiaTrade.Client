@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Bars3Icon, ListBulletIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
 import ProductCard from "../components/products/ProductCard";
 import ProductListRow from "../components/products/ProductListRow";
 import FilterSidebar from "../components/products/FilterSidebar";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
+import { entitySeoSlug } from "../utils/seo";
 import { Product } from "../types";
 
 interface FilterState {
@@ -44,6 +45,7 @@ const getInitialViewMode = (): ViewMode => {
 const Products = () => {
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
+  const { categoryId: routeCategoryId, categorySlug: routeCategorySlug } = useParams<{ categoryId?: string; categorySlug?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -101,6 +103,23 @@ const Products = () => {
             : previous.sortDescending,
     }));
   }, []);
+
+  useEffect(() => {
+    if (routeCategoryId) {
+      setFilters((previous) => ({ ...previous, category: routeCategoryId, pageNumber: 1 }));
+      return;
+    }
+
+    if (!routeCategorySlug || categories.length === 0) return;
+
+    const match = categories.find(
+      (category) => entitySeoSlug(category.name, category.id) === routeCategorySlug.toLowerCase()
+    );
+
+    if (match) {
+      setFilters((previous) => ({ ...previous, category: match.id, pageNumber: 1 }));
+    }
+  }, [categories, routeCategoryId, routeCategorySlug]);
 
   useEffect(() => {
     const fetchProducts = async () => {
