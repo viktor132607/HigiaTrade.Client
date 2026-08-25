@@ -43,6 +43,7 @@ import AdminBrands from "./pages/admin/Brands";
 import AdminUsers from "./pages/admin/Users";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminReports from "./pages/admin/Reports";
+import InvoiceImport from "./pages/admin/InvoiceImport";
 
 function App() {
   return (
@@ -164,6 +165,7 @@ function App() {
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="orders" element={<AdminOrders />} />
                 <Route path="reports" element={<AdminReports />} />
+                <Route path="invoice-import" element={<InvoiceImport />} />
                 <Route path="*" element={<Navigate to="/admin" replace />} />
               </Route>
 
