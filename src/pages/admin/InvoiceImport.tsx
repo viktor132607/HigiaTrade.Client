@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  CameraIcon,
   CheckCircleIcon,
   CloudArrowUpIcon,
   DocumentMagnifyingGlassIcon,
@@ -46,6 +47,7 @@ type EditableItem = ExtractedItem & {
 };
 
 const ACCEPTED_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg", ".webp"];
+const ACCEPTED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
 
 const confidenceLabel = (value: number, isBg: boolean) => {
@@ -60,11 +62,22 @@ const confidenceClass = (value: number) => {
   return "border-rose-200 bg-rose-50 text-rose-700";
 };
 
+const normalizeCameraFile = (candidate: File) => {
+  const type = candidate.type.toLowerCase();
+  const extension = type === "image/png" ? ".png" : type === "image/webp" ? ".webp" : ".jpg";
+
+  return new File([candidate], `camera-invoice-${Date.now()}${extension}`, {
+    type: candidate.type || "image/jpeg",
+    lastModified: candidate.lastModified || Date.now(),
+  });
+};
+
 const InvoiceImport = () => {
   const { token } = useSelector((state: RootState) => state.auth);
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
 
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
@@ -80,13 +93,15 @@ const InvoiceImport = () => {
   const text = {
     title: isBg ? "Импорт от фактура" : "Invoice import",
     subtitle: isBg
-      ? "Качи българска или английска фактура като PDF или снимка. След разчитането се отваря екран за визуална проверка на оригиналната фактура срещу извлечените артикули и количества."
-      : "Upload a Bulgarian or English invoice as PDF or image. After OCR, a visual review screen opens so you can compare the original invoice against extracted products and quantities.",
+      ? "Качи PDF/снимка или заснеми фактурата директно с камерата на телефона. След разчитането се отваря екран за визуална проверка на оригинала срещу извлечените артикули и количества."
+      : "Upload a PDF/image or capture the invoice directly with your phone camera. After OCR, a visual review screen opens so you can compare the original against extracted products and quantities.",
     dropTitle: isBg ? "Пусни фактурата тук" : "Drop the invoice here",
     dropText: isBg
-      ? "PDF, PNG, JPG, JPEG или WEBP до 15 MB. Може и Ctrl+V за снимка от clipboard."
-      : "PDF, PNG, JPG, JPEG or WEBP up to 15 MB. You can also paste an image with Ctrl+V.",
+      ? "PDF, PNG, JPG, JPEG или WEBP до 15 MB. Може Ctrl+V или директно снимане от телефон."
+      : "PDF, PNG, JPG, JPEG or WEBP up to 15 MB. You can paste with Ctrl+V or capture directly on mobile.",
     choose: isBg ? "Избери файл" : "Choose file",
+    camera: isBg ? "Снимай с камера" : "Open camera",
+    cameraHint: isBg ? "Използва задната камера на телефона" : "Uses the phone rear camera",
     analyze: isBg ? "Разчети фактурата" : "Read invoice",
     analyzing: isBg ? "Разчитане..." : "Reading...",
     invoiceNo: isBg ? "Фактура №" : "Invoice no.",
@@ -96,7 +111,6 @@ const InvoiceImport = () => {
     invoiceName: isBg ? "Ред от фактурата" : "Invoice row",
     matched: isBg ? "Въведен артикул в HygiaTrade" : "HygiaTrade product",
     quantity: isBg ? "Брой" : "Qty",
-    confidence: isBg ? "Увереност" : "Confidence",
     unmatched: isBg ? "Неразпознат продукт" : "Unmatched product",
     noItems: isBg
       ? "Не бяха открити надеждни продуктови редове. Провери самата фактура и извлечения текст."
@@ -109,8 +123,8 @@ const InvoiceImport = () => {
     rawText: isBg ? "Извлечен OCR текст" : "Extracted OCR text",
     reviewTitle: isBg ? "Проверка на разчитането" : "OCR verification",
     reviewSubtitle: isBg
-      ? "Сравни оригиналната фактура вляво с разчетените артикули вдясно. Коригирай грешна буква, избран продукт или количество преди запис."
-      : "Compare the original invoice on the left with the extracted rows on the right. Correct a wrong character, product match or quantity before saving.",
+      ? "Сравни оригиналната фактура вляво с разчетените артикули вдясно. Коригирай грешен продукт или количество преди запис."
+      : "Compare the original invoice on the left with the extracted rows on the right. Correct a product match or quantity before saving.",
     original: isBg ? "Оригинална фактура" : "Original invoice",
     extracted: isBg ? "Разчетени данни" : "Extracted data",
     reopen: isBg ? "Отвори проверката" : "Open verification",
@@ -150,7 +164,11 @@ const InvoiceImport = () => {
 
   const validateFile = (candidate: File) => {
     const lowerName = candidate.name.toLowerCase();
-    if (!ACCEPTED_EXTENSIONS.some((extension) => lowerName.endsWith(extension))) {
+    const hasAcceptedExtension = ACCEPTED_EXTENSIONS.some((extension) => lowerName.endsWith(extension));
+    const hasAcceptedImageType = ACCEPTED_IMAGE_TYPES.has(candidate.type.toLowerCase());
+    const isPdfType = candidate.type === "application/pdf";
+
+    if (!hasAcceptedExtension && !hasAcceptedImageType && !isPdfType) {
       setError(isBg ? "Поддържат се PDF, PNG, JPG, JPEG и WEBP." : "Supported formats are PDF, PNG, JPG, JPEG and WEBP.");
       return false;
     }
@@ -178,13 +196,30 @@ const InvoiceImport = () => {
     setFile(candidate);
   };
 
+  const handleCameraCapture = (candidate: File | null) => {
+    if (!candidate) return;
+
+    if (!ACCEPTED_IMAGE_TYPES.has(candidate.type.toLowerCase())) {
+      setError(
+        isBg
+          ? "Камерата върна неподдържан формат. Използвай JPG, PNG или WEBP."
+          : "The camera returned an unsupported format. Use JPG, PNG or WEBP."
+      );
+      return;
+    }
+
+    selectFile(normalizeCameraFile(candidate));
+  };
+
   const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
     const pastedFile = Array.from(event.clipboardData.files).find((item) => item.type.startsWith("image/"));
     if (!pastedFile) return;
 
     event.preventDefault();
-    const extension = pastedFile.type.includes("png") ? ".png" : ".jpg";
-    selectFile(new File([pastedFile], `clipboard-invoice-${Date.now()}${extension}`, { type: pastedFile.type }));
+    const normalized = ACCEPTED_IMAGE_TYPES.has(pastedFile.type.toLowerCase())
+      ? normalizeCameraFile(pastedFile)
+      : pastedFile;
+    selectFile(normalized);
   };
 
   const extractInvoice = async () => {
@@ -385,7 +420,21 @@ const InvoiceImport = () => {
           type="file"
           accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"
           className="hidden"
-          onChange={(event) => selectFile(event.target.files?.[0] ?? null)}
+          onChange={(event) => {
+            selectFile(event.target.files?.[0] ?? null);
+            event.target.value = "";
+          }}
+        />
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(event) => {
+            handleCameraCapture(event.target.files?.[0] ?? null);
+            event.target.value = "";
+          }}
         />
 
         <div className="flex flex-col items-center text-center">
@@ -397,13 +446,22 @@ const InvoiceImport = () => {
             {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : text.dropText}
           </p>
 
-          <div className="mt-5 flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <div className="mt-5 flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-center">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="min-h-11 rounded-lg border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 hover:border-[#18b99f] hover:text-[#148f7c]"
             >
               {text.choose}
+            </button>
+            <button
+              type="button"
+              onClick={() => cameraInputRef.current?.click()}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[#18b99f] bg-[#18b99f]/10 px-5 py-2 text-sm font-semibold text-[#148f7c] hover:bg-[#18b99f] hover:text-white sm:hidden"
+              title={text.cameraHint}
+            >
+              <CameraIcon className="h-5 w-5" />
+              {text.camera}
             </button>
             <button
               type="button"
@@ -414,6 +472,7 @@ const InvoiceImport = () => {
               {extracting ? text.analyzing : text.analyze}
             </button>
           </div>
+          <p className="mt-2 text-xs text-slate-400 sm:hidden">{text.cameraHint}</p>
         </div>
       </div>
 
