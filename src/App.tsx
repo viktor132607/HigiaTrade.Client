@@ -45,6 +45,7 @@ import AdminUsers from "./pages/admin/Users";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminReports from "./pages/admin/Reports";
 import InvoiceImport from "./pages/admin/InvoiceImport";
+import SeoDashboard from "./pages/admin/SeoDashboard";
 
 function App() {
   return (
@@ -57,7 +58,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/store" element={<Products />} />
               <Route path="/products" element={<Products />} />
-              <Route path="/categories/:categoryId" element={<Products />} />
+              <Route path="/categories/:categorySlug" element={<Products />} />
               <Route path="/category/:categoryId" element={<Products />} />
               <Route path="/products/:id" element={<ProductDetails />} />
               <Route path="/about" element={<About />} />
@@ -171,6 +172,7 @@ function App() {
                 <Route path="orders" element={<AdminOrders />} />
                 <Route path="reports" element={<AdminReports />} />
                 <Route path="invoice-import" element={<InvoiceImport />} />
+                <Route path="seo" element={<SeoDashboard />} />
                 <Route path="*" element={<Navigate to="/admin" replace />} />
               </Route>
 
