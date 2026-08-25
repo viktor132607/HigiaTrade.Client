@@ -33,3 +33,4 @@ Disallow: /wishlist/
 Disallow: /orders/
 
 Sitemap: https://higiatrade.com/sitemap.xml
+Sitemap: https://higiatrade.com/image-sitemap.xml
