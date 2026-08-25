@@ -6,6 +6,7 @@ import CartHoverPreview from "./CartHoverPreview";
 import ProductSearchEnhancer from "./ProductSearchEnhancer";
 import CompareNavbarEnhancer from "./CompareNavbarEnhancer";
 import CompareTray from "../products/CompareTray";
+import SeoManager from "../seo/SeoManager";
 
 type LayoutProps = {
   children?: ReactNode;
@@ -14,6 +15,7 @@ type LayoutProps = {
 const Layout = ({ children }: LayoutProps) => {
   return (
     <div className="flex min-h-screen flex-col overflow-x-clip">
+      <SeoManager />
       <Navbar />
       <ProductSearchEnhancer />
       <CompareNavbarEnhancer />
