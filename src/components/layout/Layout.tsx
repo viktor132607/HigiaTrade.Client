@@ -6,6 +6,7 @@ import CartHoverPreview from "./CartHoverPreview";
 import ProductSearchEnhancer from "./ProductSearchEnhancer";
 import CompareNavbarEnhancer from "./CompareNavbarEnhancer";
 import ProductBreadcrumb from "./ProductBreadcrumb";
+import CookieBanner from "./CookieBanner";
 import CompareTray from "../products/CompareTray";
 import SeoManager from "../seo/SeoManager";
 
@@ -27,6 +28,7 @@ const Layout = ({ children }: LayoutProps) => {
         {children ?? <Outlet />}
       </main>
       <Footer />
+      <CookieBanner />
     </div>
   );
 };
