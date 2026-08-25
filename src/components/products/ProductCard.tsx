@@ -27,19 +27,18 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const handleAddToCart = async () => {
     if (product.quantity <= 0) return;
     try {
+      dispatch(addItem({ id:product.id, title:product.title, regularPrice:product.regularPrice, quantity:1, imageUrl:product.mainImageUrl, mainImageUrl:product.mainImageUrl, discountPercentage:product.discountPercentage, discountedPrice:product.discountedPrice }));
+      toast.success(isBg ? "Продуктът е добавен в количката." : "Product added to cart.");
+
       if (user && token) {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Orders`, {
+        void fetch(`${process.env.NEXT_PUBLIC_API_URL}/Orders`, {
           method: "PUT",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ productId: product.id, quantity: 1 }),
-        });
-        if (!response.ok) throw new Error("Unable to add product to cart.");
+        }).catch(() => undefined);
       }
-
-      dispatch(addItem({ id:product.id, title:product.title, regularPrice:product.regularPrice, quantity:1, imageUrl:product.mainImageUrl, mainImageUrl:product.mainImageUrl, discountPercentage:product.discountPercentage, discountedPrice:product.discountedPrice }));
-      toast.success(isBg ? "Продуктът е добавен в количката." : "Product added to cart.");
     } catch {
-      toast.error(isBg ? "Продуктът не можа да бъде добавен." : "Unable to add the selected product.");
+      toast.error(isBg ? "Продуктът не е добавен в количката." : "The product was not added to your cart.");
     }
   };
 
