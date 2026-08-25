@@ -43,6 +43,7 @@ const InvoiceImport = () => {
   const validRowsWithIndexes = useMemo(() => rows.map((row, index) => ({ row, index })).filter(({ row }) => Boolean(row.selectedProductId) && Number.isInteger(Number(row.editableQuantity)) && Number(row.editableQuantity) > 0), [rows]);
   const allConfirmed = validRowsWithIndexes.length > 0 && validRowsWithIndexes.every(({ index }) => confirmedNames.has(index) && confirmedQuantities.has(index));
   const isPdf = Boolean(file && (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")));
+  const previewUrl = useMemo(() => file ? URL.createObjectURL(file) : "", [file]);
 
   const resetConfirmation = (index: number, name: boolean) => {
     const setter = name ? setConfirmedNames : setConfirmedQuantities;
@@ -59,24 +60,21 @@ const InvoiceImport = () => {
     const incoming = Array.from(selected);
     const invalid = incoming.find((candidate) => !ACCEPTED_EXTENSIONS.some((ext) => candidate.name.toLowerCase().endsWith(ext)) || candidate.size > MAX_FILE_SIZE);
     if (invalid) { setError(isBg ? `Невалиден файл: ${invalid.name}` : `Invalid file: ${invalid.name}`); return; }
-    setFiles(incoming);
-    setActiveFileIndex(0);
+    setFiles(incoming); setActiveFileIndex(0);
   };
 
   const extractInvoice = async () => {
     if (!file) return;
     try {
       setExtracting(true); setError(""); setProgress(10);
-      const formData = new FormData(); formData.append("file", file);
-      setProgress(20);
+      const formData = new FormData(); formData.append("file", file); setProgress(20);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/InvoiceImport/extract`, { method: "POST", headers: token ? { Authorization: `Bearer ${token}` } : undefined, body: formData });
       setProgress(90);
       const payload = await response.json().catch(() => null);
       if (!response.ok) throw new Error(payload?.message || "OCR error");
       const data = payload as ExtractResponse;
       const cleanItems = (data.items ?? []).filter(isRealItem);
-      setResult({ ...data, items: cleanItems });
-      setInvoiceNumber(data.invoiceNumber ?? "");
+      setResult({ ...data, items: cleanItems }); setInvoiceNumber(data.invoiceNumber ?? "");
       setRows(cleanItems.map((item) => ({ ...item, selectedProductId: item.matchedProductId ?? "", editableQuantity: String(item.quantity || "") })));
       setConfirmedNames(new Set()); setConfirmedQuantities(new Set()); setProgress(100); setReviewOpen(true);
     } catch (e) { setError(e instanceof Error ? e.message : "OCR error"); }
@@ -110,13 +108,16 @@ const InvoiceImport = () => {
 
     {result && reviewOpen && <div className="fixed inset-0 z-[100] bg-slate-950/80 p-1"><div className="flex h-full w-full flex-col overflow-hidden rounded-xl bg-white">
       <header className="flex items-center justify-between border-b px-5 py-3"><div className="flex flex-wrap items-center gap-6"><h2 className="text-2xl font-black">{isBg ? "Проверка" : "Verification"}</h2><label className="flex items-center gap-2 font-bold">{isBg ? "Фактура №" : "Invoice no."}<input value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} className="rounded-lg border px-3 py-2 font-black" /></label><div className="font-bold">{isBg ? "Дата" : "Date"}: <span className="font-black">{result.invoiceDate || "—"}</span></div></div><button onClick={() => setReviewOpen(false)} className="flex h-10 w-10 items-center justify-center rounded-full border"><XMarkIcon className="h-6 w-6" /></button></header>
-      <div className="min-h-0 flex-1 overflow-auto p-4"><table className="w-full min-w-[1000px] text-sm"><thead className="sticky top-0 bg-slate-100 text-left text-xs font-black uppercase text-slate-600"><tr><th className="w-[50%] px-4 py-3">{isBg ? "Име от фактура / продукт" : "Invoice name / product"}</th><th className="w-[18%] px-4 py-3 text-center">{isBg ? "Потвърди име" : "Confirm name"}</th><th className="w-[14%] px-4 py-3 text-right">{isBg ? "Количество" : "Quantity"}</th><th className="w-[18%] px-4 py-3 text-center">{isBg ? "Потвърди количество" : "Confirm quantity"}</th></tr></thead>
-      <tbody className="divide-y">{rows.map((row, index) => { const productValid = Boolean(row.selectedProductId); const qty = Number(row.editableQuantity); const qtyValid = Number.isInteger(qty) && qty > 0; const nc = confirmedNames.has(index); const qc = confirmedQuantities.has(index); return <tr key={`${row.sourceLine}-${index}`} className={nc && qc ? "bg-emerald-50/50" : "bg-white"}>
-        <td className="px-4 py-3"><div className="mb-2 text-base font-black text-slate-950">{row.rawName}</div><select value={row.selectedProductId} onChange={(e) => { const value=e.target.value; setRows((c)=>c.map((x,i)=>i===index?{...x,selectedProductId:value}:x)); resetConfirmation(index,true); }} className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 font-semibold"><option value="">— {isBg ? "Избери продукт" : "Choose product"} —</option>{row.candidates.map((c)=><option key={c.id} value={c.id}>{c.name}</option>)}</select></td>
-        <td className="px-4 py-3 text-center"><button disabled={!productValid} onClick={()=>toggle(index,true)} className={`rounded-lg border px-4 py-3 font-black ${nc?"bg-emerald-500 text-white":productValid?"border-emerald-300 bg-emerald-50 text-emerald-800":"bg-slate-100 text-slate-400"}`}>{nc?(isBg?"Потвърдено":"Confirmed"):(isBg?"Потвърди име":"Confirm name")}</button></td>
-        <td className="px-4 py-3 text-right"><input type="number" min="1" step="1" value={row.editableQuantity} onChange={(e)=>{const value=e.target.value;setRows((c)=>c.map((x,i)=>i===index?{...x,editableQuantity:value}:x));resetConfirmation(index,false);}} className="w-28 rounded-lg border px-3 py-3 text-right text-lg font-black" /></td>
-        <td className="px-4 py-3 text-center"><button disabled={!qtyValid} onClick={()=>toggle(index,false)} className={`rounded-lg border px-4 py-3 font-black ${qc?"bg-emerald-500 text-white":qtyValid?"border-emerald-300 bg-emerald-50 text-emerald-800":"bg-slate-100 text-slate-400"}`}>{qc?(isBg?"Потвърдено":"Confirmed"):(isBg?"Потвърди количество":"Confirm quantity")}</button></td>
-      </tr>; })}</tbody></table></div>
+      <div className="grid min-h-0 flex-1 grid-cols-[40%_60%] overflow-hidden">
+        <section className="min-h-0 border-r bg-slate-100"><div className="border-b bg-white px-4 py-2 text-xs font-black uppercase text-slate-600">{isBg ? "Оригинална фактура" : "Original invoice"}</div><div className="h-[calc(100%-37px)] overflow-auto p-2">{isPdf ? <iframe title="Original invoice" src={previewUrl} className="h-full min-h-[700px] w-full border-0 bg-white" /> : <img src={previewUrl} alt={file?.name || "Invoice"} className="mx-auto max-h-none w-full object-contain bg-white" />}</div></section>
+        <section className="min-h-0 overflow-auto p-3"><table className="w-full min-w-[850px] text-sm"><thead className="sticky top-0 z-10 bg-slate-100 text-left text-xs font-black uppercase text-slate-600"><tr><th className="w-[50%] px-3 py-3">{isBg ? "Име от фактура / продукт" : "Invoice name / product"}</th><th className="w-[18%] px-3 py-3 text-center">{isBg ? "Потвърди име" : "Confirm name"}</th><th className="w-[14%] px-3 py-3 text-right">{isBg ? "Количество" : "Quantity"}</th><th className="w-[18%] px-3 py-3 text-center">{isBg ? "Потвърди количество" : "Confirm quantity"}</th></tr></thead>
+        <tbody className="divide-y">{rows.map((row, index) => { const productValid = Boolean(row.selectedProductId); const qty = Number(row.editableQuantity); const qtyValid = Number.isInteger(qty) && qty > 0; const nc = confirmedNames.has(index); const qc = confirmedQuantities.has(index); return <tr key={`${row.sourceLine}-${index}`} className={nc && qc ? "bg-emerald-50/50" : "bg-white"}>
+          <td className="px-3 py-3"><div className="mb-2 font-black text-slate-950">{row.rawName}</div><select value={row.selectedProductId} onChange={(e) => { const value=e.target.value; setRows((c)=>c.map((x,i)=>i===index?{...x,selectedProductId:value}:x)); resetConfirmation(index,true); }} className="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 font-semibold"><option value="">— {isBg ? "Избери продукт" : "Choose product"} —</option>{row.candidates.map((c)=><option key={c.id} value={c.id}>{c.name}</option>)}</select></td>
+          <td className="px-3 py-3 text-center"><button disabled={!productValid} onClick={()=>toggle(index,true)} className={`rounded-lg border px-3 py-2 font-black ${nc?"bg-emerald-500 text-white":productValid?"border-emerald-300 bg-emerald-50 text-emerald-800":"bg-slate-100 text-slate-400"}`}>{nc?(isBg?"Потвърдено":"Confirmed"):(isBg?"Потвърди име":"Confirm name")}</button></td>
+          <td className="px-3 py-3 text-right"><input type="number" min="1" step="1" value={row.editableQuantity} onChange={(e)=>{const value=e.target.value;setRows((c)=>c.map((x,i)=>i===index?{...x,editableQuantity:value}:x));resetConfirmation(index,false);}} className="w-24 rounded-lg border px-2 py-2 text-right text-base font-black" /></td>
+          <td className="px-3 py-3 text-center"><button disabled={!qtyValid} onClick={()=>toggle(index,false)} className={`rounded-lg border px-3 py-2 font-black ${qc?"bg-emerald-500 text-white":qtyValid?"border-emerald-300 bg-emerald-50 text-emerald-800":"bg-slate-100 text-slate-400"}`}>{qc?(isBg?"Потвърдено":"Confirmed"):(isBg?"Потвърди количество":"Confirm quantity")}</button></td>
+        </tr>; })}</tbody></table></section>
+      </div>
       <footer className="flex items-center justify-between border-t bg-slate-50 px-5 py-4"><div className="font-bold">{validRowsWithIndexes.filter(({index})=>confirmedNames.has(index)&&confirmedQuantities.has(index)).length} / {validRowsWithIndexes.length}</div><button disabled={importing || !allConfirmed || result.duplicateInvoice} onClick={()=>void commitImport()} className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-6 py-3 font-black text-white disabled:opacity-35"><CheckCircleIcon className="h-5 w-5" />{isBg ? "Добави в наличности" : "Add to stock"}</button></footer>
     </div></div>}
   </div>;
