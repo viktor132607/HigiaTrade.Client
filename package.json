@@ -10,8 +10,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "postbuild": "node scripts/generate-seo.mjs",
-    "seo:generate": "node scripts/generate-seo.mjs",
+    "postbuild": "node scripts/generate-seo.mjs && node scripts/enhance-seo.mjs",
+    "seo:generate": "node scripts/generate-seo.mjs && node scripts/enhance-seo.mjs",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
