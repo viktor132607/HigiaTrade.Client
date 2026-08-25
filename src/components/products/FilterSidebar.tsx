@@ -15,6 +15,7 @@ interface FilterSidebarProps {
   selectedMinPrice?: number | null;
   selectedMaxPrice?: number | null;
   selectedRating?: number | null;
+  selectedInStockOnly?: boolean;
   suppressInitialAutoApply?: boolean;
   onApplyFilters: (filters: {
     category?: string | null;
@@ -22,6 +23,7 @@ interface FilterSidebarProps {
     minPrice?: number | null;
     maxPrice?: number | null;
     rating?: number | null;
+    inStockOnly?: boolean;
   }) => void;
 }
 
@@ -39,6 +41,7 @@ const FilterSidebar = ({
   selectedMinPrice = null,
   selectedMaxPrice = null,
   selectedRating: selectedRatingProp = null,
+  selectedInStockOnly = false,
   suppressInitialAutoApply = false,
   onApplyFilters,
 }: FilterSidebarProps) => {
@@ -116,7 +119,7 @@ const FilterSidebar = ({
     setMinPrice("");
     setMaxPrice("");
     setSelectedRating(0);
-    onApplyFilters({ category: null, search: "", minPrice: null, maxPrice: null, rating: null });
+    onApplyFilters({ category: null, search: "", minPrice: null, maxPrice: null, rating: null, inStockOnly: false });
   };
 
   const handleCategoryChange = (categoryId: string | null) => onApplyFilters({ category: categoryId });
@@ -131,7 +134,8 @@ const FilterSidebar = ({
     selectedCategory ||
     minPrice !== "" ||
     maxPrice !== "" ||
-    selectedRating
+    selectedRating ||
+    selectedInStockOnly
   );
 
   const sliderMin = minPrice === "" ? priceFloor : Math.max(priceFloor, Math.min(Number(minPrice), priceCeiling));
@@ -178,6 +182,14 @@ const FilterSidebar = ({
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-center text-sm text-slate-700">{euro.format(sliderMin)}</div>
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-center text-sm text-slate-700">{euro.format(sliderMax)}</div>
             </div>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{isBg ? "Наличност" : "Availability"}</h3>
+            <button type="button" onClick={() => onApplyFilters({ inStockOnly: !selectedInStockOnly })} className={optionClass(selectedInStockOnly)}>
+              <span className={`mr-3 inline-flex h-5 w-5 items-center justify-center rounded-md border ${selectedInStockOnly ? "border-primary-500 bg-primary-500 text-white" : "border-slate-300 bg-white"}`}>{selectedInStockOnly ? "✓" : ""}</span>
+              {isBg ? "В наличност" : "In stock"}
+            </button>
           </div>
 
           <div className="space-y-3">
