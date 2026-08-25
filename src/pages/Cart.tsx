@@ -133,9 +133,13 @@ const Cart = () => {
           <div className="divide-y divide-gray-200">
             {cart.items.map((item) => (
               <div key={item.productId} className="grid grid-cols-[80px_minmax(0,1fr)] gap-3 p-4 sm:grid-cols-[112px_minmax(0,1fr)] sm:gap-4 sm:p-6 lg:grid-cols-[112px_minmax(0,1fr)_auto] lg:items-center">
-                <img src={item.primaryImageUri || "/placeholder-image.jpg"} alt={item.title} className="h-20 w-20 rounded-xl object-cover sm:h-28 sm:w-28 sm:rounded-2xl" />
+                <Link to={`/products/${item.productId}`} className="block rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 sm:rounded-2xl">
+                  <img src={item.primaryImageUri || "/placeholder-image.jpg"} alt={item.title} className="h-20 w-20 rounded-xl object-cover transition hover:opacity-80 sm:h-28 sm:w-28 sm:rounded-2xl" />
+                </Link>
                 <div className="min-w-0">
-                  <h2 className="line-clamp-2 text-sm font-medium text-gray-900 sm:text-lg">{item.title}</h2>
+                  <Link to={`/products/${item.productId}`} className="inline-block hover:text-primary-600 hover:underline">
+                    <h2 className="line-clamp-2 text-sm font-medium text-gray-900 sm:text-lg">{item.title}</h2>
+                  </Link>
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-sm sm:text-base">
                     <span className="font-semibold text-primary-600">{formatCurrency(item.singlePrice)}</span><span className="text-gray-400">×</span><span className="font-semibold text-primary-600">{item.quantity}</span><span className="text-gray-400">=</span><span className="font-semibold text-primary-600">{formatCurrency(item.singlePrice * item.quantity)}</span>
                   </div>
