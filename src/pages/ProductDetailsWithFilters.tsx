@@ -40,9 +40,9 @@ const ProductDetailsWithFilters = () => {
     const hasFilters = Boolean(
       filters.category ||
       filters.search?.trim() ||
-      filters.minPrice !== null && filters.minPrice !== undefined ||
-      filters.maxPrice !== null && filters.maxPrice !== undefined ||
-      filters.rating !== null && filters.rating !== undefined
+      (filters.minPrice !== null && filters.minPrice !== undefined) ||
+      (filters.maxPrice !== null && filters.maxPrice !== undefined) ||
+      (filters.rating !== null && filters.rating !== undefined)
     );
     if (!hasFilters) return;
 
@@ -70,6 +70,7 @@ const ProductDetailsWithFilters = () => {
             selectedMinPrice={null}
             selectedMaxPrice={null}
             selectedRating={null}
+            suppressInitialAutoApply
             onApplyFilters={applyFilters}
           />
         </div>
