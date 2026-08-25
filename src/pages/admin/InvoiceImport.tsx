@@ -88,7 +88,6 @@ const InvoiceImport = () => {
           return Array.from(merged.values());
         });
       } catch {
-        // IndexedDB persistence is best-effort; the live queue still works if storage is blocked.
       } finally {
         queueLoadedRef.current = true;
       }
@@ -128,13 +127,25 @@ const InvoiceImport = () => {
     setError("");
   };
 
+  const removeQueuedFile = async (index: number) => {
+    const target = files[index];
+    if (!target) return;
+    await removePendingInvoiceFile(target).catch(() => undefined);
+    setFiles((current) => current.filter((_, i) => i !== index));
+    if (index === activeFileIndex) resetReview();
+    setActiveFileIndex((current) => {
+      if (current > index) return current - 1;
+      if (current === index) return Math.max(0, current - 1);
+      return current;
+    });
+  };
+
   const extractInvoice = async () => {
     if (!file) return;
     try {
       setExtracting(true); setError(""); setProgress(10);
       const formData = new FormData(); formData.append("file", file); setProgress(20);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/InvoiceImport/extract`, { method: "POST", headers: authHeaders, body: formData });
-      setProgress(90);
       const payload = await response.json().catch(() => null);
       if (!response.ok) throw new Error(payload?.message || "OCR error");
       const data = payload as ExtractResponse;
@@ -201,9 +212,9 @@ const InvoiceImport = () => {
       <input ref={fileInputRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp" className="hidden" onChange={(e) => { selectFiles(e.target.files); e.target.value = ""; }} />
       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-950 text-white">{isPdf ? <DocumentTextIcon className="h-8 w-8" /> : file ? <PhotoIcon className="h-8 w-8" /> : <CloudArrowUpIcon className="h-8 w-8" />}</div>
       <div className="mt-4 text-lg font-black">{files.length ? `${files.length} ${isBg ? "фактури чакат обработка" : "invoices pending"}` : (isBg ? "Избери фактури" : "Choose invoices")}</div>
-      {files.length > 0 && <div className="mx-auto mt-4 grid max-w-4xl gap-2 sm:grid-cols-2 lg:grid-cols-3">{files.map((candidate, index) => <button key={invoiceFileKey(candidate)} type="button" onClick={() => { setActiveFileIndex(index); resetReview(); }} className={`rounded-xl border px-4 py-3 text-left ${index === activeFileIndex ? "border-[#18b99f] bg-[#18b99f]/10" : "border-slate-200 bg-slate-50"}`}><div className="truncate font-black text-slate-950">{candidate.name}</div><div className="mt-1 text-xs text-slate-500">{(candidate.size / 1024 / 1024).toFixed(2)} MB · {isBg ? "запазена · чака потвърждение" : "saved · pending"}</div></button>)}</div>}
+      {files.length > 0 && <div className="mx-auto mt-4 grid max-w-4xl gap-2 sm:grid-cols-2 lg:grid-cols-3">{files.map((candidate, index) => <div key={invoiceFileKey(candidate)} className={`relative rounded-xl border ${index === activeFileIndex ? "border-[#18b99f] bg-[#18b99f]/10" : "border-slate-200 bg-slate-50"}`}><button type="button" onClick={() => { setActiveFileIndex(index); resetReview(); }} className="block w-full px-4 py-3 pr-11 text-left"><div className="truncate font-black text-slate-950">{candidate.name}</div><div className="mt-1 text-xs text-slate-500">{(candidate.size / 1024 / 1024).toFixed(2)} MB · {isBg ? "запазена · чака потвърждение" : "saved · pending"}</div></button><button type="button" aria-label={isBg ? "Премахни фактурата" : "Remove invoice"} onClick={() => void removeQueuedFile(index)} className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-600 hover:bg-rose-50 hover:text-rose-600"><XMarkIcon className="h-4 w-4" /></button></div>)}</div>}
       <div className="mt-5 flex justify-center gap-2"><button onClick={() => fileInputRef.current?.click()} className="rounded-lg border px-5 py-3 font-bold">{isBg ? "Добави още фактури" : "Add more invoices"}</button><button disabled={!file || extracting} onClick={() => void extractInvoice()} className="rounded-lg bg-[#18b99f] px-5 py-3 font-bold text-white disabled:opacity-40">{extracting ? (isBg ? "Разчитане..." : "Reading...") : (isBg ? `Разчети ${file?.name ?? "фактурата"}` : `Read ${file?.name ?? "invoice"}`)}</button></div>
-      {(extracting || progress > 0) && <div className="mx-auto mt-5 max-w-3xl"><div className="mb-1 flex justify-between text-xs font-bold"><span className="truncate pr-4">{file?.name}</span><span>{progress}%</span></div><div className="h-3 overflow-hidden rounded-full bg-slate-200"><div className="h-full bg-[#18b99f]" style={{ width: `${progress}%` }} /></div></div>}
+      {extracting && <div className="mx-auto mt-6 flex max-w-3xl flex-col items-center gap-3"><div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-[#18b99f]" /><div className="max-w-full truncate text-sm font-black text-slate-700">{isBg ? `Разчитане на ${file?.name ?? "фактурата"}...` : `Reading ${file?.name ?? "invoice"}...`}</div></div>}
     </div>
     {error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 font-semibold text-rose-700"><ExclamationTriangleIcon className="mr-2 inline h-5 w-5" />{error}</div>}
     {result && reviewOpen && <div className="fixed inset-0 z-[100] bg-slate-950/80 p-1"><div className="flex h-full w-full flex-col overflow-hidden rounded-xl bg-white">
