@@ -1,59 +1,58 @@
 "use client";
 
 import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 
 const WRONG = /HygiaTrade/g;
 const CORRECT = "HigiaTrade";
 
-const fixNode = (root: ParentNode | Node) => {
-  if (root.nodeType === Node.TEXT_NODE) {
-    const textNode = root as Text;
-    if (textNode.nodeValue?.includes("HygiaTrade")) textNode.nodeValue = textNode.nodeValue.replace(WRONG, CORRECT);
-    return;
-  }
+const fixText = (value: string | null) =>
+  value?.includes("HygiaTrade") ? value.replace(WRONG, CORRECT) : value;
 
-  if (!(root instanceof Element || root instanceof Document)) return;
-
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+const fixDocument = () => {
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   let node = walker.nextNode();
+
   while (node) {
     const textNode = node as Text;
-    if (textNode.nodeValue?.includes("HygiaTrade")) textNode.nodeValue = textNode.nodeValue.replace(WRONG, CORRECT);
+    const next = fixText(textNode.nodeValue);
+    if (next !== textNode.nodeValue && next != null) textNode.nodeValue = next;
     node = walker.nextNode();
   }
 
-  if (root instanceof Element) {
+  document.querySelectorAll("[title], [aria-label], [alt], [placeholder]").forEach((element) => {
     for (const attr of ["title", "aria-label", "alt", "placeholder"]) {
-      const value = root.getAttribute(attr);
-      if (value?.includes("HygiaTrade")) root.setAttribute(attr, value.replace(WRONG, CORRECT));
+      const current = element.getAttribute(attr);
+      const next = fixText(current);
+      if (next !== current && next != null) element.setAttribute(attr, next);
     }
-  }
-};
+  });
 
-const fixHead = () => {
-  document.title = document.title.replace(WRONG, CORRECT);
+  const nextTitle = fixText(document.title);
+  if (nextTitle && nextTitle !== document.title) document.title = nextTitle;
+
   document.querySelectorAll("meta[content]").forEach((meta) => {
-    const content = meta.getAttribute("content");
-    if (content?.includes("HygiaTrade")) meta.setAttribute("content", content.replace(WRONG, CORRECT));
+    const current = meta.getAttribute("content");
+    const next = fixText(current);
+    if (next !== current && next != null) meta.setAttribute("content", next);
   });
 };
 
 const BrandSpellingFixer = () => {
+  const location = useLocation();
+
   useEffect(() => {
-    fixNode(document.body);
-    fixHead();
+    // Do a few bounded passes after route rendering. A permanent MutationObserver here
+    // caused feedback with the existing global UI observer and could lock the page.
+    fixDocument();
+    const frame = requestAnimationFrame(fixDocument);
+    const timer = window.setTimeout(fixDocument, 150);
 
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        mutation.addedNodes.forEach((node) => fixNode(node));
-        if (mutation.type === "characterData") fixNode(mutation.target);
-      }
-      fixHead();
-    });
-
-    observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: false });
-    return () => observer.disconnect();
-  }, []);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [location.pathname, location.search]);
 
   return null;
 };
