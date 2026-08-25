@@ -58,6 +58,62 @@ iframe {
   max-width: calc(100vw - 1rem);
 }
 
+.price-range-input {
+  pointer-events: none;
+}
+
+.price-range-input::-webkit-slider-thumb {
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  border: 3px solid #18b99f;
+  background: #fff;
+  appearance: none;
+  cursor: pointer;
+}
+
+.price-range-input::-moz-range-thumb {
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  border: 3px solid #18b99f;
+  background: #fff;
+  cursor: pointer;
+}
+
+@media (min-width: 1280px) {
+  body.catalog-filter-layout main > div > .site-container {
+    display: grid;
+    grid-template-columns: 18rem minmax(0, 1fr);
+    column-gap: 2rem;
+    row-gap: 1.75rem;
+    align-items: start;
+  }
+
+  body.catalog-filter-layout main > div > .site-container > div:first-child {
+    grid-column: 2;
+    grid-row: 1;
+    margin-bottom: 0 !important;
+  }
+
+  body.catalog-filter-layout main > div > .site-container > div:nth-child(2) {
+    display: contents;
+  }
+
+  body.catalog-filter-layout main > div > .site-container > div:nth-child(2) > aside {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    width: 18rem;
+  }
+
+  body.catalog-filter-layout main > div > .site-container > div:nth-child(2) > div {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+
 @media (max-width: 767px) {
   .site-container {
     width: 100%;
