@@ -1,10 +1,12 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircleIcon,
   CloudArrowUpIcon,
+  DocumentMagnifyingGlassIcon,
   DocumentTextIcon,
   ExclamationTriangleIcon,
   PhotoIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -65,9 +67,11 @@ const InvoiceImport = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<ExtractResponse | null>(null);
   const [invoiceNumber, setInvoiceNumber] = useState("");
@@ -76,8 +80,8 @@ const InvoiceImport = () => {
   const text = {
     title: isBg ? "Импорт от фактура" : "Invoice import",
     subtitle: isBg
-      ? "Качи българска или английска фактура като PDF или снимка. Системата извлича продуктите и закупените количества, след което ти потвърждаваш преди промяна на наличностите."
-      : "Upload a Bulgarian or English invoice as PDF or image. The system extracts purchased products and quantities, then waits for your confirmation before changing stock.",
+      ? "Качи българска или английска фактура като PDF или снимка. След разчитането се отваря екран за визуална проверка на оригиналната фактура срещу извлечените артикули и количества."
+      : "Upload a Bulgarian or English invoice as PDF or image. After OCR, a visual review screen opens so you can compare the original invoice against extracted products and quantities.",
     dropTitle: isBg ? "Пусни фактурата тук" : "Drop the invoice here",
     dropText: isBg
       ? "PDF, PNG, JPG, JPEG или WEBP до 15 MB. Може и Ctrl+V за снимка от clipboard."
@@ -89,22 +93,49 @@ const InvoiceImport = () => {
     date: isBg ? "Дата" : "Date",
     language: isBg ? "Разпознат език" : "Detected language",
     items: isBg ? "Извлечени артикули" : "Extracted items",
-    invoiceName: isBg ? "Име от фактурата" : "Invoice item name",
-    matched: isBg ? "Продукт в HygiaTrade" : "HygiaTrade product",
-    quantity: isBg ? "Количество" : "Quantity",
+    invoiceName: isBg ? "Ред от фактурата" : "Invoice row",
+    matched: isBg ? "Въведен артикул в HygiaTrade" : "HygiaTrade product",
+    quantity: isBg ? "Брой" : "Qty",
     confidence: isBg ? "Увереност" : "Confidence",
     unmatched: isBg ? "Неразпознат продукт" : "Unmatched product",
     noItems: isBg
-      ? "Не бяха открити надеждни продуктови редове. Провери извлечения текст по-долу или използвай по-ясна фактура."
-      : "No reliable product rows were found. Check the extracted text below or use a clearer invoice.",
+      ? "Не бяха открити надеждни продуктови редове. Провери самата фактура и извлечения текст."
+      : "No reliable product rows were found. Check the invoice itself and the extracted text.",
     duplicate: isBg
       ? "Този номер на фактура вече съществува в историята на наличностите. Повторен импорт ще бъде блокиран."
       : "This invoice number already exists in stock history. Duplicate import will be blocked.",
     import: isBg ? "Потвърди и добави в наличност" : "Confirm and add to stock",
     importing: isBg ? "Добавяне..." : "Importing...",
-    rawText: isBg ? "Извлечен текст" : "Extracted text",
-    sourceLine: isBg ? "Ред от документа" : "Document line",
+    rawText: isBg ? "Извлечен OCR текст" : "Extracted OCR text",
+    reviewTitle: isBg ? "Проверка на разчитането" : "OCR verification",
+    reviewSubtitle: isBg
+      ? "Сравни оригиналната фактура вляво с разчетените артикули вдясно. Коригирай грешна буква, избран продукт или количество преди запис."
+      : "Compare the original invoice on the left with the extracted rows on the right. Correct a wrong character, product match or quantity before saving.",
+    original: isBg ? "Оригинална фактура" : "Original invoice",
+    extracted: isBg ? "Разчетени данни" : "Extracted data",
+    reopen: isBg ? "Отвори проверката" : "Open verification",
+    close: isBg ? "Затвори" : "Close",
   };
+
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl("");
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  useEffect(() => {
+    if (!reviewOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [reviewOpen]);
 
   const validImportRows = useMemo(
     () =>
@@ -114,6 +145,8 @@ const InvoiceImport = () => {
       }),
     [rows]
   );
+
+  const isPdf = Boolean(file && (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")));
 
   const validateFile = (candidate: File) => {
     const lowerName = candidate.name.toLowerCase();
@@ -135,6 +168,7 @@ const InvoiceImport = () => {
     setResult(null);
     setRows([]);
     setInvoiceNumber("");
+    setReviewOpen(false);
 
     if (!candidate || !validateFile(candidate)) {
       setFile(null);
@@ -186,6 +220,7 @@ const InvoiceImport = () => {
           editableQuantity: String(item.quantity || ""),
         }))
       );
+      setReviewOpen(true);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : isBg ? "Фактурата не можа да бъде разчетена." : "The invoice could not be read.");
     } finally {
@@ -236,11 +271,85 @@ const InvoiceImport = () => {
       );
 
       setResult((current) => (current ? { ...current, duplicateInvoice: true } : current));
+      setReviewOpen(false);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : isBg ? "Наличностите не можаха да бъдат обновени." : "Stock could not be updated.");
     } finally {
       setImporting(false);
     }
+  };
+
+  const updateSelectedProduct = (index: number, selectedProductId: string) => {
+    setRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, selectedProductId } : item));
+  };
+
+  const updateQuantity = (index: number, editableQuantity: string) => {
+    setRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, editableQuantity } : item));
+  };
+
+  const renderReviewRows = () => {
+    if (rows.length === 0) {
+      return <div className="px-5 py-12 text-center text-sm text-slate-500">{text.noItems}</div>;
+    }
+
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[760px] text-sm">
+          <thead className="sticky top-0 z-10 bg-slate-100 text-left text-[11px] uppercase tracking-wide text-slate-500">
+            <tr>
+              <th className="w-[42%] px-4 py-3">{text.invoiceName}</th>
+              <th className="w-[42%] px-4 py-3">{text.matched}</th>
+              <th className="w-[16%] px-4 py-3 text-right">{text.quantity}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200 bg-white">
+            {rows.map((row, index) => (
+              <tr key={`${row.sourceLine}-${index}`} className="align-top">
+                <td className="px-4 py-4">
+                  <div className="font-semibold leading-5 text-slate-950">{row.rawName}</div>
+                  <div className="mt-2 rounded-md bg-slate-50 p-2 font-mono text-[11px] leading-4 text-slate-500">
+                    {row.sourceLine}
+                  </div>
+                </td>
+                <td className="px-4 py-4">
+                  <select
+                    value={row.selectedProductId}
+                    onChange={(event) => updateSelectedProduct(index, event.target.value)}
+                    className="min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none focus:border-[#18b99f]"
+                  >
+                    <option value="">— {text.unmatched} —</option>
+                    {row.candidates.map((candidate) => (
+                      <option key={candidate.id} value={candidate.id}>
+                        {candidate.name} ({Math.round(candidate.confidence * 100)}%)
+                      </option>
+                    ))}
+                  </select>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${confidenceClass(row.matchConfidence)}`}>
+                      {isBg ? "артикул" : "product"}: {confidenceLabel(row.matchConfidence, isBg)} {Math.round(row.matchConfidence * 100)}%
+                    </span>
+                    <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold ${confidenceClass(row.quantityConfidence)}`}>
+                      {isBg ? "брой" : "qty"}: {confidenceLabel(row.quantityConfidence, isBg)} {Math.round(row.quantityConfidence * 100)}%
+                    </span>
+                  </div>
+                </td>
+                <td className="px-4 py-4 text-right">
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="numeric"
+                    value={row.editableQuantity}
+                    onChange={(event) => updateQuantity(index, event.target.value)}
+                    className="min-h-11 w-24 rounded-md border border-slate-300 px-3 text-right text-base font-bold text-slate-950 outline-none focus:border-[#18b99f]"
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
   };
 
   return (
@@ -281,9 +390,9 @@ const InvoiceImport = () => {
 
         <div className="flex flex-col items-center text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-950 text-white">
-            {file?.type === "application/pdf" ? <DocumentTextIcon className="h-8 w-8" /> : file ? <PhotoIcon className="h-8 w-8" /> : <CloudArrowUpIcon className="h-8 w-8" />}
+            {isPdf ? <DocumentTextIcon className="h-8 w-8" /> : file ? <PhotoIcon className="h-8 w-8" /> : <CloudArrowUpIcon className="h-8 w-8" />}
           </div>
-          <h2 className="mt-4 text-lg font-bold text-slate-950">{file ? file.name : text.dropTitle}</h2>
+          <h2 className="mt-4 break-all text-lg font-bold text-slate-950">{file ? file.name : text.dropTitle}</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
             {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : text.dropText}
           </p>
@@ -316,140 +425,148 @@ const InvoiceImport = () => {
       )}
 
       {result && (
-        <>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <label className="rounded-xl border border-slate-200 bg-white p-4 text-sm">
-              <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">{text.invoiceNo}</span>
-              <input
-                value={invoiceNumber}
-                onChange={(event) => setInvoiceNumber(event.target.value)}
-                className="mt-2 min-h-10 w-full rounded-md border border-slate-300 px-3 font-semibold text-slate-950 outline-none focus:border-[#18b99f]"
-                placeholder={isBg ? "Въведи номер" : "Enter number"}
-              />
-            </label>
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{text.date}</div>
-              <div className="mt-2 font-semibold text-slate-950">{result.invoiceDate || "—"}</div>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{text.language}</div>
-              <div className="mt-2 font-semibold text-slate-950">{result.detectedLanguage === "bg" ? "Български" : "English"}</div>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{text.items}</div>
-              <div className="mt-2 text-2xl font-bold text-slate-950">{rows.length}</div>
-            </div>
-          </div>
-
-          {result.duplicateInvoice && (
-            <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-              <ExclamationTriangleIcon className="mt-0.5 h-5 w-5 flex-none" />
-              <span>{text.duplicate}</span>
-            </div>
-          )}
-
-          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 px-4 py-4 sm:px-5">
-              <h2 className="text-lg font-bold text-slate-950">{text.items}</h2>
-              <p className="mt-1 text-xs text-slate-500">
-                {isBg
-                  ? "Провери съпоставянето и количеството. Нищо не влиза в наличност, докато не натиснеш потвърждение."
-                  : "Review product matching and quantity. Nothing changes stock until you confirm."}
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-950">
+                <DocumentMagnifyingGlassIcon className="h-5 w-5 text-[#18b99f]" />
+                {text.reviewTitle}
+              </div>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                {rows.length} {isBg ? "реда са разчетени. Отвори проверката, за да сравниш всичко с оригинала." : "rows were extracted. Open verification to compare everything with the original."}
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setReviewOpen(true)}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-5 py-2 text-sm font-semibold text-white hover:bg-[#18b99f]"
+            >
+              <DocumentMagnifyingGlassIcon className="h-5 w-5" />
+              {text.reopen}
+            </button>
+          </div>
 
-            {rows.length === 0 ? (
-              <div className="px-5 py-10 text-center text-sm text-slate-500">{text.noItems}</div>
-            ) : (
-              <div className="table-scroll">
-                <table className="w-full min-w-[840px] text-sm">
-                  <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                    <tr>
-                      <th className="px-4 py-3">{text.invoiceName}</th>
-                      <th className="px-4 py-3">{text.matched}</th>
-                      <th className="px-4 py-3">{text.quantity}</th>
-                      <th className="px-4 py-3">{text.confidence}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {rows.map((row, index) => (
-                      <tr key={`${row.sourceLine}-${index}`} className="align-top">
-                        <td className="px-4 py-4">
-                          <div className="max-w-md font-semibold text-slate-950">{row.rawName}</div>
-                          <details className="mt-2 max-w-md text-xs text-slate-500">
-                            <summary className="cursor-pointer font-medium text-slate-600">{text.sourceLine}</summary>
-                            <div className="mt-1 break-words rounded bg-slate-50 p-2 font-mono">{row.sourceLine}</div>
-                          </details>
-                        </td>
-                        <td className="px-4 py-4">
-                          <select
-                            value={row.selectedProductId}
-                            onChange={(event) =>
-                              setRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, selectedProductId: event.target.value } : item))
-                            }
-                            className="min-h-11 w-full min-w-64 rounded-md border border-slate-300 bg-white px-3 text-slate-900 outline-none focus:border-[#18b99f]"
-                          >
-                            <option value="">— {text.unmatched} —</option>
-                            {row.candidates.map((candidate) => (
-                              <option key={candidate.id} value={candidate.id}>
-                                {candidate.name} ({Math.round(candidate.confidence * 100)}%)
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-4 py-4">
-                          <input
-                            type="number"
-                            min="0"
-                            step="1"
-                            inputMode="numeric"
-                            value={row.editableQuantity}
-                            onChange={(event) =>
-                              setRows((current) => current.map((item, rowIndex) => rowIndex === index ? { ...item, editableQuantity: event.target.value } : item))
-                            }
-                            className="min-h-11 w-28 rounded-md border border-slate-300 px-3 text-right font-semibold text-slate-950 outline-none focus:border-[#18b99f]"
-                          />
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex flex-col gap-2">
-                            <span className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${confidenceClass(row.matchConfidence)}`}>
-                              {isBg ? "продукт" : "product"}: {confidenceLabel(row.matchConfidence, isBg)} {Math.round(row.matchConfidence * 100)}%
-                            </span>
-                            <span className={`inline-flex w-fit rounded-full border px-2.5 py-1 text-xs font-semibold ${confidenceClass(row.quantityConfidence)}`}>
-                              {isBg ? "количество" : "quantity"}: {confidenceLabel(row.quantityConfidence, isBg)} {Math.round(row.quantityConfidence * 100)}%
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-xl bg-slate-50 p-3 text-sm"><div className="text-[11px] font-semibold uppercase text-slate-500">{text.invoiceNo}</div><div className="mt-1 truncate font-bold text-slate-950">{invoiceNumber || "—"}</div></div>
+            <div className="rounded-xl bg-slate-50 p-3 text-sm"><div className="text-[11px] font-semibold uppercase text-slate-500">{text.date}</div><div className="mt-1 font-bold text-slate-950">{result.invoiceDate || "—"}</div></div>
+            <div className="rounded-xl bg-slate-50 p-3 text-sm"><div className="text-[11px] font-semibold uppercase text-slate-500">{text.language}</div><div className="mt-1 font-bold text-slate-950">{result.detectedLanguage === "bg" ? "Български" : "English"}</div></div>
+            <div className="rounded-xl bg-slate-50 p-3 text-sm"><div className="text-[11px] font-semibold uppercase text-slate-500">{text.items}</div><div className="mt-1 font-bold text-slate-950">{rows.length}</div></div>
+          </div>
+        </section>
+      )}
 
-            <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-              <div className="text-xs text-slate-500">
-                {isBg
-                  ? `${validImportRows.length} реда са готови за импорт. Неразпознатите остават само за преглед.`
-                  : `${validImportRows.length} rows are ready to import. Unmatched rows remain for review only.`}
+      {result && (
+        <details className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+          <summary className="cursor-pointer text-sm font-bold text-slate-800">{text.rawText}</summary>
+          <pre className="mt-4 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-4 text-xs leading-5 text-slate-200">{result.textPreview}</pre>
+        </details>
+      )}
+
+      {result && reviewOpen && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/75 p-0 backdrop-blur-sm sm:p-3 lg:p-5">
+          <div className="mx-auto flex h-full max-w-[1900px] flex-col overflow-hidden bg-white shadow-2xl sm:rounded-2xl">
+            <header className="flex flex-none items-start justify-between gap-4 border-b border-slate-200 bg-white px-4 py-3 sm:px-5">
+              <div className="min-w-0">
+                <h2 className="text-lg font-black text-slate-950 sm:text-xl">{text.reviewTitle}</h2>
+                <p className="mt-1 max-w-5xl text-xs leading-5 text-slate-500 sm:text-sm">{text.reviewSubtitle}</p>
               </div>
               <button
                 type="button"
-                disabled={importing || validImportRows.length === 0}
-                onClick={() => void commitImport()}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#18b99f] disabled:cursor-not-allowed disabled:opacity-40"
+                onClick={() => setReviewOpen(false)}
+                className="flex h-10 w-10 flex-none items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-950"
+                aria-label={text.close}
+                title={text.close}
               >
-                <CheckCircleIcon className="h-5 w-5" />
-                {importing ? text.importing : text.import}
+                <XMarkIcon className="h-5 w-5" />
               </button>
-            </div>
-          </section>
+            </header>
 
-          <details className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
-            <summary className="cursor-pointer text-sm font-bold text-slate-800">{text.rawText}</summary>
-            <pre className="mt-4 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-4 text-xs leading-5 text-slate-200">{result.textPreview}</pre>
-          </details>
-        </>
+            <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(520px,0.95fr)]">
+              <section className="flex min-h-[46vh] min-w-0 flex-col border-b border-slate-200 bg-slate-100 lg:min-h-0 lg:border-b-0 lg:border-r">
+                <div className="flex flex-none items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2.5">
+                  <div className="text-xs font-black uppercase tracking-wide text-slate-700">{text.original}</div>
+                  <div className="max-w-[60%] truncate text-xs text-slate-500" title={file?.name}>{file?.name}</div>
+                </div>
+                <div className="min-h-0 flex-1 overflow-auto p-2 sm:p-3">
+                  {previewUrl ? (
+                    isPdf ? (
+                      <iframe
+                        src={previewUrl}
+                        title={text.original}
+                        className="h-full min-h-[600px] w-full border-0 bg-white shadow-sm"
+                      />
+                    ) : (
+                      <div className="flex min-h-full items-start justify-center">
+                        <img src={previewUrl} alt={text.original} className="max-h-none max-w-full bg-white object-contain shadow-sm" />
+                      </div>
+                    )
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm text-slate-500">{isBg ? "Няма визуализация." : "No preview available."}</div>
+                  )}
+                </div>
+              </section>
+
+              <section className="flex min-h-[54vh] min-w-0 flex-col bg-white lg:min-h-0">
+                <div className="flex-none border-b border-slate-200 bg-white p-4">
+                  <div className="mb-3 text-xs font-black uppercase tracking-wide text-slate-700">{text.extracted}</div>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <label className="rounded-lg border border-slate-200 bg-slate-50 p-2.5">
+                      <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">{text.invoiceNo}</span>
+                      <input
+                        value={invoiceNumber}
+                        onChange={(event) => setInvoiceNumber(event.target.value)}
+                        className="mt-1 min-h-9 w-full rounded border border-slate-300 bg-white px-2 text-sm font-bold text-slate-950 outline-none focus:border-[#18b99f]"
+                        placeholder={isBg ? "Въведи номер" : "Enter number"}
+                      />
+                    </label>
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5"><div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{text.date}</div><div className="mt-1 text-sm font-bold text-slate-950">{result.invoiceDate || "—"}</div></div>
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5"><div className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{text.items}</div><div className="mt-1 text-sm font-bold text-slate-950">{rows.length}</div></div>
+                  </div>
+                  {result.duplicateInvoice && (
+                    <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                      <ExclamationTriangleIcon className="h-4 w-4 flex-none" />
+                      <span>{text.duplicate}</span>
+                    </div>
+                  )}
+                  {error && (
+                    <div className="mt-3 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">
+                      <ExclamationTriangleIcon className="h-4 w-4 flex-none" />
+                      <span>{error}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-auto">{renderReviewRows()}</div>
+
+                <footer className="flex flex-none flex-col gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="text-xs leading-5 text-slate-500">
+                    {isBg
+                      ? `${validImportRows.length} от ${rows.length} реда са готови за импорт. Провери визуално всеки ред преди потвърждение.`
+                      : `${validImportRows.length} of ${rows.length} rows are ready to import. Visually verify every row before confirming.`}
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={() => setReviewOpen(false)}
+                      className="min-h-11 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                    >
+                      {text.close}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={importing || validImportRows.length === 0 || result.duplicateInvoice}
+                      onClick={() => void commitImport()}
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#18b99f] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <CheckCircleIcon className="h-5 w-5" />
+                      {importing ? text.importing : text.import}
+                    </button>
+                  </div>
+                </footer>
+              </section>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
