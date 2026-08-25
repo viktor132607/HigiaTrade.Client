@@ -16,296 +16,157 @@
 }
 
 @layer base {
-  html {
-    overflow-x: clip;
-  }
-
-  body {
-    @apply min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100;
-    overflow-x: clip;
-  }
-
-  #root {
-    @apply min-h-screen;
-    overflow-x: clip;
-  }
-
-  a {
-    @apply transition-colors;
-  }
-
-  h1,
-  h2,
-  h3,
-  h4 {
-    font-family: "Space Grotesk", sans-serif;
-    letter-spacing: -0.03em;
-  }
-
-  button,
-  input,
-  select,
-  textarea {
-    font: inherit;
-    min-width: 0;
-  }
-
-  img,
-  picture,
-  video,
-  canvas,
-  svg {
-    display: block;
-    max-width: 100%;
-  }
-
-  table {
-    border-collapse: collapse;
-  }
+  html { overflow-x: clip; }
+  body { @apply min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100; overflow-x: clip; }
+  #root { @apply min-h-screen; overflow-x: clip; }
+  a { @apply transition-colors; }
+  h1,h2,h3,h4 { font-family: "Space Grotesk", sans-serif; letter-spacing: -0.03em; }
+  button,input,select,textarea { font: inherit; min-width: 0; }
+  img,picture,video,canvas,svg { display: block; max-width: 100%; }
+  table { border-collapse: collapse; }
 }
 
 @layer components {
-  .font-display {
-    font-family: "Space Grotesk", sans-serif;
-  }
-
-  .card-surface {
-    @apply rounded-[2rem] border border-slate-200 bg-white shadow-[0_30px_90px_-60px_rgba(15,23,42,0.55)];
-  }
-
-  .muted-label {
-    @apply text-sm font-semibold uppercase tracking-[0.24em] text-primary-600;
-  }
-
-  .table-scroll {
-    @apply overflow-x-auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
-  }
-
-  .rich-text-shell .ql-toolbar {
-    @apply rounded-t-2xl border-slate-200 bg-white;
-    overflow-x: auto;
-  }
-
-  .rich-text-shell .ql-container {
-    @apply rounded-b-2xl border-slate-200 bg-white text-sm text-slate-700;
-    min-height: 12rem;
-  }
-
-  .rich-text-shell .ql-editor {
-    min-height: 12rem;
-    overflow-wrap: anywhere;
-  }
-
-  .site-container {
-    width: 100%;
-    margin-inline: auto;
-    padding-left: max(1rem, env(safe-area-inset-left));
-    padding-right: max(1rem, env(safe-area-inset-right));
-  }
+  .font-display { font-family: "Space Grotesk", sans-serif; }
+  .card-surface { @apply rounded-[2rem] border border-slate-200 bg-white shadow-[0_30px_90px_-60px_rgba(15,23,42,0.55)]; }
+  .muted-label { @apply text-sm font-semibold uppercase tracking-[0.24em] text-primary-600; }
+  .table-scroll { @apply overflow-x-auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+  .rich-text-shell .ql-toolbar { @apply rounded-t-2xl border-slate-200 bg-white; overflow-x: auto; }
+  .rich-text-shell .ql-container { @apply rounded-b-2xl border-slate-200 bg-white text-sm text-slate-700; min-height: 12rem; }
+  .rich-text-shell .ql-editor { min-height: 12rem; overflow-wrap: anywhere; }
+  .site-container { width: 100%; margin-inline: auto; padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
 }
 
-@media (min-width: 640px) {
-  .site-container {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .site-container {
-    padding-left: 2rem;
-    padding-right: 2rem;
-  }
-}
-
+@media (min-width: 640px) { .site-container { padding-left: 1.5rem; padding-right: 1.5rem; } }
+@media (min-width: 1024px) { .site-container { padding-left: 2rem; padding-right: 2rem; } }
 @media (min-width: 1280px) {
-  .site-container {
-    max-width: 1440px;
-  }
-
-  .admin-shell main .max-w-7xl {
-    width: 100%;
-    max-width: none !important;
-  }
-
-  .admin-shell .table-scroll {
-    overflow-x: visible;
-  }
-
-  .admin-shell .table-scroll table {
-    width: 100%;
-    min-width: 0 !important;
-    table-layout: fixed;
-  }
-
-  .admin-shell .table-scroll th,
-  .admin-shell .table-scroll td {
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
+  .site-container { max-width: 1440px; }
+  .admin-shell main .max-w-7xl { width: 100%; max-width: none !important; }
+  .admin-shell .table-scroll { overflow-x: visible; }
+  .admin-shell .table-scroll table { width: 100%; min-width: 0 !important; table-layout: fixed; }
+  .admin-shell .table-scroll th,.admin-shell .table-scroll td { white-space: normal; overflow-wrap: anywhere; }
 }
+@media (min-width: 1536px) { .site-container { max-width: 1680px; } }
+@media (min-width: 2200px) { .site-container { max-width: 1920px; padding-left: 2.5rem; padding-right: 2.5rem; } }
 
-@media (min-width: 1536px) {
-  .site-container {
-    max-width: 1680px;
-  }
-}
-
-@media (min-width: 2200px) {
-  .site-container {
-    max-width: 1920px;
-    padding-left: 2.5rem;
-    padding-right: 2.5rem;
-  }
-}
-
-/* Prevent iOS form zoom and keep touch controls usable. */
 @media (max-width: 767px) {
-  input,
-  select,
-  textarea {
-    font-size: 16px;
-  }
-
-  button,
-  a,
-  input,
-  select {
-    touch-action: manipulation;
-  }
-
-  .admin-shell {
-    overflow-x: hidden;
-  }
-
-  .admin-shell main {
-    width: 100%;
-    max-width: 100vw;
-  }
-
-  .admin-shell main h1 {
-    font-size: 1.35rem;
-    line-height: 1.7rem;
-  }
-
-  .admin-shell .table-scroll {
-    margin-left: -0.75rem;
-    margin-right: -0.75rem;
-    padding-bottom: 0.35rem;
-  }
-
-  .admin-shell .table-scroll table {
-    font-size: 0.8rem;
-  }
-
-  .admin-shell form input,
-  .admin-shell form select,
-  .admin-shell form textarea {
-    width: 100%;
-  }
-
-  .admin-shell form button[type="submit"],
-  .admin-shell form button[type="button"] {
-    min-height: 44px;
-  }
-
-  .admin-mobile-nav {
-    padding-left: max(0.25rem, env(safe-area-inset-left));
-    padding-right: max(0.25rem, env(safe-area-inset-right));
-  }
-
-  /* Existing admin overlays stay above the mobile navigation and scroll naturally on phones. */
-  .fixed.inset-0.bg-black.bg-opacity-50 {
-    z-index: 60;
-    align-items: flex-start;
-    overflow-y: auto;
-    padding: 0;
-  }
-
-  .fixed.inset-0.bg-black.bg-opacity-50 > div {
-    width: 100%;
-    min-height: 100%;
-    max-height: none;
-    border-radius: 0;
-    padding: 1rem;
-    padding-top: max(1rem, env(safe-area-inset-top));
-    padding-bottom: max(5rem, calc(env(safe-area-inset-bottom) + 1rem));
-  }
+  input,select,textarea { font-size: 16px; }
+  button,a,input,select { touch-action: manipulation; }
+  .admin-shell { overflow-x: hidden; }
+  .admin-shell main { width: 100%; max-width: 100vw; }
+  .admin-shell main h1 { font-size: 1.35rem; line-height: 1.7rem; }
+  .admin-shell .table-scroll { margin-left: -0.75rem; margin-right: -0.75rem; padding-bottom: 0.35rem; }
+  .admin-shell .table-scroll table { font-size: 0.8rem; }
+  .admin-shell form input,.admin-shell form select,.admin-shell form textarea { width: 100%; }
+  .admin-shell form button[type="submit"],.admin-shell form button[type="button"] { min-height: 44px; }
+  .admin-mobile-nav { padding-left: max(0.25rem, env(safe-area-inset-left)); padding-right: max(0.25rem, env(safe-area-inset-right)); }
+  .fixed.inset-0.bg-black.bg-opacity-50 { z-index: 60; align-items: flex-start; overflow-y: auto; padding: 0; }
+  .fixed.inset-0.bg-black.bg-opacity-50 > div { width: 100%; min-height: 100%; max-height: none; border-radius: 0; padding: 1rem; padding-top: max(1rem, env(safe-area-inset-top)); padding-bottom: max(5rem, calc(env(safe-area-inset-bottom) + 1rem)); }
 }
+@media (min-width: 768px) { .fixed.inset-0.bg-black.bg-opacity-50 { z-index: 60; } }
 
-@media (min-width: 768px) {
-  .fixed.inset-0.bg-black.bg-opacity-50 {
-    z-index: 60;
-  }
-}
-
-::selection {
-  background: rgba(59, 130, 246, 0.18);
-  color: #0f172a;
-}
+::selection { background: rgba(20, 184, 166, 0.28); color: #0f172a; }
 
 html.dark {
   color-scheme: dark;
+  --dark-page: #0b1120;
+  --dark-panel: #111827;
+  --dark-panel-soft: #172033;
+  --dark-input: #0f172a;
+  --dark-border: #334155;
+  --dark-text: #f8fafc;
+  --dark-muted: #94a3b8;
+  --dark-muted-strong: #cbd5e1;
 }
 
-/* Global light/dark baseline for migrated Next.js client pages. */
-html:not(.dark),
-html:not(.dark) body {
-  background: #ffffff;
-  color: #000000;
+html:not(.dark),html:not(.dark) body { background: #ffffff; color: #000000; }
+
+html.dark,html.dark body,#root:has(.dark) {
+  background: var(--dark-page);
+  color: var(--dark-text);
 }
 
-html.dark,
 html.dark body,
 html.dark main,
-html.dark section,
-html.dark article {
-  background: #020617;
-  color: #ffffff;
+html.dark .min-h-screen,
+html.dark [class*="min-h-[calc"] {
+  background-color: var(--dark-page) !important;
+  color: var(--dark-text);
 }
 
+/* Main surfaces keep depth instead of collapsing into one black sheet. */
 html.dark .bg-white,
-html.dark .bg-gray-50,
+html.dark .card-surface,
+html.dark article.bg-white,
+html.dark section.bg-white,
+html.dark aside > .bg-white,
+html.dark .rounded-\[2rem\].bg-white,
+html.dark .rounded-2xl.bg-white,
+html.dark .rounded-lg.bg-white {
+  background-color: var(--dark-panel) !important;
+  color: var(--dark-text) !important;
+}
+
 html.dark .bg-slate-50,
+html.dark .bg-gray-50,
+html.dark .bg-slate-100,
 html.dark .bg-gray-100,
-html.dark .bg-slate-100 {
-  background-color: #020617 !important;
-  color: #ffffff !important;
+html.dark .bg-amber-50 {
+  background-color: var(--dark-panel-soft) !important;
 }
 
-html.dark .text-gray-500,
-html.dark .text-gray-600,
-html.dark .text-gray-700,
-html.dark .text-gray-800,
+html.dark .text-slate-950,
+html.dark .text-slate-900,
 html.dark .text-gray-900,
-html.dark .text-slate-500,
-html.dark .text-slate-600,
-html.dark .text-slate-700,
+html.dark .text-gray-800,
 html.dark .text-slate-800,
-html.dark .text-slate-900 {
-  color: #ffffff !important;
+html.dark .text-black {
+  color: var(--dark-text) !important;
 }
 
-html.dark .border-gray-200,
-html.dark .border-gray-300,
+html.dark .text-slate-700,
+html.dark .text-gray-700,
+html.dark .text-slate-600,
+html.dark .text-gray-600 {
+  color: var(--dark-muted-strong) !important;
+}
+
+html.dark .text-slate-500,
+html.dark .text-gray-500,
+html.dark .text-slate-400,
+html.dark .text-gray-400 {
+  color: var(--dark-muted) !important;
+}
+
+html.dark .border-slate-100,
 html.dark .border-slate-200,
-html.dark .border-slate-300 {
-  border-color: #334155 !important;
+html.dark .border-slate-300,
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-gray-300 {
+  border-color: var(--dark-border) !important;
 }
 
 html.dark input,
 html.dark select,
 html.dark textarea {
-  background-color: #020617 !important;
-  color: #ffffff !important;
-  border-color: #334155 !important;
+  background-color: var(--dark-input) !important;
+  color: var(--dark-text) !important;
+  border-color: var(--dark-border) !important;
 }
 
 html.dark input::placeholder,
-html.dark textarea::placeholder {
-  color: #cbd5e1 !important;
+html.dark textarea::placeholder { color: #64748b !important; }
+html.dark select option { background: var(--dark-input); color: var(--dark-text); }
+
+html.dark button:not([class*="bg-primary"]):not([class*="bg-[#18b99f]"]):not([class*="bg-slate-950"]):not([class*="bg-red"]):not([class*="bg-emerald"]),
+html.dark a[class*="border"] {
+  border-color: var(--dark-border) !important;
+}
+
+html.dark .shadow-sm,
+html.dark [class*="shadow-["] {
+  box-shadow: 0 20px 55px -35px rgba(0,0,0,.75) !important;
 }
 
 html.dark table,
@@ -314,6 +175,25 @@ html.dark tbody,
 html.dark tr,
 html.dark td,
 html.dark th {
-  background-color: #020617 !important;
-  color: #ffffff !important;
+  background-color: var(--dark-panel) !important;
+  color: var(--dark-text) !important;
+  border-color: var(--dark-border) !important;
 }
+
+html.dark thead,
+html.dark th { background-color: #162033 !important; }
+html.dark tr:hover td { background-color: #172033 !important; }
+
+/* Storefront-specific polish. */
+html.dark .price-range-input { color-scheme: dark; }
+html.dark .price-range-input::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--dark-panel); }
+html.dark .price-range-input::-moz-range-thumb { box-shadow: 0 0 0 3px var(--dark-panel); }
+html.dark .prose { color: var(--dark-muted-strong) !important; }
+html.dark .prose strong,html.dark .prose h1,html.dark .prose h2,html.dark .prose h3 { color: var(--dark-text) !important; }
+
+html.dark .rich-text-shell .ql-toolbar,
+html.dark .rich-text-shell .ql-container { background: var(--dark-panel) !important; border-color: var(--dark-border) !important; color: var(--dark-text) !important; }
+html.dark .ql-toolbar .ql-stroke { stroke: var(--dark-muted-strong) !important; }
+html.dark .ql-toolbar .ql-fill { fill: var(--dark-muted-strong) !important; }
+
+html.dark ::selection { background: rgba(20,184,166,.38); color: #fff; }
