@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { addItem } from "../../store/slices/cartSlice";
 import { RootState } from "../../store";
 import { formatCurrency } from "../../utils/currency";
+import { productSeoPath, seoImageUrl } from "../../utils/seo";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 import ProductActions from "./ProductActions";
 
@@ -32,6 +33,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const user = useSelector((state: RootState) => state.auth.user);
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
+  const productPath = productSeoPath(product);
+  const productImage = seoImageUrl(product.mainImageUrl, product.title);
 
   const handleAddToCart = async () => {
     if (!user) {
@@ -106,10 +109,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_28px_90px_-60px_rgba(15,23,42,0.55)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_32px_90px_-50px_rgba(15,23,42,0.65)]">
-      <Link to={`/products/${product.id}`} className="relative block overflow-hidden">
+      <Link to={productPath} className="relative block overflow-hidden">
         <img
-          src={product.mainImageUrl || "/placeholder-image.jpg"}
+          src={productImage}
           alt={product.title}
+          width={640}
+          height={640}
+          loading="lazy"
+          decoding="async"
           className="h-60 w-full object-cover transition duration-500 group-hover:scale-105 sm:h-64"
         />
         <div className="absolute left-4 top-4 flex flex-col items-start gap-2">
@@ -149,7 +156,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         </div>
 
         <Link
-          to={`/products/${product.id}`}
+          to={productPath}
           className="mt-4 line-clamp-2 font-display text-xl font-semibold leading-tight text-slate-950 transition hover:text-[#18b99f]"
         >
           {product.title}
