@@ -84,8 +84,8 @@ const FilterSidebar = ({
     `flex h-12 w-full items-center rounded-2xl border px-4 text-left text-sm font-medium transition ${active ? "border-primary-200 bg-primary-50 text-primary-700" : "border-transparent bg-slate-50 text-slate-700 hover:border-slate-200 hover:bg-slate-100"}`;
 
   return (
-    <aside className="w-full xl:sticky xl:top-24 xl:w-72 xl:shrink-0 xl:self-start">
-      <div className="box-border w-full rounded-[2rem] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_-55px_rgba(15,23,42,0.55)] sm:p-6">
+    <aside className="w-full xl:w-72 xl:shrink-0 xl:self-start">
+      <div className="box-border h-auto max-h-none w-full overflow-visible rounded-[2rem] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_-55px_rgba(15,23,42,0.55)] sm:p-6">
         <div className="space-y-6">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600">{isBg ? "Филтриране" : "Filtering"}</p>
