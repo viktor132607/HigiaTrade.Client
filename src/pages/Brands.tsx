@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import ProductCard from "../components/products/ProductCard";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
 
@@ -23,9 +24,29 @@ type Product = {
   discountedPrice?: number;
 };
 
+const CYRILLIC: Record<string, string> = {
+  а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ж: "zh", з: "z", и: "i", й: "y",
+  к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u",
+  ф: "f", х: "h", ц: "ts", ч: "ch", ш: "sh", щ: "sht", ъ: "a", ь: "y", ю: "yu", я: "ya",
+};
+
+const brandSlug = (value: string) =>
+  value
+    .toLowerCase()
+    .split("")
+    .map((char) => CYRILLIC[char] ?? char)
+    .join("")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 100) || "brand";
+
 const Brands = () => {
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
+  const navigate = useNavigate();
+  const { brandSlug: routeBrandSlug } = useParams<{ brandSlug?: string }>();
 
   const [brands, setBrands] = useState<Brand[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
@@ -52,6 +73,16 @@ const Brands = () => {
 
     void loadBrands();
   }, [isBg]);
+
+  useEffect(() => {
+    if (!routeBrandSlug) {
+      setSelectedBrand(null);
+      return;
+    }
+
+    const matchingBrand = brands.find((brand) => brandSlug(brand.name) === routeBrandSlug.toLowerCase());
+    setSelectedBrand(matchingBrand ?? null);
+  }, [brands, routeBrandSlug]);
 
   useEffect(() => {
     if (!selectedBrand) {
@@ -84,6 +115,15 @@ const Brands = () => {
     void loadProducts();
   }, [selectedBrand, isBg]);
 
+  const chooseBrand = (brand: Brand, active: boolean) => {
+    if (active) {
+      navigate("/brands");
+      return;
+    }
+
+    navigate(`/brands/${brandSlug(brand.name)}`);
+  };
+
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-8 sm:py-12">
       <div className="site-container">
@@ -92,12 +132,12 @@ const Brands = () => {
             {isBg ? "Нашите партньори" : "Our partners"}
           </p>
           <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-            {isBg ? "Марки" : "Brands"}
+            {selectedBrand ? selectedBrand.name : isBg ? "Марки" : "Brands"}
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-600 sm:text-base">
-            {isBg
+            {selectedBrand?.description || (isBg
               ? "Разгледай портфолиото ни от марки и продуктите, които предлагаме от всяка от тях."
-              : "Browse our brand portfolio and the products we offer from each brand."}
+              : "Browse our brand portfolio and the products we offer from each brand.")}
           </p>
         </div>
 
@@ -119,7 +159,7 @@ const Brands = () => {
                 <button
                   key={brand.id}
                   type="button"
-                  onClick={() => setSelectedBrand(active ? null : brand)}
+                  onClick={() => chooseBrand(brand, active)}
                   className={`group overflow-hidden rounded-2xl border bg-white text-left shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg ${
                     active ? "border-[#18b99f] ring-2 ring-[#18b99f]/20" : "border-slate-200"
                   }`}
@@ -156,6 +196,12 @@ const Brands = () => {
                 </button>
               );
             })}
+          </div>
+        )}
+
+        {routeBrandSlug && !loadingBrands && brands.length > 0 && !selectedBrand && (
+          <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
+            {isBg ? "Тази марка вече не е активна или не съществува." : "This brand is no longer active or does not exist."}
           </div>
         )}
 
