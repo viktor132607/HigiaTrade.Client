@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  BrowserRouter as Router,
-  Navigate,
-  Route,
-  Routes,
-} from "react-router-dom";
+import { BrowserRouter as Router, Navigate, Route, Routes } from "react-router-dom";
 import { Provider } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -69,104 +64,23 @@ function App() {
               <Route path="/sano" element={<SanoDistributor />} />
               <Route path="/sano/:region" element={<SanoDistributor />} />
               <Route path="/sano-distributor" element={<Navigate to="/sano" replace />} />
-
-              <Route
-                path="/promotions"
-                element={
-                  <InfoPage
-                    titleBg="Промоции"
-                    titleEn="Promotions"
-                    descriptionBg="Тук ще се показват активните промоции и намаления."
-                    descriptionEn="Active promotions and discounts will be shown here."
-                  />
-                }
-              />
-
+              <Route path="/promotions" element={<InfoPage titleBg="Промоции" titleEn="Promotions" descriptionBg="Тук ще се показват активните промоции и намаления." descriptionEn="Active promotions and discounts will be shown here." />} />
               <Route path="/new-products" element={<NewProducts />} />
-
-              <Route
-                path="/best-sellers"
-                element={
-                  <InfoPage
-                    titleBg="Най-продавани"
-                    titleEn="Best sellers"
-                    descriptionBg="Тук ще се показват най-продаваните продукти."
-                    descriptionEn="The best-selling products will be shown here."
-                  />
-                }
-              />
-
+              <Route path="/best-sellers" element={<InfoPage titleBg="Най-продавани" titleEn="Best sellers" descriptionBg="Тук ще се показват най-продаваните продукти." descriptionEn="The best-selling products will be shown here." />} />
               <Route path="/brands" element={<Brands />} />
               <Route path="/brands/:brandSlug" element={<Brands />} />
               <Route path="/compare" element={<Compare />} />
-
-              <Route
-                path="/cart"
-                element={
-                  <PrivateRoute>
-                    <Cart />
-                  </PrivateRoute>
-                }
-              />
-
-              <Route
-                path="/checkout"
-                element={
-                  <PrivateRoute>
-                    <Checkout />
-                  </PrivateRoute>
-                }
-              />
-
-              <Route
-                path="/checkout/confirmation"
-                element={
-                  <PrivateRoute>
-                    <CheckoutConfirmation />
-                  </PrivateRoute>
-                }
-              />
-
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/checkout/confirmation" element={<CheckoutConfirmation />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
-
-              <Route
-                path="/wishlist"
-                element={
-                  <PrivateRoute>
-                    <Wishlist />
-                  </PrivateRoute>
-                }
-              />
-
-              <Route
-                path="/orders"
-                element={
-                  <PrivateRoute>
-                    <Orders />
-                  </PrivateRoute>
-                }
-              />
-
-              <Route
-                path="/profile"
-                element={
-                  <PrivateRoute>
-                    <Profile />
-                  </PrivateRoute>
-                }
-              />
-
-              <Route
-                path="/admin"
-                element={
-                  <PrivateRoute>
-                    <AdminPanel />
-                  </PrivateRoute>
-                }
-              >
+              <Route path="/wishlist" element={<PrivateRoute><Wishlist /></PrivateRoute>} />
+              <Route path="/orders" element={<PrivateRoute><Orders /></PrivateRoute>} />
+              <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+              <Route path="/admin" element={<PrivateRoute><AdminPanel /></PrivateRoute>}>
                 <Route index element={<AdminOverview />} />
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="categories" element={<AdminCategories />} />
@@ -178,12 +92,10 @@ function App() {
                 <Route path="seo" element={<SeoDashboard />} />
                 <Route path="*" element={<Navigate to="/admin" replace />} />
               </Route>
-
               <Route path="/:categorySlug/:region" element={<RegionalCategory />} />
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
-
           <ToastContainer position="bottom-right" newestOnTop />
         </Router>
       </LanguageThemeProvider>
