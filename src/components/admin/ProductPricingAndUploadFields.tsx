@@ -193,21 +193,21 @@ const ProductPricingAndUploadFields = ({
     )
       ? preferredMainImageUri
       : cleanImages[0]?.uri ?? "";
+    const mainImage = cleanImages.find((image) => image.uri === resolvedMainImageUri);
+    const orderedImages = mainImage
+      ? [mainImage, ...cleanImages.filter((image) => image.uri !== resolvedMainImageUri)]
+      : cleanImages;
 
-    setUploadedImages(cleanImages);
+    setUploadedImages(orderedImages);
     setMainImageUri(resolvedMainImageUri);
     onImagesChange(
       resolvedMainImageUri,
-      cleanImages.filter((image) => image.uri !== resolvedMainImageUri)
+      orderedImages.filter((image) => image.uri !== resolvedMainImageUri)
     );
   };
 
   const setMainImage = (image: ProductImage) => {
-    setMainImageUri(image.uri);
-    onImagesChange(
-      image.uri,
-      uploadedImages.filter((item) => item.uri !== image.uri)
-    );
+    notifyImagesChange(uploadedImages, image.uri);
   };
 
   const moveItem = <T,>(items: T[], from: number, to: number) => {
@@ -531,7 +531,7 @@ const ProductPricingAndUploadFields = ({
             <div className="mb-2 hidden text-xs font-medium uppercase tracking-wide text-gray-500 sm:block">
               Качени снимки — плъзни карта върху желаното място
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 items-stretch gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
               {uploadedImages.map((image, index) => {
                 const isMain = image.uri === mainImageUri;
                 const isDragging = draggedImageIndex === index;
@@ -598,7 +598,9 @@ const ProductPricingAndUploadFields = ({
 
                     <div className="hidden select-none items-center justify-center border-b border-gray-200 bg-gray-50 px-2 py-1.5 text-xs font-semibold text-gray-700 sm:flex">☰ Плъзни за подреждане</div>
 
-                    <img src={image.uri} alt={`Снимка ${index + 1}`} draggable={false} className="aspect-square w-full select-none object-cover sm:h-32 sm:aspect-auto" />
+                    <div className="aspect-square w-full overflow-hidden bg-slate-50">
+                      <img src={image.uri} alt={`Снимка ${index + 1}`} draggable={false} className="h-full w-full select-none object-contain" />
+                    </div>
 
                     <div className="flex items-center justify-between gap-2 border-t border-gray-200 px-2 py-2" onClick={(event) => event.stopPropagation()}>
                       <label className="flex min-h-10 cursor-pointer items-center gap-2 text-xs font-medium text-gray-800 sm:text-sm">

@@ -14,6 +14,7 @@ type Target = {
 type BrandOption = {
   id?: string;
   name: string;
+  thumbnailImageUrl?: string | null;
   productCount: number;
 };
 
@@ -35,6 +36,7 @@ const ProductBrandEnhancer = () => {
   const [brandCreateError, setBrandCreateError] = useState("");
   const targetRef = useRef<Target | null>(null);
   const brandRef = useRef("");
+  const brandsRef = useRef<BrandOption[]>([]);
 
   useEffect(() => { brandRef.current = brand; }, [brand]);
 
@@ -43,7 +45,9 @@ const ProductBrandEnhancer = () => {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Brands`);
       if (!response.ok) throw new Error();
       const data = await response.json();
-      setBrands(Array.isArray(data) ? data : []);
+      const normalizedBrands: BrandOption[] = Array.isArray(data) ? data : [];
+      brandsRef.current = normalizedBrands;
+      setBrands(normalizedBrands);
     } catch {
       setBrands([]);
     }
@@ -82,9 +86,14 @@ const ProductBrandEnhancer = () => {
       const created: BrandOption = {
         id: data?.id ? String(data.id) : undefined,
         name: String(data?.name || name),
+        thumbnailImageUrl: data?.thumbnailImageUrl ? String(data.thumbnailImageUrl) : null,
         productCount: Number(data?.productCount || 0),
       };
-      setBrands((current) => [...current.filter((item) => item.name.toLocaleLowerCase("bg-BG") !== created.name.toLocaleLowerCase("bg-BG")), created].sort((a, b) => a.name.localeCompare(b.name, "bg-BG")));
+      setBrands((current) => {
+        const next = [...current.filter((item) => item.name.toLocaleLowerCase("bg-BG") !== created.name.toLocaleLowerCase("bg-BG")), created].sort((a, b) => a.name.localeCompare(b.name, "bg-BG"));
+        brandsRef.current = next;
+        return next;
+      });
       setBrand(created.name);
       setNewBrandName("");
       setIsCreatingBrand(false);
@@ -160,7 +169,16 @@ const ProductBrandEnhancer = () => {
       if (!isProductSave) return originalFetch(input, init);
       try {
         const payload = JSON.parse(init.body);
-        payload.brand = brandRef.current.trim() || null;
+        const selectedBrand = brandRef.current.trim();
+        payload.brand = selectedBrand || null;
+
+        if (!String(payload.mainImageUrl ?? "").trim()) {
+          const selectedBrandData = brandsRef.current.find(
+            (item) => item.name.trim().toLocaleLowerCase("bg-BG") === selectedBrand.toLocaleLowerCase("bg-BG")
+          );
+          payload.mainImageUrl = selectedBrandData?.thumbnailImageUrl?.trim() || "/higiqlogo.png";
+        }
+
         return originalFetch(input, { ...init, body: JSON.stringify(payload) });
       } catch {
         return originalFetch(input, init);

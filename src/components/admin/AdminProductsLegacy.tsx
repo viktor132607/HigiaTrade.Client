@@ -398,10 +398,6 @@ const AdminProducts = () => {
       errors.discountPercentage = "Отстъпката трябва да е между 0 и 100%.";
     }
 
-    if (!formData.mainImageUrl.trim()) {
-      errors.mainImageUrl = "Качи поне една снимка и избери основна.";
-    }
-
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
