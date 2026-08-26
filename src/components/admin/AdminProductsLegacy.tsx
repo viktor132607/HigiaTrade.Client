@@ -107,6 +107,10 @@ const AdminProducts = () => {
 
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
+  const [categoryFilterQuery, setCategoryFilterQuery] = useState("");
+  const [brandFilterQuery, setBrandFilterQuery] = useState("");
+  const [isCategoryFilterOpen, setIsCategoryFilterOpen] = useState(false);
+  const [isBrandFilterOpen, setIsBrandFilterOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
@@ -201,6 +205,32 @@ const AdminProducts = () => {
       category.name.toLocaleLowerCase("bg-BG").includes(query)
     );
   }, [categories, categorySearch]);
+
+  const sortedFilterCategories = useMemo(
+    () => [...categories].sort((a, b) => a.name.localeCompare(b.name, "bg-BG", { sensitivity: "base" })),
+    [categories]
+  );
+
+  const sortedFilterBrands = useMemo(
+    () => [...brands].sort((a, b) => a.name.localeCompare(b.name, "bg-BG", { sensitivity: "base" })),
+    [brands]
+  );
+
+  const visibleCategoryFilterOptions = useMemo(() => {
+    const query = categoryFilterQuery.trim().toLocaleLowerCase("bg-BG");
+    if (!query) return sortedFilterCategories;
+    return sortedFilterCategories.filter((category) =>
+      category.name.toLocaleLowerCase("bg-BG").includes(query)
+    );
+  }, [categoryFilterQuery, sortedFilterCategories]);
+
+  const visibleBrandFilterOptions = useMemo(() => {
+    const query = brandFilterQuery.trim().toLocaleLowerCase("bg-BG");
+    if (!query) return sortedFilterBrands;
+    return sortedFilterBrands.filter((brand) =>
+      brand.name.toLocaleLowerCase("bg-BG").includes(query)
+    );
+  }, [brandFilterQuery, sortedFilterBrands]);
 
   const categoryNameToCreate = categorySearch.trim();
   const canCreateCategory =
@@ -586,6 +616,10 @@ const AdminProducts = () => {
     setDebouncedMaxPrice("");
     setSelectedCategoryId("");
     setSelectedBrand("");
+    setCategoryFilterQuery("");
+    setBrandFilterQuery("");
+    setIsCategoryFilterOpen(false);
+    setIsBrandFilterOpen(false);
     setCurrentPage(1);
   };
 
@@ -622,39 +656,118 @@ const AdminProducts = () => {
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
               />
             </div>
-            <div>
+            <div className="relative">
               <label htmlFor="categoryFilter" className="mb-1 block text-xs font-medium text-gray-600">Категория</label>
-              <select
+              <input
                 id="categoryFilter"
-                value={selectedCategoryId}
+                type="text"
+                autoComplete="off"
+                value={categoryFilterQuery}
+                onFocus={() => setIsCategoryFilterOpen(true)}
+                onBlur={() => window.setTimeout(() => setIsCategoryFilterOpen(false), 120)}
                 onChange={(event) => {
-                  setSelectedCategoryId(event.target.value);
+                  setCategoryFilterQuery(event.target.value);
+                  setSelectedCategoryId("");
                   setCurrentPage(1);
+                  setIsCategoryFilterOpen(true);
                 }}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-              >
-                <option value="">Всички категории</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>{category.name}</option>
-                ))}
-              </select>
+                placeholder="Пиши или избери категория"
+                className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm outline-none focus:border-[#18b99f] focus:ring-2 focus:ring-[#18b99f]/20 sm:text-sm"
+              />
+              {isCategoryFilterOpen && (
+                <div className="absolute z-40 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-gray-200 bg-white py-1 shadow-xl">
+                  <button
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => {
+                      setCategoryFilterQuery("");
+                      setSelectedCategoryId("");
+                      setCurrentPage(1);
+                      setIsCategoryFilterOpen(false);
+                    }}
+                    className="block w-full px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-emerald-50"
+                  >
+                    Всички категории
+                  </button>
+                  {visibleCategoryFilterOptions.length > 0 ? (
+                    visibleCategoryFilterOptions.map((category) => (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          setCategoryFilterQuery(category.name);
+                          setSelectedCategoryId(category.id);
+                          setCurrentPage(1);
+                          setIsCategoryFilterOpen(false);
+                        }}
+                        className={`block w-full px-3 py-2 text-left text-sm hover:bg-emerald-50 ${selectedCategoryId === category.id ? "bg-emerald-50 font-semibold text-[#138b78]" : "text-slate-700"}`}
+                      >
+                        {category.name}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-3 py-2 text-sm text-gray-500">Няма намерена категория.</div>
+                  )}
+                </div>
+              )}
             </div>
-            <div>
+            <div className="relative">
               <label htmlFor="brandFilter" className="mb-1 block text-xs font-medium text-gray-600">Марка</label>
-              <select
+              <input
                 id="brandFilter"
-                value={selectedBrand}
+                type="text"
+                autoComplete="off"
+                value={brandFilterQuery}
+                onFocus={() => setIsBrandFilterOpen(true)}
+                onBlur={() => window.setTimeout(() => setIsBrandFilterOpen(false), 120)}
                 onChange={(event) => {
-                  setSelectedBrand(event.target.value);
+                  setBrandFilterQuery(event.target.value);
+                  setSelectedBrand("");
                   setCurrentPage(1);
+                  setIsBrandFilterOpen(true);
                 }}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-              >
-                <option value="">Всички марки</option>
-                {brands.map((brand) => (
-                  <option key={brand.name} value={brand.name}>{brand.name} ({brand.productCount})</option>
-                ))}
-              </select>
+                placeholder="Пиши или избери марка"
+                className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm outline-none focus:border-[#18b99f] focus:ring-2 focus:ring-[#18b99f]/20 sm:text-sm"
+              />
+              {isBrandFilterOpen && (
+                <div className="absolute z-40 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-gray-200 bg-white py-1 shadow-xl">
+                  <button
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => {
+                      setBrandFilterQuery("");
+                      setSelectedBrand("");
+                      setCurrentPage(1);
+                      setIsBrandFilterOpen(false);
+                    }}
+                    className="block w-full px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-emerald-50"
+                  >
+                    Всички марки
+                  </button>
+                  {visibleBrandFilterOptions.length > 0 ? (
+                    visibleBrandFilterOptions.map((brand) => (
+                      <button
+                        key={brand.name}
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          setBrandFilterQuery(brand.name);
+                          setSelectedBrand(brand.name);
+                          setCurrentPage(1);
+                          setIsBrandFilterOpen(false);
+                        }}
+                        className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-emerald-50 ${selectedBrand === brand.name ? "bg-emerald-50 font-semibold text-[#138b78]" : "text-slate-700"}`}
+                      >
+                        <span>{brand.name}</span>
+                        <span className="text-xs text-gray-400">{brand.productCount}</span>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-3 py-2 text-sm text-gray-500">Няма намерена марка.</div>
+                  )}
+                </div>
+              )}
             </div>
             <div>
               <label htmlFor="minPrice" className="mb-1 block text-xs font-medium text-gray-600">Цена от</label>
