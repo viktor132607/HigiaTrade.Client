@@ -61,6 +61,7 @@ const ProductCategoryHierarchyEnhancer = () => {
     const detach = () => {
       if (!active) return;
       active.container.style.display = "";
+      delete active.container.dataset.categoryHierarchyEnhanced;
       active.mount.remove();
       active = null;
       setTarget(null);
@@ -147,7 +148,7 @@ const ProductCategoryHierarchyEnhancer = () => {
     <div className="space-y-3 rounded-lg border border-slate-300 bg-slate-50/60 p-4">
       <div className="flex items-center justify-between gap-3">
         <div className="text-sm font-semibold text-slate-900">{isBg ? "Категория и подкатегория" : "Category and subcategory"}</div>
-        <a href="/admin/categories" className="text-xs font-semibold text-[#18b99f] hover:underline">{isBg ? "Управление" : "Manage"}</a>
+        <div className="flex gap-3 text-xs font-semibold"><a href="/admin/categories" className="text-[#18b99f] hover:underline">{isBg ? "Категории" : "Categories"}</a><a href="/admin/subcategories" className="text-[#18b99f] hover:underline">{isBg ? "Подкатегории" : "Subcategories"}</a></div>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         <label className="grid gap-1 text-sm font-semibold text-slate-800">
