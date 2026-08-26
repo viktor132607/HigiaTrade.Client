@@ -1,0 +1,44 @@
+name: Retry applying searchable admin filters
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-apply-searchable-admin-filters-v2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+      - name: Apply patch from prepared workflow
+        shell: python
+        run: |
+          from pathlib import Path
+          import textwrap
+
+          source = Path('.github/workflows/one-shot-searchable-admin-filters.yml').read_text(encoding='utf-8')
+          marker = '      - name: Patch searchable filters\n'
+          start = source.index(marker)
+          run_marker = '        run: |\n'
+          script_start = source.index(run_marker, start) + len(run_marker)
+          script_end = source.index('\n      - name: Validate', script_start)
+          script = textwrap.dedent(source[script_start:script_end])
+          exec(compile(script, '<searchable-filter-patch>', 'exec'), {'__name__': '__main__'})
+      - name: Validate
+        run: |
+          npm install
+          npm run typecheck
+          npm run build
+      - name: Commit and push
+        run: |
+          git checkout -- package-lock.json package.json 2>/dev/null || true
+          git config user.name "Viktor Iliev"
+          git config user.email "96659685+viktor132607@users.noreply.github.com"
+          git add src/components/admin/AdminProductsLegacy.tsx
+          git commit -m "Add searchable alphabetical category and brand filters"
+          git push
