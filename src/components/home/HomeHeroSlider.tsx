@@ -133,6 +133,29 @@ const HomeHeroSlider = () => {
   const activeSlide = useMemo(() => slides[activeIndex] ?? slides[0] ?? defaultHomeSlides[0], [activeIndex, slides]);
   const canNavigate = slides.length > 1;
 
+  const renderSlideContent = (slide: HomeSlide, index: number) => {
+    const active = index === activeIndex;
+    const eyebrow = isBg ? slide.eyebrowBg : slide.eyebrowEn;
+    const title = isBg ? slide.titleBg : slide.titleEn;
+    const badge = isBg ? slide.badgeBg : slide.badgeEn;
+    const note = isBg ? slide.noteBg : slide.noteEn;
+    const cta = isBg ? slide.ctaBg : slide.ctaEn;
+
+    return (
+      <div
+        key={slide.id}
+        className={`col-start-1 row-start-1 max-w-xl transition-opacity duration-300 ${active ? "visible opacity-100" : "invisible pointer-events-none opacity-0"}`}
+        aria-hidden={!active}
+      >
+        {Boolean(eyebrow) && <p className="text-sm font-semibold text-teal-700 sm:text-xl dark:text-teal-300">{eyebrow}</p>}
+        <h1 className="mt-3 font-display text-3xl font-extrabold uppercase leading-[1.05] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl dark:text-white">{title}</h1>
+        {Boolean(badge) && <span className="mt-5 inline-flex rounded-full bg-slate-950 px-4 py-2 text-xs font-black tracking-wide text-white dark:bg-white dark:text-black">{badge}</span>}
+        {Boolean(note) && <p className="mt-6 max-w-lg text-sm font-semibold leading-6 text-slate-700 sm:mt-8 sm:text-lg dark:text-slate-200">{note}</p>}
+        {Boolean(cta) && <Link to={slide.ctaUrl || "/products"} tabIndex={active ? 0 : -1} className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-950 px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-primary-600 sm:mt-8 sm:px-8 dark:bg-white dark:text-black dark:hover:bg-primary-200">{cta}</Link>}
+      </div>
+    );
+  };
+
   return (
     <section className="relative overflow-hidden bg-white text-slate-950 transition-colors dark:bg-black dark:text-white">
       <div className={`relative min-h-[380px] bg-gradient-to-r ${activeSlide.accent || "from-teal-100 via-cyan-50 to-white"} transition-colors sm:min-h-[430px] dark:from-slate-950 dark:via-slate-900 dark:to-black`}>
@@ -148,12 +171,8 @@ const HomeHeroSlider = () => {
         )}
 
         <div className="relative z-10 mx-auto flex max-w-7xl px-14 py-12 sm:px-16 sm:py-16 lg:px-8">
-          <div className="max-w-xl">
-            {Boolean(isBg ? activeSlide.eyebrowBg : activeSlide.eyebrowEn) && <p className="text-sm font-semibold text-teal-700 sm:text-xl dark:text-teal-300">{isBg ? activeSlide.eyebrowBg : activeSlide.eyebrowEn}</p>}
-            <h1 className="mt-3 font-display text-3xl font-extrabold uppercase leading-[1.05] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl dark:text-white">{isBg ? activeSlide.titleBg : activeSlide.titleEn}</h1>
-            {Boolean(isBg ? activeSlide.badgeBg : activeSlide.badgeEn) && <span className="mt-5 inline-flex rounded-full bg-slate-950 px-4 py-2 text-xs font-black tracking-wide text-white dark:bg-white dark:text-black">{isBg ? activeSlide.badgeBg : activeSlide.badgeEn}</span>}
-            {Boolean(isBg ? activeSlide.noteBg : activeSlide.noteEn) && <p className="mt-6 max-w-lg text-sm font-semibold leading-6 text-slate-700 sm:mt-8 sm:text-lg dark:text-slate-200">{isBg ? activeSlide.noteBg : activeSlide.noteEn}</p>}
-            {Boolean(isBg ? activeSlide.ctaBg : activeSlide.ctaEn) && <Link to={activeSlide.ctaUrl || "/products"} className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-950 px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-primary-600 sm:mt-8 sm:px-8 dark:bg-white dark:text-black dark:hover:bg-primary-200">{isBg ? activeSlide.ctaBg : activeSlide.ctaEn}</Link>}
+          <div className="grid w-full max-w-xl">
+            {slides.map(renderSlideContent)}
           </div>
         </div>
 
