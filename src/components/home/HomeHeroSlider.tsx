@@ -83,8 +83,8 @@ const HomeHeroSlider = () => {
     <section className="relative overflow-hidden bg-white text-slate-950 transition-colors dark:bg-black dark:text-white">
       <div className={`relative min-h-[380px] bg-gradient-to-r ${activeSlide.accent} transition-colors sm:min-h-[430px] dark:from-slate-950 dark:via-slate-900 dark:to-black`}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(255,255,255,0.85),transparent_25%),radial-gradient(circle_at_65%_30%,rgba(255,255,255,0.55),transparent_28%)] dark:bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.08),transparent_30%)]" />
-        <img src={activeSlide.image} alt={isBg ? activeSlide.titleBg : activeSlide.titleEn} className="absolute inset-y-0 right-0 hidden h-full w-3/5 object-cover opacity-80 md:block" />
-        <div className="absolute inset-y-0 right-0 hidden w-3/5 bg-gradient-to-r from-transparent to-white/10 md:block dark:to-black/30" />
+        <img src={activeSlide.image} alt={isBg ? activeSlide.titleBg : activeSlide.titleEn} className="absolute inset-y-0 left-[30%] right-0 hidden h-full w-auto object-cover object-center opacity-80 md:block" />
+        <div className="absolute inset-y-0 left-[30%] right-0 hidden bg-gradient-to-r from-transparent to-white/10 md:block dark:to-black/30" />
 
         <button type="button" onClick={() => setActiveIndex((current) => (current - 1 + slides.length) % slides.length)} className="absolute left-2 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-slate-700 shadow transition hover:bg-white sm:left-4" aria-label={isBg ? "Предишен слайд" : "Previous slide"}><ChevronLeftIcon className="h-5 w-5" /></button>
         <button type="button" onClick={() => setActiveIndex((current) => (current + 1) % slides.length)} className="absolute right-2 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-slate-700 shadow transition hover:bg-white sm:right-4" aria-label={isBg ? "Следващ слайд" : "Next slide"}><ChevronRightIcon className="h-5 w-5" /></button>
