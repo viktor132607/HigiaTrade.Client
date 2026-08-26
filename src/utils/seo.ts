@@ -34,11 +34,10 @@ export const categorySeoPath = (category: { id: string; name: string }) =>
 export const brandSeoPath = (brandName: string) =>
   `/brands/${slugifySeo(brandName, 100)}`;
 
-export const seoImageUrl = (url: string | null | undefined, descriptiveName: string) => {
-  if (!url) return "/placeholder-image.jpg";
-
-  const match = url.match(/^(.*\/api\/Images\/[0-9a-f-]{36})(?:\/[^?#]+)?([?#].*)?$/i);
-  if (!match) return url;
-
-  return `${match[1]}/${slugifySeo(descriptiveName, 96)}${match[2] || ""}`;
+export const seoImageUrl = (url: string | null | undefined, _descriptiveName: string) => {
+  // Keep the exact API URL returned by the server. Adding a descriptive path segment
+  // breaks images that were pasted/copied directly into a product and are only valid
+  // at their original endpoint. Static SEO generation still handles descriptive image
+  // aliases separately in scripts/generate-seo.mjs.
+  return url || "/placeholder-image.jpg";
 };
