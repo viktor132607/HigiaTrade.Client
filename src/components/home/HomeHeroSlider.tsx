@@ -26,67 +26,10 @@ export interface HomeSlideshowPayload {
   slides: HomeSlide[];
 }
 
-export const defaultHomeSlides: HomeSlide[] = [
-  {
-    id: "1",
-    order: 0,
-    isActive: true,
-    eyebrowBg: "Чистота за дома и бизнеса",
-    eyebrowEn: "Cleaning for home and business",
-    titleBg: "Почистващи препарати",
-    titleEn: "Cleaning products",
-    badgeBg: "АКТУАЛЕН КАТАЛОГ",
-    badgeEn: "CURRENT CATALOG",
-    noteBg: "Реални продукти, цени и наличности от каталога на HygiaTrade",
-    noteEn: "Real products, prices and stock levels from the HygiaTrade catalog",
-    ctaBg: "Към продуктите",
-    ctaEn: "View products",
-    ctaUrl: "/products",
-    image: "https://images.unsplash.com/photo-1585421514738-01798e348b17?auto=format&fit=crop&w=1200&q=80",
-    accent: "from-teal-100 via-cyan-50 to-white",
-  },
-  {
-    id: "2",
-    order: 1,
-    isActive: true,
-    eyebrowBg: "Ежедневна грижа",
-    eyebrowEn: "Everyday care",
-    titleBg: "Перилни препарати",
-    titleEn: "Laundry detergents",
-    badgeBg: "ЗА ДОМА",
-    badgeEn: "FOR HOME",
-    noteBg: "Продукти за бяло, цветно пране и ежедневна употреба",
-    noteEn: "Products for white and colored laundry and everyday use",
-    ctaBg: "Разгледай",
-    ctaEn: "Browse",
-    ctaUrl: "/products",
-    image: "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?auto=format&fit=crop&w=1200&q=80",
-    accent: "from-sky-100 via-cyan-50 to-white",
-  },
-  {
-    id: "3",
-    order: 2,
-    isActive: true,
-    eyebrowBg: "Професионална хигиена",
-    eyebrowEn: "Professional hygiene",
-    titleBg: "За бизнеса и офиса",
-    titleEn: "For business and office",
-    badgeBg: "ПРОФЕСИОНАЛНО",
-    badgeEn: "PROFESSIONAL",
-    noteBg: "Препарати и консумативи с ясни цени и актуални наличности",
-    noteEn: "Cleaning products and supplies with clear prices and current stock",
-    ctaBg: "Към каталога",
-    ctaEn: "Open catalog",
-    ctaUrl: "/products",
-    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1200&q=80",
-    accent: "from-emerald-100 via-teal-50 to-white",
-  },
-];
-
 const HomeHeroSlider = () => {
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
-  const [slides, setSlides] = useState<HomeSlide[]>(defaultHomeSlides);
+  const [slides, setSlides] = useState<HomeSlide[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
@@ -95,19 +38,24 @@ const HomeHeroSlider = () => {
     const loadSlides = async () => {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/home-slideshow`, { cache: "no-store" });
-        if (!response.ok) return;
+        if (!response.ok) {
+          if (!cancelled) setSlides([]);
+          return;
+        }
+
         const payload = (await response.json()) as HomeSlideshowPayload;
         const nextSlides = Array.isArray(payload?.slides)
           ? payload.slides
               .filter((slide) => slide?.isActive !== false)
               .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
           : [];
-        if (!cancelled && nextSlides.length > 0) {
+
+        if (!cancelled) {
           setSlides(nextSlides);
           setActiveIndex(0);
         }
       } catch {
-        // Keep the built-in slideshow as a safe fallback if the API is unavailable.
+        if (!cancelled) setSlides([]);
       }
     };
 
@@ -130,7 +78,7 @@ const HomeHeroSlider = () => {
     if (activeIndex >= slides.length) setActiveIndex(0);
   }, [activeIndex, slides.length]);
 
-  const activeSlide = useMemo(() => slides[activeIndex] ?? slides[0] ?? defaultHomeSlides[0], [activeIndex, slides]);
+  const activeSlide = useMemo(() => slides[activeIndex] ?? slides[0] ?? null, [activeIndex, slides]);
   const canNavigate = slides.length > 1;
 
   const renderSlideContent = (slide: HomeSlide, index: number) => {
@@ -155,6 +103,8 @@ const HomeHeroSlider = () => {
       </div>
     );
   };
+
+  if (!activeSlide) return null;
 
   return (
     <section className="relative overflow-hidden bg-white text-slate-950 transition-colors dark:bg-black dark:text-white">
