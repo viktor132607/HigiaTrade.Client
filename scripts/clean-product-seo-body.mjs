@@ -16,6 +16,7 @@ async function walk(dir) {
 
 function removeVisibleSeoBlocks(html) {
   return html
+    .replace(/<section\s+data-generated-seo=["']true["'][\s\S]*?<\/section>/gi, "")
     .replace(/<section\s+data-seo-enhancer=["']faq["'][\s\S]*?<\/section>/gi, "")
     .replace(/<nav\s+data-seo-enhancer=["']internal-links["'][\s\S]*?<\/nav>/gi, "");
 }
@@ -31,7 +32,7 @@ try {
       changed += 1;
     }
   }
-  console.log(`[SEO] Removed visible FAQ/internal-link blocks from ${changed} product page(s); JSON-LD schemas remain in <head>.`);
+  console.log(`[SEO] Removed visible SEO body blocks from ${changed} product page(s); metadata and JSON-LD remain in <head>.`);
 } catch (error) {
   if (error?.code !== "ENOENT") throw error;
   console.log("[SEO] No generated product directory found; nothing to clean.");
