@@ -2,6 +2,7 @@ import React from "react";
 import AdminProductsLegacy from "../../components/admin/AdminProductsLegacy";
 import ProductAvailabilitySortEnhancer from "../../components/admin/ProductAvailabilitySortEnhancer";
 import ProductBrandEnhancer from "../../components/admin/ProductBrandEnhancer";
+import ProductCategoryHierarchyEnhancer from "../../components/admin/ProductCategoryHierarchyEnhancer";
 import ProductDescriptionEnhancer from "../../components/admin/ProductDescriptionEnhancer";
 import ProductIncompleteNotice from "../../components/admin/ProductIncompleteNotice";
 import ProductNewStatusEnhancer from "../../components/admin/ProductNewStatusEnhancer";
@@ -11,6 +12,7 @@ const AdminProducts = () => (
   <>
     <ProductAvailabilitySortEnhancer />
     <ProductBrandEnhancer />
+    <ProductCategoryHierarchyEnhancer />
     <ProductDescriptionEnhancer />
     <ProductNewStatusEnhancer />
     <ProductStockEnhancer />
