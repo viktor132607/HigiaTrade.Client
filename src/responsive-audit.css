@@ -71,6 +71,22 @@ iframe {
   max-width: none !important;
 }
 
+/* Admin pages must not inherit centered desktop width caps from individual screens. */
+.admin-shell > div:first-child {
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.admin-shell main > div > div[class*="max-w-"],
+.admin-shell main > section > div[class*="max-w-"] {
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
 .price-range-input {
   pointer-events: none;
 }

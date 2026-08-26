@@ -111,7 +111,7 @@ const AdminPanel = ({ children }: AdminPanelProps) => {
 
   return (
     <div className="admin-shell min-h-[calc(100vh-4rem)] bg-slate-100">
-      <div className="mx-auto min-h-[calc(100vh-4rem)] max-w-[1600px] lg:grid lg:grid-cols-[260px_minmax(0,1fr)]">
+      <div className="min-h-[calc(100vh-4rem)] w-full max-w-none lg:grid lg:grid-cols-[260px_minmax(0,1fr)]">
         <aside className="hidden border-r border-slate-800 bg-slate-950 px-5 py-6 text-slate-100 lg:block">
           <nav className="sticky top-24 grid gap-2">
             {navigation.map((item) => (
