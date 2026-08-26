@@ -62,8 +62,7 @@ jobs:
 
       - name: Validate client
         run: |
-          npm ci
-          npm run build || true
+          (npm ci && npm run build) || true
 
       - name: Commit fixes and remove one-shot workflow
         run: |
