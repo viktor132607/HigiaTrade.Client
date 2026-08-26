@@ -10,6 +10,7 @@ import { RootState } from "../store";
 import { addItem } from "../store/slices/cartSlice";
 import { formatCurrency } from "../utils/currency";
 import { brandSeoPath } from "../utils/seo";
+import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_LINK } from "../config/contact";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
 import ProductActions from "../components/products/ProductActions";
 import ProductCard from "../components/products/ProductCard";
@@ -301,7 +302,7 @@ const ProductDetails = () => {
   const nextImage = () => setSelectedImage((index) => (index === images.length - 1 ? 0 : index + 1));
   const openWholesaleInquiry = () => {
     const subject = tr(`Запитване за цени на едро: ${product.title}`, `Wholesale price inquiry: ${product.title}`);
-    window.location.href = `/contact?subject=${encodeURIComponent(subject)}`;
+    navigate(`/contact?subject=${encodeURIComponent(subject)}`);
   };
   const openDeliveryInquiry = () => {
     const subject = tr(`Доставка: ${product.title}`, `Delivery: ${product.title}`);
@@ -335,31 +336,51 @@ const ProductDetails = () => {
           </section>
 
           <section className="flex h-fit min-h-[532px] flex-col rounded-2xl border border-slate-200 bg-white p-4 lg:p-5">
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{product.categoryName || tr("Продукт", "Product")}</div>
-            <h1 className="mt-1.5 text-2xl font-bold leading-tight">{product.title}</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              {product.brand && <div className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700">{tr("Марка", "Brand")}: {product.brand}</div>}
-              <div className="flex">{[1, 2, 3, 4, 5].map((star) => <StarIcon key={star} className={`h-4 w-4 ${star <= Math.round(rating) ? "text-yellow-400" : "text-slate-200"}`} />)}</div>
-            </div>
-
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <div className="rounded-lg border border-[#18b99f] bg-slate-50 px-3 py-2 text-left ring-1 ring-[#18b99f]/20">
-                <div className="text-[9px] font-bold uppercase tracking-wide text-slate-500">{tr("Цена на дребно", "Retail price")}</div>
-                <div className="mt-1 flex flex-wrap items-end gap-x-2 gap-y-0.5">
-                  {promoActive && <span className="text-[11px] font-semibold text-slate-400 line-through">{formatCurrency(product.regularPrice)}</span>}
-                  <span className={`text-lg font-black leading-none ${promoActive ? "text-rose-600" : "text-slate-950"}`}>{formatCurrency(displayPrice)}</span>
-                </div>
-                {promoActive && <div className="mt-1 text-[9px] font-bold uppercase tracking-wide text-rose-600">{tr(`Промоция -${Math.round(discountPercent)}%`, `Promotion -${Math.round(discountPercent)}%`)}</div>}
-              </div>
-
-              <button type="button" onClick={openWholesaleInquiry} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-left transition hover:border-[#18b99f] hover:bg-emerald-50/40">
-                <div className="text-[9px] font-bold uppercase tracking-wide text-slate-500">{tr("Цени на едро", "Wholesale pricing")}</div>
-                <div className="mt-1 text-sm font-black leading-tight text-slate-950">{tr("Запитване за цени на едро", "Request wholesale pricing")}</div>
-                <div className="mt-1 text-[9px] leading-3.5 text-slate-500">{tr("Свържете се с нас за индивидуална оферта.", "Contact us for a tailored quote.")}</div>
+            <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-slate-500">
+              {product.categoryName && (
+                <span>
+                  {tr("Категория", "Category")}: {" "}
+                  <button type="button" onClick={() => navigate(`/category/${product.categoryId}`)} className="font-semibold text-[#00aebe] hover:underline">
+                    {product.categoryName}
+                  </button>
+                </span>
+              )}
+              {product.brand && (
+                <span>
+                  {tr("Производител", "Manufacturer")}: {" "}
+                  <button type="button" onClick={() => navigate(brandSeoPath(product.brand!))} className="font-semibold text-[#00aebe] hover:underline">
+                    {product.brand}
+                  </button>
+                </span>
+              )}
+              <button type="button" onClick={openDeliveryInquiry} className="font-semibold text-[#00aebe] hover:underline">
+                {tr("Доставка", "Delivery")}
               </button>
             </div>
 
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-y border-slate-200 py-2.5">
+            <h1 className="mt-2 text-3xl font-bold leading-tight">{product.title}</h1>
+            <div className="mt-2 flex">{[1, 2, 3, 4, 5].map((star) => <StarIcon key={star} className={`h-4 w-4 ${star <= Math.round(rating) ? "text-yellow-400" : "text-slate-200"}`} />)}</div>
+
+            <div className="mt-4 border-b border-slate-200 pb-3">
+              <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
+                {promoActive && <span className="text-sm font-semibold text-slate-400 line-through">{formatCurrency(product.regularPrice)}</span>}
+                <span className={`text-2xl font-black leading-none ${promoActive ? "text-rose-600" : "text-slate-950"}`}>{formatCurrency(displayPrice)}</span>
+                {promoActive && <span className="text-[10px] font-bold uppercase tracking-wide text-rose-600">{tr(`Промоция -${Math.round(discountPercent)}%`, `Promotion -${Math.round(discountPercent)}%`)}</span>}
+              </div>
+              <p className="mt-2 text-xs leading-5 text-slate-600">
+                {tr("Минималната стойност на поръчката е 50 €. За цени на едро моля използвайте ", "The minimum order value is €50. For wholesale pricing please use the ")}
+                <button type="button" onClick={openWholesaleInquiry} className="font-semibold text-[#00aebe] hover:underline">
+                  {tr("контактната форма", "contact form")}
+                </button>
+                {tr(" или се обадете на ", " or call ")}
+                <a href={`tel:${CONTACT_PHONE_LINK}`} className="font-semibold text-[#00aebe] hover:underline">
+                  {CONTACT_PHONE_DISPLAY}
+                </a>
+                .
+              </p>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-2.5">
               <strong className={`inline-flex items-center gap-2 text-sm ${product.quantity > 0 ? "text-emerald-700" : "text-rose-600"}`}>
                 {product.quantity > 0 ? <><CheckCircleIcon className="h-5 w-5" />{tr("В наличност", "In stock")}</> : tr("Изчерпан продукт", "Out of stock")}
               </strong>
@@ -379,30 +400,6 @@ const ProductDetails = () => {
             )}
 
             <div className="mt-auto pt-4">
-              <div className="mb-3 border-t border-slate-200 pt-2.5 text-xs text-slate-500">
-                <div className="flex flex-wrap gap-x-5 gap-y-1.5">
-                  {product.categoryName && (
-                    <span>
-                      {tr("Категория", "Category")}: {" "}
-                      <button type="button" onClick={() => navigate(`/category/${product.categoryId}`)} className="font-medium text-[#00aebe] hover:underline">
-                        {product.categoryName}
-                      </button>
-                    </span>
-                  )}
-                  {product.brand && (
-                    <span>
-                      {tr("Производител", "Manufacturer")}: {" "}
-                      <button type="button" onClick={() => navigate(brandSeoPath(product.brand!))} className="font-medium text-[#00aebe] hover:underline">
-                        {product.brand}
-                      </button>
-                    </span>
-                  )}
-                </div>
-                <button type="button" onClick={openDeliveryInquiry} className="mt-1.5 font-medium text-[#00aebe] hover:underline">
-                  {tr("Доставка", "Delivery")}
-                </button>
-              </div>
-
               <div className="grid grid-cols-2 gap-2.5">
                 <button onClick={() => void addToCart()} disabled={product.quantity <= 0} className="rounded-xl bg-slate-950 px-4 py-3 font-bold text-white disabled:opacity-40">
                   {product.quantity > 0 ? tr("Добави в количката", "Add to cart") : tr("Изчерпан продукт", "Unavailable")}
