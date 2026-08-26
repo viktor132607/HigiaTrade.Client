@@ -126,7 +126,7 @@ const ProductStockEnhancer = () => {
     !target.isEditing ? (
       <div className="rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm text-gray-700 sm:p-4">
         <div className="font-semibold">{isBg ? "Начална наличност: 0 бр." : "Initial stock: 0 units"}</div>
-        <div className="mt-1 leading-5 text-gray-500">{isBg ? "Запази продукта, след което добави реалното количество от „Наличност“ с номер на фактура." : "Save the product, then add the actual quantity from Stock with an invoice number."}</div>
+        <div className="mt-1 leading-5 text-gray-500">{isBg ? "Запази продукта, след което добави реалното количество от „Наличност“ — с фактура или без фактура (0000000000)." : "Save the product, then add the actual quantity from Stock — with an invoice or without one (0000000000)."}</div>
       </div>
     ) : productId ? (
       <ProductStockManager token={token} productId={productId} currentQuantity={currentQuantity} onQuantityChange={updateLegacyStock} />
