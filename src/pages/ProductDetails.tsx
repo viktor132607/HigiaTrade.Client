@@ -368,7 +368,7 @@ const ProductDetails = () => {
                 {promoActive && <span className="text-[10px] font-bold uppercase tracking-wide text-rose-600">{tr(`Промоция -${Math.round(discountPercent)}%`, `Promotion -${Math.round(discountPercent)}%`)}</span>}
               </div>
               <p className="mt-2 text-xs leading-5 text-slate-600">
-                {tr("Минималната стойност на поръчката е 50 €. За цени на едро моля използвайте ", "The minimum order value is €50. For wholesale pricing please use the ")}
+                {tr("Минималната стойност на поръчката е 50 €. За цени на едро, моля използвайте ", "The minimum order value is €50. For wholesale pricing, please use the ")}
                 <button type="button" onClick={openWholesaleInquiry} className="font-semibold text-[#00aebe] hover:underline">
                   {tr("контактната форма", "contact form")}
                 </button>

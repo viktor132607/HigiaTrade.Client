@@ -141,7 +141,7 @@ const Home = () => {
         <div className="mx-auto flex max-w-7xl flex-col gap-1.5 px-3 py-3 text-sm text-slate-700 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-6 sm:px-6 lg:px-8 dark:text-slate-200">
           <span className="font-semibold">{isBg ? "Минимална стойност на поръчката: 50 €." : "Minimum order value: €50."}</span>
           <span>
-            {isBg ? "За цени на едро използвайте " : "For wholesale pricing, use the "}
+            {isBg ? "За цени на едро, моля използвайте " : "For wholesale pricing, please use the "}
             <Link to="/contact" className="font-semibold text-[#18b99f] underline underline-offset-2">
               {isBg ? "контактната форма" : "contact form"}
             </Link>

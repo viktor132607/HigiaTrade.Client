@@ -674,7 +674,7 @@ const AdminProducts = () => {
                 <table className="w-full min-w-[64rem] divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="w-12 px-6 py-3 text-left"><input type="checkbox" checked={products.length > 0 && products.every((product) => selectedProductIds.includes(product.id))} onChange={toggleAllProductsOnPage} className="h-4 w-4 rounded border-gray-300" /></th>
+                      <th className="w-28 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"><label className="inline-flex cursor-pointer items-center gap-2 whitespace-nowrap"><input type="checkbox" checked={products.length > 0 && products.every((product) => selectedProductIds.includes(product.id))} onChange={toggleAllProductsOnPage} className="h-5 w-5 rounded border-gray-300 accent-[#18b99f]" /><span>Избери</span></label></th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Име</th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Категория</th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Марка</th>
@@ -688,8 +688,8 @@ const AdminProducts = () => {
                     {products.map((product) => {
                       const thumbnailUrl = product.mainImageUrl || product.imageUrl;
                       return (
-                        <tr key={product.id} className={product.isActive === false ? "bg-gray-50 opacity-65" : ""}>
-                          <td className="px-6 py-4"><input type="checkbox" checked={selectedProductIds.includes(product.id)} onChange={() => toggleProductSelection(product.id)} className="h-4 w-4 rounded border-gray-300" /></td>
+                        <tr key={product.id} className={`${product.isActive === false ? "opacity-65" : ""} ${selectedProductIds.includes(product.id) ? "bg-emerald-50" : product.isActive === false ? "bg-gray-50" : ""}`}>
+                          <td className="px-4 py-4 align-middle"><label className="inline-flex cursor-pointer items-center"><input type="checkbox" checked={selectedProductIds.includes(product.id)} onChange={() => toggleProductSelection(product.id)} className="h-5 w-5 rounded border-gray-300 accent-[#18b99f]" /><span className="sr-only">Избери {product.title}</span></label></td>
                           <td className="px-6 py-3 text-sm text-gray-900">
                             <div className="flex items-center gap-3">
                               <button type="button" onClick={() => handleEditProduct(product)} className="flex-none rounded-md focus:outline-none focus:ring-2 focus:ring-[#18b99f] focus:ring-offset-2" title="Редактирай продукт">
