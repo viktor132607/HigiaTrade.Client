@@ -14,7 +14,7 @@ import ProductActions from "../components/products/ProductActions";
 import ProductCard from "../components/products/ProductCard";
 
 type ProductImage = { id: string | null; uri: string };
-type Product = { id:string; title:string; description:string; regularPrice:number; mainImageUrl:string; secondaryImages?:ProductImage[]; categoryId:string; categoryName?:string; brand?:string; quantity:number; rating?:number; discountPercentage?:number; discountedPrice?:number; wholesalePrice?:number; wholesaleMinQuantity?:number; isNewProduct?:boolean; };
+type Product = { id:string; title:string; description:string; regularPrice:number; mainImageUrl:string; secondaryImages?:ProductImage[]; categoryId:string; categoryName?:string; brand?:string; quantity:number; rating?:number; discountPercentage?:number; discountedPrice?:number; wholesalePrice?:number; wholesalePriceInclVat?:number; wholesalePriceExclVat?:number; wholesaleMinQuantity?:number; isNewProduct?:boolean; };
 type ReviewItem = { id:string; content:string; rating:number; createdOn:string; userId:string; userNames:string; };
 
 const VIEW_HISTORY_KEY = "higiatrade_recently_viewed_products";
@@ -68,7 +68,7 @@ const ProductDetails = () => {
   if(error||!product)return <div className="flex min-h-[55vh] items-center justify-center px-4 text-center text-red-600">{error||tr("Продуктът не е намерен.","Product not found.")}</div>;
   const images=Array.from(new Set([product.mainImageUrl,...(product.secondaryImages??[]).map(x=>x.uri)].filter(Boolean)));
   const displayPrice=product.discountedPrice&&product.discountedPrice>0?product.discountedPrice:product.regularPrice;
-  const wholesalePrice=Number(product.wholesalePrice??0);
+  const wholesalePrice=Number(product.wholesalePriceInclVat??product.wholesalePrice??0);
   const wholesaleMinQuantity=Number(product.wholesaleMinQuantity??0);
   const rating=Number(product.rating??0);
   const previousImage=()=>setSelectedImage(index=>index===0?images.length-1:index-1);
@@ -99,7 +99,7 @@ const ProductDetails = () => {
           </div>
         </div>
         <div className="mt-6 border-y py-4"><strong className={`inline-flex items-center gap-2 ${product.quantity>0?"text-emerald-700":"text-rose-600"}`}>{product.quantity>0?<><CheckCircleIcon className="h-5 w-5"/>{tr("В наличност","In stock")}</>:tr("Изчерпан продукт","Out of stock")}</strong></div>
-        <div className="prose prose-sm mt-6" dangerouslySetInnerHTML={{__html:product.description||""}}/>
+        <div className="mt-6 leading-7 text-slate-700 [&_b]:font-bold [&_strong]:font-bold [&_i]:italic [&_em]:italic [&_u]:underline [&_p]:my-3 [&_ul]:my-3 [&_ul]:ml-6 [&_ul]:list-disc [&_ol]:my-3 [&_ol]:ml-6 [&_ol]:list-decimal [&_li]:my-1" dangerouslySetInnerHTML={{__html:product.description||""}}/>
         {product.quantity>0&&<div className="mt-6 flex items-center gap-3"><button onClick={()=>setQuantity(Math.max(1,quantity-1))}>−</button><input type="number" min={1} max={product.quantity} value={quantity} onChange={e=>setQuantity(Math.min(product.quantity,Math.max(1,Number(e.target.value)||1)))} className="w-20 rounded border p-2 text-center"/><button onClick={()=>setQuantity(Math.min(product.quantity,quantity+1))}>+</button></div>}
         <button onClick={()=>void addToCart()} disabled={product.quantity<=0} className="mt-6 w-full rounded-xl bg-slate-950 px-5 py-3 font-bold text-white disabled:opacity-40">{product.quantity>0?tr("Добави в количката","Add to cart"):tr("Изчерпан продукт","Unavailable")}</button>
         <ProductActions productId={product.id} showLabels />
