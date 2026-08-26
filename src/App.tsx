@@ -39,7 +39,6 @@ import AdminPanel from "./pages/admin/AdminPanel";
 import AdminOverview from "./pages/admin/AdminOverview";
 import AdminProducts from "./pages/admin/Products";
 import AdminCategories from "./pages/admin/Categories";
-import AdminSubcategories from "./pages/admin/Subcategories";
 import AdminBrands from "./pages/admin/Brands";
 import AdminUsers from "./pages/admin/Users";
 import AdminOrders from "./pages/admin/AdminOrders";
@@ -91,7 +90,7 @@ function App() {
                 <Route index element={<AdminOverview />} />
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="categories" element={<AdminCategories />} />
-                <Route path="subcategories" element={<AdminSubcategories />} />
+                <Route path="subcategories" element={<Navigate to="/admin/categories" replace />} />
                 <Route path="brands" element={<AdminBrands />} />
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="orders" element={<AdminOrders />} />
