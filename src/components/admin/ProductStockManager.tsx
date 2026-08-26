@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 
 type StockEntry = {
@@ -24,6 +24,7 @@ const ProductStockManager = ({ token, productId, currentQuantity, onQuantityChan
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState("");
+  const bypassSubmitRef = useRef(false);
 
   useEffect(() => {
     const load = async () => {
@@ -45,12 +46,12 @@ const ProductStockManager = ({ token, productId, currentQuantity, onQuantityChan
     void load();
   }, [productId, token]);
 
-  const addStock = async () => {
+  const addStock = async (): Promise<boolean> => {
     const parsedQuantity = Number.parseInt(quantity, 10);
     const invoice = invoiceNumber.trim() || "0000000000";
     if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
       setError(isBg ? "Въведи количество по-голямо от 0." : "Enter a quantity greater than 0.");
-      return;
+      return false;
     }
 
     try {
@@ -68,12 +69,47 @@ const ProductStockManager = ({ token, productId, currentQuantity, onQuantityChan
       if (data?.entry) setEntries((previous) => [data.entry, ...previous]);
       setQuantity("");
       setInvoiceNumber("");
+      return true;
     } catch (addError) {
       setError(addError instanceof Error ? addError.message : isBg ? "Количеството не можа да бъде добавено." : "Stock could not be added.");
+      return false;
     } finally {
       setAdding(false);
     }
   };
+
+  useEffect(() => {
+    const parsedQuantity = Number.parseInt(quantity, 10);
+    if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) return;
+
+    const modalHeading = Array.from(document.querySelectorAll("h2")).find((heading) => {
+      const text = heading.textContent?.trim() ?? "";
+      return text === "Редактирай продукт" || text === "Edit product";
+    });
+    const form = modalHeading?.parentElement?.querySelector("form") ?? modalHeading?.closest("div")?.querySelector("form");
+    if (!(form instanceof HTMLFormElement)) return;
+
+    const handleSubmit = (event: SubmitEvent) => {
+      if (bypassSubmitRef.current) {
+        bypassSubmitRef.current = false;
+        return;
+      }
+      const pending = Number.parseInt(quantity, 10);
+      if (!Number.isFinite(pending) || pending <= 0 || adding) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const submitter = event.submitter instanceof HTMLButtonElement ? event.submitter : undefined;
+      void addStock().then((saved) => {
+        if (!saved) return;
+        bypassSubmitRef.current = true;
+        window.setTimeout(() => form.requestSubmit(submitter), 0);
+      });
+    };
+
+    form.addEventListener("submit", handleSubmit, true);
+    return () => form.removeEventListener("submit", handleSubmit, true);
+  }, [quantity, invoiceNumber, adding, productId, token, isBg]);
 
   return (
     <div className="rounded-lg border border-slate-300 bg-slate-50/60 p-3 sm:p-4">
@@ -88,7 +124,7 @@ const ProductStockManager = ({ token, productId, currentQuantity, onQuantityChan
         <button type="button" onClick={() => void addStock()} disabled={adding} className="min-h-11 rounded-md bg-[#18b99f] px-5 py-2 font-semibold text-white hover:bg-[#149f8a] disabled:cursor-not-allowed disabled:opacity-50">{adding ? (isBg ? "Добавяне..." : "Adding...") : (isBg ? "+ Добави" : "+ Add")}</button>
       </div>
 
-      <p className="mt-2 text-xs text-gray-500">{isBg ? "Без фактура остави полето празно — записва се № 0000000000 с текущите дата и час. Може да се използва многократно." : "Leave the invoice blank to record no. 0000000000 with the current date and time. It can be used repeatedly."}</p>
+      <p className="mt-2 text-xs text-gray-500">{isBg ? "Ако въведеш количество и натиснеш „Запази“ на продукта без да натискаш „+ Добави“, количеството ще се добави автоматично. Без фактура се записва № 0000000000 с текущите дата и час." : "If you enter a quantity and save the product without pressing + Add, the quantity is added automatically. A blank invoice is recorded as no. 0000000000 with the current date and time."}</p>
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
       <div className="mt-5 border-t border-slate-200 pt-4">
