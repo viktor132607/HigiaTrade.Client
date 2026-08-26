@@ -18,6 +18,7 @@ import SanoDistributor from "./pages/SanoDistributor";
 import CompanyInfo from "./pages/CompanyInfo";
 import RegionalCategory from "./pages/RegionalCategory";
 import NewProducts from "./pages/NewProducts";
+import Promotions from "./pages/Promotions";
 import Compare from "./pages/Compare";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
@@ -68,7 +69,7 @@ function App() {
               <Route path="/sano" element={<SanoDistributor />} />
               <Route path="/sano/:region" element={<SanoDistributor />} />
               <Route path="/sano-distributor" element={<Navigate to="/sano" replace />} />
-              <Route path="/promotions" element={<InfoPage titleBg="Промоции" titleEn="Promotions" descriptionBg="Тук ще се показват активните промоции и намаления." descriptionEn="Active promotions and discounts will be shown here." />} />
+              <Route path="/promotions" element={<Promotions />} />
               <Route path="/new-products" element={<NewProducts />} />
               <Route path="/best-sellers" element={<InfoPage titleBg="Най-продавани" titleEn="Best sellers" descriptionBg="Тук ще се показват най-продаваните продукти." descriptionEn="The best-selling products will be shown here." />} />
               <Route path="/brands" element={<Brands />} />
