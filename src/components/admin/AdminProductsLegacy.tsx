@@ -800,7 +800,18 @@ const AdminProducts = () => {
                         <p className="text-sm font-medium text-red-700">Намерени са сходни или съществуващи продукти:</p>
                         {duplicateProductMatches.map((match) => {
                           const exact = match.title.trim().toLocaleLowerCase("bg-BG") === formData.name.trim().toLocaleLowerCase("bg-BG");
-                          return <div key={match.id} className={`rounded-md border px-3 py-2 text-sm ${exact ? "border-red-300 bg-red-50 text-red-800" : "border-amber-200 bg-white text-slate-700"}`}><span className="font-semibold">{match.title}</span>{exact && <span className="ml-2 font-bold">ВЕЧЕ СЪЩЕСТВУВА</span>}</div>;
+                          return (
+                            <button
+                              key={match.id}
+                              type="button"
+                              onClick={() => handleEditProduct(match)}
+                              className={`block w-full rounded-md border px-3 py-2 text-left text-sm transition hover:border-[#18b99f] hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-[#18b99f]/30 ${exact ? "border-red-300 bg-red-50 text-red-800" : "border-amber-200 bg-white text-slate-700"}`}
+                              title={`Редактирай ${match.title}`}
+                            >
+                              <span className="font-semibold underline-offset-2 hover:underline">{match.title}</span>
+                              {exact && <span className="ml-2 font-bold">ВЕЧЕ СЪЩЕСТВУВА — РЕДАКТИРАЙ</span>}
+                            </button>
+                          );
                         })}
                       </div>
                     )}
