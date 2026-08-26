@@ -61,6 +61,7 @@ const ProductDescriptionEnhancer = () => {
     const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
     setter?.call(target.textarea, normalized);
     target.textarea.dispatchEvent(new Event("input", { bubbles: true }));
+    target.textarea.dispatchEvent(new Event("change", { bubbles: true }));
   };
 
   return createPortal(
