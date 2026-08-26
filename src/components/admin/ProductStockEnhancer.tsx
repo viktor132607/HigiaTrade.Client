@@ -65,12 +65,14 @@ const ProductStockEnhancer = () => {
       mount.dataset.stockEnhancer = "true";
       stockInput.dataset.stockEnhancerSource = "true";
       container.insertAdjacentElement("afterend", mount);
-      container.style.display = "none";
 
-      if (!isEditing) setNativeInputValue(stockInput, "0");
+      // When creating a product, keep the normal stock field visible so the
+      // initial quantity can be entered immediately and sent with the POST.
+      // The advanced stock manager is only used for existing products.
+      if (isEditing) container.style.display = "none";
 
       activeTarget = { stockInput, container, mount, productTitle: nameInput.value.trim(), isEditing };
-      setCurrentQuantity(isEditing ? Number.parseInt(stockInput.value, 10) || 0 : 0);
+      setCurrentQuantity(Number.parseInt(stockInput.value, 10) || 0);
       setTarget(activeTarget);
     };
 
@@ -115,7 +117,7 @@ const ProductStockEnhancer = () => {
     return () => { cancelled = true; };
   }, [target, token, isBg]);
 
-  if (!target) return null;
+  if (!target || !target.isEditing) return null;
 
   const updateLegacyStock = (quantity: number) => {
     setCurrentQuantity(quantity);
@@ -123,12 +125,7 @@ const ProductStockEnhancer = () => {
   };
 
   return createPortal(
-    !target.isEditing ? (
-      <div className="rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm text-gray-700 sm:p-4">
-        <div className="font-semibold">{isBg ? "Начална наличност: 0 бр." : "Initial stock: 0 units"}</div>
-        <div className="mt-1 leading-5 text-gray-500">{isBg ? "Запази продукта, след което добави реалното количество от „Наличност“ — с фактура или без фактура (0000000000)." : "Save the product, then add the actual quantity from Stock — with an invoice or without one (0000000000)."}</div>
-      </div>
-    ) : productId ? (
+    productId ? (
       <ProductStockManager token={token} productId={productId} currentQuantity={currentQuantity} onQuantityChange={updateLegacyStock} />
     ) : (
       <div className="rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm text-gray-600 sm:p-4">{resolveError || (isBg ? "Зареждане на наличността..." : "Loading stock...")}</div>
