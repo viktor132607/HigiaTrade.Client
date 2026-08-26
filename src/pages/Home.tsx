@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 import HomeHeroSlider from "../components/home/HomeHeroSlider";
 import ProductCard from "../components/products/ProductCard";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
+import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_LINK } from "../config/contact";
 
 interface Category {
   id: string;
@@ -136,10 +137,24 @@ const Home = () => {
         </div>
       </section>
 
+      <section className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-black">
+        <div className="mx-auto flex max-w-7xl flex-col gap-1.5 px-3 py-3 text-sm text-slate-700 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-6 sm:px-6 lg:px-8 dark:text-slate-200">
+          <span className="font-semibold">{isBg ? "Минимална стойност на поръчката: 50 €." : "Minimum order value: €50."}</span>
+          <span>
+            {isBg ? "За цени на едро използвайте " : "For wholesale pricing, use the "}
+            <Link to="/contact" className="font-semibold text-[#18b99f] underline underline-offset-2">
+              {isBg ? "контактната форма" : "contact form"}
+            </Link>
+            {isBg ? " или се обадете на " : " or call "}
+            <a href={`tel:${CONTACT_PHONE_LINK}`} className="font-semibold text-[#18b99f] underline underline-offset-2">{CONTACT_PHONE_DISPLAY}</a>.
+          </span>
+        </div>
+      </section>
+
       {tabProducts.length > 0 && (
         <section className="mx-auto max-w-7xl px-3 py-7 sm:px-6 sm:py-8 lg:px-8">
-          <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-            {tabProducts.slice(0, 10).map((product) => <ProductCard key={product.id} product={product} />)}
+          <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+            {tabProducts.slice(0, 8).map((product) => <ProductCard key={product.id} product={product} />)}
           </div>
         </section>
       )}
