@@ -1,0 +1,35 @@
+name: Retry searchable filter workflow validation fix
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-fix-searchable-filter-runner-v2.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+      - name: Patch validation command
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('.github/workflows/one-shot-searchable-admin-filters.yml')
+          text = p.read_text(encoding='utf-8')
+          if 'npm ci' not in text:
+              raise SystemExit('npm ci not found')
+          text = text.replace('npm ci', 'npm install', 1)
+          p.write_text(text, encoding='utf-8')
+      - name: Commit and push
+        run: |
+          git config user.name "Viktor Iliev"
+          git config user.email "96659685+viktor132607@users.noreply.github.com"
+          git add .github/workflows/one-shot-searchable-admin-filters.yml
+          git commit -m "Use npm install in searchable filter workflow"
+          git pull --rebase origin main
+          git push
