@@ -269,14 +269,15 @@ iframe {
   }
 
   main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] > section:first-child > div > div {
-    width: 92px;
-    max-height: 566px;
+    width: 127px;
+    max-height: 532px;
     padding-right: 0;
+    gap: 8px;
   }
 
   main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] > section:first-child > div > div > button {
-    width: 88px;
-    height: 88px;
+    width: 127px;
+    height: 127px;
   }
 
   main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] > section:first-child > div > button {
