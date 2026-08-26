@@ -127,6 +127,8 @@ const AdminProducts = () => {
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   useEffect(() => {
     void fetchCategories();
@@ -506,11 +508,15 @@ const AdminProducts = () => {
     );
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (!selectedProductIds.length) return;
-    if (!window.confirm(`Да се изтрият ли избраните ${selectedProductIds.length} продукта?`)) return;
+    setIsBulkDeleteModalOpen(true);
+  };
 
+  const handleBulkDeleteConfirm = async () => {
+    if (!selectedProductIds.length || bulkDeleting) return;
     try {
+      setBulkDeleting(true);
       await Promise.all(
         selectedProductIds.map(async (productId) => {
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products/${productId}`, {
@@ -520,13 +526,15 @@ const AdminProducts = () => {
           if (!response.ok) throw new Error("Един или повече продукти не можаха да бъдат изтрити.");
         })
       );
-
+      setIsBulkDeleteModalOpen(false);
       setSelectedProductIds([]);
       await fetchProducts();
       await fetchBrands();
       toast.success("Избраните продукти са изтрити.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Избраните продукти не можаха да бъдат изтрити.");
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -887,6 +895,25 @@ const AdminProducts = () => {
             <div className="flex justify-end gap-3">
               <button type="button" onClick={() => { setIsDeleteModalOpen(false); setProductToDelete(null); }} className="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50">Отказ</button>
               <button type="button" onClick={handleDeleteConfirm} className="rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700">Изтрий</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isBulkDeleteModalOpen && selectedProductIds.length > 0 && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget && !bulkDeleting) setIsBulkDeleteModalOpen(false); }}>
+          <div className="w-full max-w-xl rounded-xl bg-white p-6 text-gray-900 shadow-2xl">
+            <div className="mb-4 flex items-start gap-3">
+              <div className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-red-100 text-red-600"><TrashIcon className="h-6 w-6" /></div>
+              <div><h2 className="text-xl font-bold">Изтриване на няколко продукта</h2><p className="mt-1 text-sm text-gray-600">Избрани продукти: <strong>{selectedProductIds.length}</strong></p></div>
+            </div>
+            <div className="mb-5 max-h-48 overflow-y-auto rounded-lg border border-red-100 bg-red-50 p-3">
+              <ul className="space-y-1 text-sm text-gray-800">{products.filter((product) => selectedProductIds.includes(product.id)).map((product) => <li key={product.id}>• {product.title}</li>)}</ul>
+            </div>
+            <p className="mb-6 text-sm font-medium text-red-700">Това действие е необратимо. Всички избрани продукти ще бъдат изтрити.</p>
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button type="button" disabled={bulkDeleting} onClick={() => setIsBulkDeleteModalOpen(false)} className="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50">Отказ</button>
+              <button type="button" disabled={bulkDeleting} onClick={() => void handleBulkDeleteConfirm()} className="inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"><TrashIcon className="mr-2 h-5 w-5" />{bulkDeleting ? "Изтриване..." : `Изтрий ${selectedProductIds.length} продукта`}</button>
             </div>
           </div>
         </div>
