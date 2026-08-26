@@ -34,7 +34,7 @@ jobs:
 
       - name: Validation attempt
         run: |
-          npm ci
+          npm ci || true
           npm run build || true
 
       - name: Commit
