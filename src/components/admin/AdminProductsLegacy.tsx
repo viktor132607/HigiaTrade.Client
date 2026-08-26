@@ -129,6 +129,8 @@ const AdminProducts = () => {
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [duplicateProductMatches, setDuplicateProductMatches] = useState<Product[]>([]);
+  const [checkingDuplicateProducts, setCheckingDuplicateProducts] = useState(false);
 
   useEffect(() => {
     void fetchCategories();
@@ -159,6 +161,37 @@ const AdminProducts = () => {
     debouncedMinPrice,
     debouncedMaxPrice,
   ]);
+
+  useEffect(() => {
+    const query = formData.name.trim();
+    if (!isModalOpen || editingProduct || query.length < 2) {
+      setDuplicateProductMatches([]);
+      setCheckingDuplicateProducts(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      try {
+        setCheckingDuplicateProducts(true);
+        const params = new URLSearchParams({ PageNumber: "1", PageSize: "8", Title: query, SortBy: "title", SortDescending: "false" });
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products?${params.toString()}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("Проверката за съществуващ продукт не успя.");
+        const data = await response.json();
+        const items: Product[] = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+        setDuplicateProductMatches(items.slice(0, 8));
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === "AbortError")) setDuplicateProductMatches([]);
+      } finally {
+        if (!controller.signal.aborted) setCheckingDuplicateProducts(false);
+      }
+    }, 250);
+
+    return () => { window.clearTimeout(timeout); controller.abort(); };
+  }, [formData.name, isModalOpen, editingProduct, token]);
 
   const filteredFormCategories = useMemo(() => {
     const query = categorySearch.trim().toLocaleLowerCase("bg-BG");
@@ -664,10 +697,13 @@ const AdminProducts = () => {
           </div>
 
           {selectedProductIds.length > 0 && (
-            <button type="button" onClick={handleBulkDelete} className="flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700">
-              <TrashIcon className="mr-2 h-5 w-5" />
-              Изтрий избраните ({selectedProductIds.length})
-            </button>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button type="button" onClick={() => setSelectedProductIds([])} className="rounded-md border border-slate-300 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50">Изчисти избора</button>
+              <button type="button" onClick={handleBulkDelete} className="flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700">
+                <TrashIcon className="mr-2 h-5 w-5" />
+                Изтрий избраните ({selectedProductIds.length})
+              </button>
+            </div>
           )}
         </div>
 
@@ -752,6 +788,24 @@ const AdminProducts = () => {
                   className={`${regularInputClass} border-2 border-slate-600`}
                 />
                 {validationErrors.name && <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>}
+                {!editingProduct && formData.name.trim().length >= 2 && (
+                  <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-amber-900">Проверка за вече съществуващ продукт</p>
+                      {checkingDuplicateProducts && <span className="text-xs text-amber-700">Проверка...</span>}
+                    </div>
+                    {!checkingDuplicateProducts && duplicateProductMatches.length === 0 && <p className="mt-1 text-sm text-emerald-700">Не е намерен съществуващ продукт с това име.</p>}
+                    {duplicateProductMatches.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        <p className="text-sm font-medium text-red-700">Намерени са сходни или съществуващи продукти:</p>
+                        {duplicateProductMatches.map((match) => {
+                          const exact = match.title.trim().toLocaleLowerCase("bg-BG") === formData.name.trim().toLocaleLowerCase("bg-BG");
+                          return <div key={match.id} className={`rounded-md border px-3 py-2 text-sm ${exact ? "border-red-300 bg-red-50 text-red-800" : "border-amber-200 bg-white text-slate-700"}`}><span className="font-semibold">{match.title}</span>{exact && <span className="ml-2 font-bold">ВЕЧЕ СЪЩЕСТВУВА</span>}</div>;
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="relative">
