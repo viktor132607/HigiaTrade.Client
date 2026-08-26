@@ -249,22 +249,46 @@ iframe {
 }
 
 @media (min-width: 1024px) {
-  main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] {
-    align-items: stretch;
+  main > div[class*="max-w-[1020px]"] {
+    width: 100%;
+    max-width: none;
   }
 
-  main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] > section:first-child,
+  main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] {
+    grid-template-columns: minmax(0, 560px) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] > section:first-child {
+    width: 100%;
+    max-width: none;
+  }
+
   main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] > section:first-child > div {
-    height: 100%;
+    align-items: flex-start;
   }
 
   main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] > section:first-child > div > div {
-    height: 100%;
-    max-height: none;
+    width: 92px;
+    max-height: 460px;
+    padding-right: 0;
+  }
+
+  main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] > section:first-child > div > div > button {
+    width: 88px;
+    height: 88px;
   }
 
   main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] > section:first-child > div > button {
-    height: 100%;
-    aspect-ratio: auto;
+    width: auto;
+    height: auto !important;
+    aspect-ratio: 1 / 1 !important;
+    align-self: flex-start;
+  }
+
+  main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] > section:nth-child(2) {
+    width: 100%;
+    max-width: none;
+    justify-self: stretch;
   }
 }
