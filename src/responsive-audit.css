@@ -247,3 +247,24 @@ iframe {
     max-width: calc(100vw - 2.5rem);
   }
 }
+
+@media (min-width: 1024px) {
+  main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] {
+    align-items: stretch;
+  }
+
+  main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] > section:first-child,
+  main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] > section:first-child > div {
+    height: 100%;
+  }
+
+  main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] > section:first-child > div > div {
+    height: 100%;
+    max-height: none;
+  }
+
+  main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] > section:first-child > div > button {
+    height: 100%;
+    aspect-ratio: auto;
+  }
+}
