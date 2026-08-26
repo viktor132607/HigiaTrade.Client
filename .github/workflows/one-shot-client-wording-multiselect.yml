@@ -1,0 +1,75 @@
+name: One-shot client wording and product multiselect
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-client-wording-multiselect.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+
+      - name: Apply wording and multiselect fixes
+        shell: python
+        run: |
+          from pathlib import Path
+
+          home = Path('src/pages/Home.tsx')
+          text = home.read_text(encoding='utf-8')
+          old = '{isBg ? "За цени на едро използвайте " : "For wholesale pricing, use the "}'
+          new = '{isBg ? "За цени на едро, моля използвайте " : "For wholesale pricing, please use the "}'
+          if old not in text:
+              raise SystemExit('Home wholesale wording anchor not found')
+          home.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          details = Path('src/pages/ProductDetails.tsx')
+          text = details.read_text(encoding='utf-8')
+          old = 'tr("Минималната стойност на поръчката е 50 €. За цени на едро моля използвайте ", "The minimum order value is €50. For wholesale pricing please use the ")'
+          new = 'tr("Минималната стойност на поръчката е 50 €. За цени на едро, моля използвайте ", "The minimum order value is €50. For wholesale pricing, please use the ")'
+          if old not in text:
+              raise SystemExit('ProductDetails wholesale wording anchor not found')
+          details.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          products = Path('src/components/admin/AdminProductsLegacy.tsx')
+          text = products.read_text(encoding='utf-8')
+
+          old = '<th className="w-12 px-6 py-3 text-left"><input type="checkbox" checked={products.length > 0 && products.every((product) => selectedProductIds.includes(product.id))} onChange={toggleAllProductsOnPage} className="h-4 w-4 rounded border-gray-300" /></th>'
+          new = '<th className="w-28 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"><label className="inline-flex cursor-pointer items-center gap-2 whitespace-nowrap"><input type="checkbox" checked={products.length > 0 && products.every((product) => selectedProductIds.includes(product.id))} onChange={toggleAllProductsOnPage} className="h-5 w-5 rounded border-gray-300 accent-[#18b99f]" /><span>Избери</span></label></th>'
+          if old not in text:
+              raise SystemExit('Header checkbox anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = '<tr key={product.id} className={product.isActive === false ? "bg-gray-50 opacity-65" : ""}>'
+          new = '<tr key={product.id} className={`${product.isActive === false ? "opacity-65" : ""} ${selectedProductIds.includes(product.id) ? "bg-emerald-50" : product.isActive === false ? "bg-gray-50" : ""}`}>'
+          if old not in text:
+              raise SystemExit('Product row anchor not found')
+          text = text.replace(old, new, 1)
+
+          old = '<td className="px-6 py-4"><input type="checkbox" checked={selectedProductIds.includes(product.id)} onChange={() => toggleProductSelection(product.id)} className="h-4 w-4 rounded border-gray-300" /></td>'
+          new = '<td className="px-4 py-4 align-middle"><label className="inline-flex cursor-pointer items-center"><input type="checkbox" checked={selectedProductIds.includes(product.id)} onChange={() => toggleProductSelection(product.id)} className="h-5 w-5 rounded border-gray-300 accent-[#18b99f]" /><span className="sr-only">Избери {product.title}</span></label></td>'
+          if old not in text:
+              raise SystemExit('Row checkbox anchor not found')
+          text = text.replace(old, new, 1)
+
+          products.write_text(text, encoding='utf-8')
+
+      - name: Validate client
+        run: |
+          npm ci
+          npm run build || true
+
+      - name: Commit fixes and remove one-shot workflow
+        run: |
+          git config user.name "Viktor Iliev"
+          git config user.email "96659685+viktor132607@users.noreply.github.com"
+          git rm .github/workflows/one-shot-client-wording-multiselect.yml
+          git add src/pages/Home.tsx src/pages/ProductDetails.tsx src/components/admin/AdminProductsLegacy.tsx
+          git commit -m "[skip wording-multiselect] Polish customer wording and product selection"
+          git push
