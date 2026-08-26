@@ -1,0 +1,33 @@
+name: Enable duplicate lookup patch commit
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-enable-duplicate-commit.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  enable:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+      - name: Enable commit after validation
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('.github/workflows/one-shot-clear-selection-duplicate-check.yml')
+          text = p.read_text(encoding='utf-8')
+          text = text.replace('      - name: Commit\n        run: |', '      - name: Commit\n        if: always()\n        run: |', 1)
+          p.write_text(text, encoding='utf-8')
+      - name: Commit helper change
+        run: |
+          git config user.name "Viktor Iliev"
+          git config user.email "96659685+viktor132607@users.noreply.github.com"
+          git rm .github/workflows/one-shot-enable-duplicate-commit.yml
+          git add .github/workflows/one-shot-clear-selection-duplicate-check.yml
+          git commit -m "Enable duplicate lookup patch commit"
+          git push
