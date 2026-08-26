@@ -255,7 +255,7 @@ iframe {
   }
 
   main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] {
-    grid-template-columns: minmax(0, 560px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 670px) minmax(0, 1fr);
     align-items: start;
   }
 
@@ -270,7 +270,7 @@ iframe {
 
   main .grid[class*="lg:grid-cols-[minmax(0,460px)_minmax(0,520px)]"] > section:first-child > div > div {
     width: 92px;
-    max-height: 460px;
+    max-height: 566px;
     padding-right: 0;
   }
 
