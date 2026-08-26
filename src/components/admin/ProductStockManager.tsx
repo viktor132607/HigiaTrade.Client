@@ -47,13 +47,9 @@ const ProductStockManager = ({ token, productId, currentQuantity, onQuantityChan
 
   const addStock = async () => {
     const parsedQuantity = Number.parseInt(quantity, 10);
-    const invoice = invoiceNumber.trim();
+    const invoice = invoiceNumber.trim() || "0000000000";
     if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
       setError(isBg ? "Въведи количество по-голямо от 0." : "Enter a quantity greater than 0.");
-      return;
-    }
-    if (!invoice) {
-      setError(isBg ? "Въведи номер на фактурата." : "Enter an invoice number.");
       return;
     }
 
@@ -88,11 +84,11 @@ const ProductStockManager = ({ token, productId, currentQuantity, onQuantityChan
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-[180px_1fr_auto] md:items-end">
         <label className="grid gap-1 text-sm font-semibold text-gray-800">{isBg ? "Добави количество" : "Add quantity"}<input type="number" inputMode="numeric" min="1" value={quantity} onChange={(event) => setQuantity(event.target.value)} placeholder={isBg ? "Напр. 24" : "E.g. 24"} className="min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-[#18b99f] focus:ring-2 focus:ring-[#18b99f]/20" /></label>
-        <label className="grid gap-1 text-sm font-semibold text-gray-800">{isBg ? "Фактура №" : "Invoice no."}<input type="text" maxLength={100} value={invoiceNumber} onChange={(event) => setInvoiceNumber(event.target.value)} placeholder={isBg ? "Напр. 0000123456 / 24.08.2026" : "E.g. 0000123456 / 24.08.2026"} className="min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-[#18b99f] focus:ring-2 focus:ring-[#18b99f]/20" /></label>
+        <label className="grid gap-1 text-sm font-semibold text-gray-800">{isBg ? "Фактура № (по желание)" : "Invoice no. (optional)"}<input type="text" maxLength={100} value={invoiceNumber} onChange={(event) => setInvoiceNumber(event.target.value)} placeholder={isBg ? "Празно = 0000000000" : "Blank = 0000000000"} className="min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-[#18b99f] focus:ring-2 focus:ring-[#18b99f]/20" /></label>
         <button type="button" onClick={() => void addStock()} disabled={adding} className="min-h-11 rounded-md bg-[#18b99f] px-5 py-2 font-semibold text-white hover:bg-[#149f8a] disabled:cursor-not-allowed disabled:opacity-50">{adding ? (isBg ? "Добавяне..." : "Adding...") : (isBg ? "+ Добави" : "+ Add")}</button>
       </div>
 
-      <p className="mt-2 text-xs text-gray-500">{isBg ? "При добавяне наличността се увеличава и записът остава свързан с фактурата." : "Adding stock increases the quantity and keeps the receipt linked to its invoice."}</p>
+      <p className="mt-2 text-xs text-gray-500">{isBg ? "Без фактура остави полето празно — записва се № 0000000000 с текущите дата и час. Може да се използва многократно." : "Leave the invoice blank to record no. 0000000000 with the current date and time. It can be used repeatedly."}</p>
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
       <div className="mt-5 border-t border-slate-200 pt-4">
