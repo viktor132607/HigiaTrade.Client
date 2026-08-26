@@ -45,6 +45,7 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminReports from "./pages/admin/Reports";
 import InvoiceImport from "./pages/admin/InvoiceImport";
 import SeoDashboard from "./pages/admin/SeoDashboard";
+import AdminSlideshow from "./pages/admin/Slideshow";
 
 function App() {
   return (
@@ -94,6 +95,7 @@ function App() {
                 <Route path="orders" element={<AdminOrders />} />
                 <Route path="reports" element={<AdminReports />} />
                 <Route path="invoice-import" element={<InvoiceImport />} />
+                <Route path="slideshow" element={<AdminSlideshow />} />
                 <Route path="seo" element={<SeoDashboard />} />
                 <Route path="*" element={<Navigate to="/admin" replace />} />
               </Route>
