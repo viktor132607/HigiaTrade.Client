@@ -58,6 +58,19 @@ iframe {
   max-width: calc(100vw - 1rem);
 }
 
+/* Admin content should use the full width that remains next to the sidebar. */
+.admin-shell main,
+.admin-shell main > div,
+.admin-shell main > section {
+  width: 100%;
+  max-width: none;
+}
+
+.admin-shell main .max-w-7xl {
+  width: 100% !important;
+  max-width: none !important;
+}
+
 .price-range-input {
   pointer-events: none;
 }
