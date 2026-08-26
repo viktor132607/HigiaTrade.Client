@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { Outlet } from "react-router-dom";
+import { useEffect, type ReactNode } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import CartHoverPreview from "./CartHoverPreview";
@@ -15,6 +15,14 @@ type LayoutProps = {
 };
 
 const Layout = ({ children }: LayoutProps) => {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (/^\/products\/[^/]+/.test(location.pathname)) {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
+  }, [location.pathname]);
+
   return (
     <div className="flex min-h-screen flex-col overflow-x-clip">
       <SeoManager />
