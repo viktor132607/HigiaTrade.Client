@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { CheckCircleIcon, ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { StarIcon } from "@heroicons/react/24/solid";
@@ -65,6 +65,7 @@ const extractPackageSize = (product: Product) => {
 
 const ProductDetails = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const token = useSelector((state: RootState) => state.auth.token);
   const { language } = useLanguageTheme();
@@ -206,19 +207,26 @@ const ProductDetails = () => {
     };
   }, [galleryOpen, product?.mainImageUrl, product?.secondaryImages]);
 
+  const cartItem = () => {
+    if (!product) return null;
+    return {
+      id: product.id,
+      title: product.title,
+      regularPrice: product.regularPrice,
+      quantity,
+      imageUrl: product.mainImageUrl,
+      mainImageUrl: product.mainImageUrl,
+      discountPercentage: product.discountPercentage,
+      discountedPrice: product.discountedPrice,
+    };
+  };
+
   const addToCart = async () => {
     if (!product || product.quantity <= 0) return;
     try {
-      dispatch(addItem({
-        id: product.id,
-        title: product.title,
-        regularPrice: product.regularPrice,
-        quantity,
-        imageUrl: product.mainImageUrl,
-        mainImageUrl: product.mainImageUrl,
-        discountPercentage: product.discountPercentage,
-        discountedPrice: product.discountedPrice,
-      }));
+      const item = cartItem();
+      if (!item) return;
+      dispatch(addItem(item));
       toast.success(tr("Продуктът е добавен в количката.", "Product added to cart."));
       if (token) {
         void fetch(`${process.env.NEXT_PUBLIC_API_URL}/Orders`, {
@@ -229,6 +237,27 @@ const ProductDetails = () => {
       }
     } catch {
       toast.error(tr("Продуктът не беше добавен в количката.", "The product was not added to your cart."));
+    }
+  };
+
+  const buyNow = async () => {
+    if (!product || product.quantity <= 0) return;
+    try {
+      if (token) {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Orders`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ productId: product.id, quantity }),
+        });
+        if (!response.ok) throw new Error("Unable to add product to cart.");
+      }
+
+      const item = cartItem();
+      if (!item) return;
+      dispatch(addItem(item));
+      navigate("/checkout");
+    } catch {
+      toast.error(tr("Покупката не можа да бъде започната.", "We could not start checkout."));
     }
   };
 
@@ -343,9 +372,14 @@ const ProductDetails = () => {
             )}
 
             <div className="mt-auto pt-4">
-              <button onClick={() => void addToCart()} disabled={product.quantity <= 0} className="w-full rounded-xl bg-slate-950 px-5 py-3 font-bold text-white disabled:opacity-40">
-                {product.quantity > 0 ? tr("Добави в количката", "Add to cart") : tr("Изчерпан продукт", "Unavailable")}
-              </button>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button onClick={() => void addToCart()} disabled={product.quantity <= 0} className="rounded-xl bg-slate-950 px-4 py-3 font-bold text-white disabled:opacity-40">
+                  {product.quantity > 0 ? tr("Добави в количката", "Add to cart") : tr("Изчерпан продукт", "Unavailable")}
+                </button>
+                <button onClick={() => void buyNow()} disabled={product.quantity <= 0} className="rounded-xl bg-[#18b99f] px-4 py-3 font-bold text-white transition hover:bg-[#149f8a] disabled:opacity-40">
+                  {product.quantity > 0 ? tr("Купи", "Buy now") : tr("Изчерпан", "Unavailable")}
+                </button>
+              </div>
               <ProductActions productId={product.id} showLabels />
             </div>
           </section>
