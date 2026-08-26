@@ -1,0 +1,33 @@
+name: Fix searchable filter workflow validation
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-fix-searchable-filter-runner.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+      - name: Switch validation install command
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('.github/workflows/one-shot-searchable-admin-filters.yml')
+          text = p.read_text(encoding='utf-8')
+          text = text.replace('          npm ci\n          npm run build', '          npm install\n          npm run typecheck\n          npm run build', 1)
+          p.write_text(text, encoding='utf-8')
+      - name: Commit
+        run: |
+          git config user.name "Viktor Iliev"
+          git config user.email "96659685+viktor132607@users.noreply.github.com"
+          git rm .github/workflows/one-shot-fix-searchable-filter-runner.yml
+          git add .github/workflows/one-shot-searchable-admin-filters.yml
+          git commit -m "Fix searchable filter workflow validation"
+          git push
