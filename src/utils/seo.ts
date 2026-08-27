@@ -34,10 +34,20 @@ export const categorySeoPath = (category: { id: string; name: string }) =>
 export const brandSeoPath = (brandName: string) =>
   `/brands/${slugifySeo(brandName, 100)}`;
 
-export const seoImageUrl = (url: string | null | undefined, _descriptiveName: string) => {
-  // Keep the exact API URL returned by the server. Adding a descriptive path segment
-  // breaks images that were pasted/copied directly into a product and are only valid
-  // at their original endpoint. Static SEO generation still handles descriptive image
-  // aliases separately in scripts/generate-seo.mjs.
-  return url || "/placeholder-image.jpg";
+const DEFAULT_PRODUCT_IMAGE = "/higiqlogo.png";
+const DEFAULT_IMAGE_CACHE_VERSION = "20260827-1";
+
+export const seoImageUrl = (
+  url: string | null | undefined,
+  _descriptiveName: string,
+  usesDefaultImage = false
+) => {
+  // Keep real product image URLs exactly as returned by the API.
+  // Virtual brand defaults get a cache key so a previously cached failed request
+  // cannot leave every product using the same brand logo with a broken image.
+  const resolved = url?.trim() || DEFAULT_PRODUCT_IMAGE;
+  if (!usesDefaultImage || resolved.startsWith("/")) return resolved;
+
+  const separator = resolved.includes("?") ? "&" : "?";
+  return `${resolved}${separator}defaultImage=${DEFAULT_IMAGE_CACHE_VERSION}`;
 };
