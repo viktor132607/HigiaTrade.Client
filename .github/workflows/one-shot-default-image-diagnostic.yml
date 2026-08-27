@@ -1,0 +1,31 @@
+name: Default image diagnostic
+
+"on":
+  push:
+    paths:
+      - '.github/workflows/one-shot-default-image-diagnostic.yml'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect production product and brand image URLs
+        shell: bash
+        run: |
+          set -euo pipefail
+          API='https://higiatrade-server.onrender.com/api'
+          echo '=== PRODUCTS ==='
+          curl -fsSL "$API/Products?PageNumber=1&PageSize=30&SortBy=title&SortDescending=false" \
+            | jq -r '.items[] | [.title, (.brand // ""), (.mainImageUrl // ""), ((.usesDefaultImage // false)|tostring)] | @tsv'
+          echo '=== BRANDS ==='
+          curl -fsSL "$API/Brands" \
+            | jq -r '.[] | [.name, (.thumbnailImageUrl // "")] | @tsv'
+          echo '=== IMAGE STATUS ==='
+          urls=$(curl -fsSL "$API/Products?PageNumber=1&PageSize=30&SortBy=title&SortDescending=false" | jq -r '.items[] | select(.usesDefaultImage == true) | .mainImageUrl' | sort -u)
+          while IFS= read -r url; do
+            [ -z "$url" ] && continue
+            if [[ "$url" == /* ]]; then url="https://higiatrade.com$url"; fi
+            code=$(curl -L -s -o /dev/null -w '%{http_code}' "$url" || true)
+            type=$(curl -L -sI "$url" | awk -F': ' 'tolower($1)=="content-type" {print $2}' | tr -d '\r' | tail -1 || true)
+            printf '%s\t%s\t%s\n' "$code" "$type" "$url"
+          done <<< "$urls"
