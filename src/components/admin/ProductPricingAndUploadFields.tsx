@@ -12,6 +12,7 @@ type Props = {
   defaultWholesalePrice?: number;
   currentMainImageUrl?: string;
   currentSecondaryImages?: ProductImage[];
+  usesDefaultImage?: boolean;
   onImagesChange: (
     mainImageUrl: string,
     secondaryImages: ProductImage[]
@@ -34,9 +35,10 @@ const ProductPricingAndUploadFields = ({
   defaultWholesalePrice,
   currentMainImageUrl,
   currentSecondaryImages = [],
+  usesDefaultImage = false,
   onImagesChange,
 }: Props) => {
-  const initialMainImageUrl = currentMainImageUrl?.trim() ?? "";
+  const initialMainImageUrl = usesDefaultImage ? "" : currentMainImageUrl?.trim() ?? "";
   const initialImages: ProductImage[] = [
     ...(initialMainImageUrl ? [{ uri: initialMainImageUrl }] : []),
     ...currentSecondaryImages.filter(
@@ -307,7 +309,8 @@ const ProductPricingAndUploadFields = ({
       }
 
       const nextImages = [...uploadedImages, ...uploaded];
-      notifyImagesChange(nextImages);
+      const firstRealUpload = uploadedImages.length === 0 ? uploaded[0]?.uri ?? "" : mainImageUri;
+      notifyImagesChange(nextImages, firstRealUpload);
 
       if (
         typeof window !== "undefined" &&

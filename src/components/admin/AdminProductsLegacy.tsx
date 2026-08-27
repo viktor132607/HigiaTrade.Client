@@ -1102,6 +1102,7 @@ const AdminProducts = () => {
                   defaultWholesalePrice={editingProduct?.wholesalePriceInclVat ?? editingProduct?.wholesalePrice}
                   currentMainImageUrl={formData.mainImageUrl}
                   currentSecondaryImages={formData.secondaryImages}
+                  usesDefaultImage={editingProduct?.usesDefaultImage === true}
                   onImagesChange={(mainImageUrl, secondaryImages) => {
                     setFormData((previous) => ({ ...previous, mainImageUrl, secondaryImages }));
                     setValidationErrors((previous) => ({ ...previous, mainImageUrl: undefined }));
