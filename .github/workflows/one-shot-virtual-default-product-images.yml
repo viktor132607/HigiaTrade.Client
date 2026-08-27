@@ -1,0 +1,90 @@
+name: One-shot virtual default product images
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-virtual-default-product-images.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+
+      - name: Patch client default image handling
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          brand_path = Path('src/components/admin/ProductBrandEnhancer.tsx')
+          brand = brand_path.read_text(encoding='utf-8')
+
+          old = '''        if (!String(payload.mainImageUrl ?? "").trim()) {
+          const selectedBrandData = brandsRef.current.find(
+            (item) => item.name.trim().toLocaleLowerCase("bg-BG") === selectedBrand.toLocaleLowerCase("bg-BG")
+          );
+          payload.mainImageUrl = selectedBrandData?.thumbnailImageUrl?.trim() || "/higiqlogo.png";
+        }
+
+'''
+          if old not in brand:
+              raise SystemExit('default image persistence block not found')
+          brand = brand.replace(old, '', 1)
+
+          brand = brand.replace('  const brandsRef = useRef<BrandOption[]>([]);\n', '', 1)
+          brand = brand.replace('      brandsRef.current = normalizedBrands;\n', '', 1)
+          brand = brand.replace('        brandsRef.current = next;\n', '', 1)
+          brand_path.write_text(brand, encoding='utf-8')
+
+          products_path = Path('src/components/admin/AdminProductsLegacy.tsx')
+          products = products_path.read_text(encoding='utf-8')
+
+          interface_old = '''  mainImageUrl: string;
+  secondaryImages: ProductImage[];
+'''
+          interface_new = '''  mainImageUrl: string;
+  usesDefaultImage?: boolean;
+  secondaryImages: ProductImage[];
+'''
+          if interface_old not in products:
+              raise SystemExit('product interface anchor not found')
+          products = products.replace(interface_old, interface_new, 1)
+
+          edit_old = '      mainImageUrl: product.mainImageUrl || "",\n'
+          edit_new = '      mainImageUrl: product.usesDefaultImage ? "" : product.mainImageUrl || "",\n'
+          if edit_old not in products:
+              raise SystemExit('edit image anchor not found')
+          products = products.replace(edit_old, edit_new, 1)
+          products_path.write_text(products, encoding='utf-8')
+          PY
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.0'
+          cache: npm
+
+      - name: Install
+        run: npm install
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Commit client changes
+        shell: bash
+        run: |
+          git checkout -- package-lock.json package.json 2>/dev/null || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/one-shot-virtual-default-product-images.yml
+          git add src/components/admin/ProductBrandEnhancer.tsx src/components/admin/AdminProductsLegacy.tsx
+          git commit -m "Keep default product images virtual"
+          git push
