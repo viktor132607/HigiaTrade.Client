@@ -1,4 +1,4 @@
-import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { AdjustmentsHorizontalIcon, ChevronDownIcon, MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
@@ -55,6 +55,7 @@ const FilterSidebar = ({
   const [priceFloor, setPriceFloor] = useState(0);
   const [priceCeiling, setPriceCeiling] = useState(100);
   const didRunAutoApply = useRef(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const isCatalogPage =
     location.pathname === "/products" ||
@@ -122,7 +123,7 @@ const FilterSidebar = ({
     onApplyFilters({ category: null, search: "", minPrice: null, maxPrice: null, rating: null, inStockOnly: false });
   };
 
-  const handleCategoryChange = (categoryId: string | null) => onApplyFilters({ category: categoryId });
+  const handleCategoryChange = (categoryId: string | null) => { onApplyFilters({ category: categoryId }); setMobileOpen(false); };
   const handleRatingChange = (rating: number) => {
     const next = rating === selectedRating ? 0 : rating;
     setSelectedRating(next);
@@ -154,7 +155,8 @@ const FilterSidebar = ({
 
   return (
     <aside className="w-full xl:w-72 xl:shrink-0 xl:self-start">
-      <div className="box-border h-auto max-h-none w-full overflow-visible rounded-[2rem] border border-slate-200 bg-white p-5 shadow-[0_24px_70px_-55px_rgba(15,23,42,0.55)] sm:p-6">
+      <button type="button" onClick={() => setMobileOpen((open) => !open)} className="flex h-12 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 shadow-sm xl:hidden"><span className="flex items-center gap-2"><AdjustmentsHorizontalIcon className="h-5 w-5 text-[#18b99f]" />{isBg ? "Филтри" : "Filters"}</span><ChevronDownIcon className={`h-5 w-5 transition ${mobileOpen ? "rotate-180" : ""}`} /></button>
+      <div className={`${mobileOpen ? "mt-3 block" : "hidden"} box-border h-auto max-h-none w-full overflow-visible rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_24px_70px_-55px_rgba(15,23,42,0.55)] sm:p-6 xl:mt-0 xl:block xl:rounded-[2rem]`}>
         <div className="space-y-6">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600">{isBg ? "Филтриране" : "Filtering"}</p>

@@ -217,11 +217,11 @@ const Products = () => {
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-5 sm:py-8 lg:py-10">
       <div className="site-container">
-        <div className="mb-5 flex flex-col gap-3 rounded-lg border border-slate-200 bg-white px-4 py-4 shadow-sm sm:mb-7 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-2 text-sm text-slate-800">
+        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm sm:mb-7 sm:flex-row sm:items-center sm:justify-between sm:px-4 sm:py-4">
+          <div className="grid w-full grid-cols-1 gap-2 min-[430px]:grid-cols-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3">
+            <label className="flex min-w-0 flex-col gap-1 text-sm text-slate-800 sm:flex-row sm:items-center sm:gap-2">
               <span>{isBg ? "Подреди:" : "Sort:"}</span>
-              <select value={currentSortValue} onChange={handleSortChange} className="min-h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#18b99f]">
+              <select value={currentSortValue} onChange={handleSortChange} className="min-h-10 w-full min-w-0 rounded-md border border-slate-300 bg-white px-2.5 py-2 text-sm text-slate-700 outline-none focus:border-[#18b99f] sm:w-auto sm:px-3">
                 <option value="rating:desc">{isBg ? "Най-популярни" : "Most popular"}</option>
                 <option value="createdOn:desc">{isBg ? "Най-нови" : "Newest"}</option>
                 <option value="regularPrice:asc">{isBg ? "Цена: ниска към висока" : "Price: low to high"}</option>
@@ -231,9 +231,9 @@ const Products = () => {
               </select>
             </label>
 
-            <label className="flex items-center gap-2 text-sm text-slate-800">
+            <label className="flex min-w-0 flex-col gap-1 text-sm text-slate-800 sm:flex-row sm:items-center sm:gap-2">
               <span>{isBg ? "Продукти на страница:" : "Products per page:"}</span>
-              <select value={filters.pageSize} onChange={handlePageSizeChange} className="min-h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#18b99f]">
+              <select value={filters.pageSize} onChange={handlePageSizeChange} className="min-h-10 w-full min-w-0 rounded-md border border-slate-300 bg-white px-2.5 py-2 text-sm text-slate-700 outline-none focus:border-[#18b99f] sm:w-auto sm:px-3">
                 <option value="20">20</option>
                 <option value="50">50</option>
                 <option value="100">100</option>
@@ -241,7 +241,7 @@ const Products = () => {
             </label>
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-slate-800">
+          <div className="flex w-full items-center justify-between gap-2 text-sm text-slate-800 sm:w-auto sm:justify-start">
             <span>{isBg ? "Покажи:" : "View:"}</span>
             <div className="inline-flex overflow-hidden rounded-md border border-slate-300 bg-white">
               <button type="button" onClick={() => handleViewModeChange("compact")} className={`flex h-10 w-10 items-center justify-center border-r border-slate-300 ${viewMode === "compact" ? "bg-slate-100 text-orange-500" : "text-slate-500 hover:bg-slate-50"}`} title={isBg ? "Компактен списък" : "Compact list"}>
@@ -257,7 +257,7 @@ const Products = () => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-5 sm:gap-8 xl:flex-row">
+        <div className="flex flex-col gap-4 sm:gap-8 xl:flex-row">
           <FilterSidebar
             categories={categories}
             selectedCategory={filters.category}
@@ -271,7 +271,7 @@ const Products = () => {
 
           <div className="min-w-0 flex-1">
             {viewMode === "grid" ? (
-              <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:gap-6 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
+              <div className="grid grid-cols-2 gap-2.5 min-[430px]:gap-3 sm:gap-6 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
                 {products.map((product) => <ProductCard key={product.id} product={product} />)}
               </div>
             ) : viewMode === "compact" ? (

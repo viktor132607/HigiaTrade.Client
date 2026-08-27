@@ -50,10 +50,10 @@ const ProductActions = ({ productId, showLabels = false, compact = false }: Prop
 
   const baseClass = compact
     ? "inline-flex h-9 items-center justify-center gap-1.5 whitespace-nowrap break-normal rounded-md border px-2.5 text-xs font-medium transition"
-    : "flex h-11 w-full min-w-0 items-center justify-center gap-2 whitespace-nowrap break-normal rounded-lg border px-3 text-sm font-semibold transition";
+    : "flex h-10 w-full min-w-0 items-center justify-center gap-1.5 whitespace-nowrap break-normal rounded-lg border px-2 text-xs font-semibold transition sm:h-11 sm:gap-2 sm:px-3 sm:text-sm";
 
   return (
-    <div className={compact ? "flex flex-wrap items-center gap-2" : "mt-3 grid grid-cols-2 gap-2.5"}>
+    <div className={compact ? "flex flex-wrap items-center gap-2" : "mt-2 grid grid-cols-2 gap-2 sm:mt-3 sm:gap-2.5"}>
       <button
         type="button"
         onClick={handleCompare}
@@ -65,7 +65,7 @@ const ProductActions = ({ productId, showLabels = false, compact = false }: Prop
         title={isBg ? "Сравни" : "Compare"}
       >
         <ArrowsRightLeftIcon className={`${compact ? "h-4 w-4" : "h-5 w-5"} shrink-0`} />
-        {showLabels ? <span className="whitespace-nowrap break-normal">{isBg ? (isCompared ? "Добавен" : "Сравни") : isCompared ? "Added" : "Compare"}</span> : null}
+        {showLabels ? <span className="hidden whitespace-nowrap break-normal sm:inline">{isBg ? (isCompared ? "Добавен" : "Сравни") : isCompared ? "Added" : "Compare"}</span> : null}
       </button>
 
       <button
@@ -83,7 +83,7 @@ const ProductActions = ({ productId, showLabels = false, compact = false }: Prop
         ) : (
           <HeartIcon className={`${compact ? "h-4 w-4" : "h-5 w-5"} shrink-0`} />
         )}
-        {showLabels ? <span className="whitespace-nowrap break-normal">{isBg ? "Любими" : "Wishlist"}</span> : null}
+        {showLabels ? <span className="hidden whitespace-nowrap break-normal sm:inline">{isBg ? "Любими" : "Wishlist"}</span> : null}
       </button>
     </div>
   );

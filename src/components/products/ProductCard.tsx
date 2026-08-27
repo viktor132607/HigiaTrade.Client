@@ -60,26 +60,26 @@ const ProductCard = ({ product }: ProductCardProps) => {
     tabIndex={0}
     onClick={openProduct}
     onKeyDown={(event)=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();openProduct();}}}
-    className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_28px_90px_-60px_rgba(15,23,42,0.55)] transition duration-300 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-[#18b99f]"
+    className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white shadow-[0_20px_60px_-50px_rgba(15,23,42,0.45)] transition duration-300 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-[#18b99f] sm:rounded-[2rem] sm:shadow-[0_28px_90px_-60px_rgba(15,23,42,0.55)]"
   >
-    <Link to={productPath} onClick={event=>event.stopPropagation()} className="relative block overflow-hidden"><img src={productImage} alt={product.title} width={640} height={640} loading="lazy" decoding="async" onError={handleImageError} className="h-60 w-full object-cover transition duration-500 group-hover:scale-105 sm:h-64"/><div className="absolute left-4 top-4 flex flex-col items-start gap-2">{product.isNewProduct&&<span className="rounded-full bg-[#18b99f] px-3 py-1 text-xs font-bold uppercase text-white">{isBg?"Ново":"New"}</span>}{discountPercent>0?<span className="rounded-full bg-rose-600 px-3 py-1 text-xs font-bold text-white">-{discountPercent}%</span>:null}</div><span className={`absolute right-4 top-4 rounded-full px-3 py-1 text-xs font-semibold ${product.quantity===0?"bg-rose-100 text-rose-700":"bg-emerald-100 text-emerald-700"}`}>{stockLabel}</span></Link>
-    <div className="flex flex-1 flex-col p-5">
-      <div className="flex items-center justify-between gap-3"><p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{isBg?"Продукт":"Product"}</p><div className="flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700"><StarIcon className="h-3.5 w-3.5"/>{(product.rating??0).toFixed(1)}</div></div>
-      <Link to={productPath} onClick={event=>event.stopPropagation()} className="mt-4 min-h-[3.25rem] line-clamp-2 font-display text-xl font-semibold leading-tight text-slate-950 hover:text-[#18b99f]">{product.title}</Link>
-      <p className="mt-3 min-h-[4.5rem] line-clamp-3 text-sm leading-6 text-slate-600">{product.description.replace(/<[^>]+>/g," ")}</p>
+    <Link to={productPath} onClick={event=>event.stopPropagation()} className="relative block overflow-hidden"><img src={productImage} alt={product.title} width={640} height={640} loading="lazy" decoding="async" onError={handleImageError} className="h-40 w-full object-cover transition duration-500 group-hover:scale-105 min-[430px]:h-44 sm:h-64"/><div className="absolute left-2 top-2 flex flex-col items-start gap-1.5 sm:left-4 sm:top-4 sm:gap-2">{product.isNewProduct&&<span className="rounded-full bg-[#18b99f] px-2 py-0.5 text-[10px] font-bold uppercase text-white sm:px-3 sm:py-1 sm:text-xs">{isBg?"Ново":"New"}</span>}{discountPercent>0?<span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white sm:px-3 sm:py-1 sm:text-xs">-{discountPercent}%</span>:null}</div><span className={`absolute right-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold sm:right-4 sm:top-4 sm:px-3 sm:py-1 sm:text-xs ${product.quantity===0?"bg-rose-100 text-rose-700":"bg-emerald-100 text-emerald-700"}`}><span className="sm:hidden">{product.quantity===0?(isBg?"Няма":"Out"):(isBg?"Налично":"Stock")}</span><span className="hidden sm:inline">{stockLabel}</span></span></Link>
+    <div className="flex flex-1 flex-col p-3 sm:p-5">
+      <div className="flex items-center justify-between gap-2"><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 sm:text-xs sm:tracking-[0.24em]">{isBg?"Продукт":"Product"}</p><div className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 sm:px-2.5 sm:py-1 sm:text-xs"><StarIcon className="h-3.5 w-3.5"/>{(product.rating??0).toFixed(1)}</div></div>
+      <Link to={productPath} onClick={event=>event.stopPropagation()} className="mt-2 min-h-[2.5rem] line-clamp-2 font-display text-sm font-semibold leading-5 text-slate-950 hover:text-[#18b99f] sm:mt-4 sm:min-h-[3.25rem] sm:text-xl sm:leading-tight">{product.title}</Link>
+      <p className="mt-3 hidden min-h-[4.5rem] line-clamp-3 text-sm leading-6 text-slate-600 sm:block">{product.description.replace(/<[^>]+>/g," ")}</p>
 
-      <div className="mt-auto pt-6">
-        <div className="flex min-h-[4.75rem] items-end justify-between gap-4">
-          <div className="flex min-h-[4.75rem] flex-col justify-end">
+      <div className="mt-auto pt-4 sm:pt-6">
+        <div className="flex min-h-[4.25rem] items-end justify-between gap-2 sm:min-h-[4.75rem] sm:gap-4">
+          <div className="flex min-h-[4.25rem] min-w-0 flex-col justify-end sm:min-h-[4.75rem]">
             {promoActive?<div className="mb-0.5 text-sm font-semibold text-slate-400 line-through">{formatCurrency(product.regularPrice)}</div>:null}
-            <p className={`font-display text-2xl font-bold ${promoActive?"text-rose-600":"text-slate-950"}`}>{formatCurrency(displayPrice)}</p>
+            <p className={`font-display text-lg font-bold sm:text-2xl ${promoActive?"text-rose-600":"text-slate-950"}`}>{formatCurrency(displayPrice)}</p>
             <div className="mt-1 min-h-4 text-xs font-semibold uppercase tracking-wide text-rose-600">{promoActive?(isBg?"Промо цена":"Promo price"):"\u00a0"}</div>
           </div>
-          <span className={`mb-1 shrink-0 text-right text-xs ${product.quantity===0?"font-semibold text-rose-600":"text-emerald-600"}`}>{stockLabel}</span>
+          <span className={`mb-1 hidden shrink-0 text-right text-xs sm:block ${product.quantity===0?"font-semibold text-rose-600":"text-emerald-600"}`}>{stockLabel}</span>
         </div>
 
         <div className="mt-2" onClick={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()}><ProductActions productId={product.id} showLabels/></div>
-        <button type="button" onClick={event=>{event.stopPropagation();void handleAddToCart();}} disabled={product.quantity===0} className={`mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold ${product.quantity===0?"cursor-not-allowed bg-slate-100 text-slate-400":"bg-slate-950 text-white hover:bg-primary-600"}`}><ShoppingBagIcon className="h-5 w-5"/>{product.quantity===0?(isBg?"Изчерпан продукт":"Unavailable"):(isBg?"Добави в количката":"Add to cart")}</button>
+        <button type="button" onClick={event=>{event.stopPropagation();void handleAddToCart();}} disabled={product.quantity===0} className={`mt-2 inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-semibold sm:mt-3 sm:min-h-12 sm:gap-2 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm ${product.quantity===0?"cursor-not-allowed bg-slate-100 text-slate-400":"bg-slate-950 text-white hover:bg-primary-600"}`}><ShoppingBagIcon className="h-4 w-4 sm:h-5 sm:w-5"/><span className="sm:hidden">{product.quantity===0?(isBg?"Няма":"Out"):(isBg?"Купи":"Buy")}</span><span className="hidden sm:inline">{product.quantity===0?(isBg?"Изчерпан продукт":"Unavailable"):(isBg?"Добави в количката":"Add to cart")}</span></button>
       </div>
     </div>
   </article>;
