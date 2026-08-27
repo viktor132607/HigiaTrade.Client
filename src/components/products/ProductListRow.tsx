@@ -20,7 +20,7 @@ const ProductListRow = ({ product, compact = false }: Props) => {
   const isBg = language === "bg";
   const displayPrice = product.discountedPrice && product.discountedPrice > 0 ? product.discountedPrice : product.regularPrice;
   const productPath = productSeoPath(product);
-  const productImage = seoImageUrl(product.mainImageUrl, product.title);
+  const productImage = seoImageUrl(product.mainImageUrl, product.title, product.usesDefaultImage === true);
   const stockLabel = product.quantity > 0 ? (isBg ? "В наличност" : "In stock") : (isBg ? "Изчерпан продукт" : "Out of stock");
 
   const addToCart = async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -54,7 +54,12 @@ const ProductListRow = ({ product, compact = false }: Props) => {
     }
   };
 
-  const image = (className: string) => <img src={productImage} alt={product.title} width={320} height={320} loading="lazy" decoding="async" className={className} />;
+  const handleImageError = (event: React.SyntheticEvent<HTMLImageElement>) => {
+    const image = event.currentTarget;
+    if (!image.src.endsWith("/higiqlogo.png")) image.src = "/higiqlogo.png";
+  };
+
+  const image = (className: string) => <img src={productImage} alt={product.title} width={320} height={320} loading="lazy" decoding="async" onError={handleImageError} className={className} />;
 
   if (compact) {
     return <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-3 border-b border-slate-200 bg-white px-3 py-3 last:border-b-0 sm:grid-cols-[80px_minmax(0,1fr)_auto] sm:items-center">
