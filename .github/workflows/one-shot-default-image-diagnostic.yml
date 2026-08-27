@@ -20,12 +20,10 @@ jobs:
           echo '=== BRANDS ==='
           curl -fsSL "$API/Brands" \
             | jq -r '.[] | [.name, (.thumbnailImageUrl // "")] | @tsv'
-          echo '=== IMAGE STATUS ==='
-          urls=$(curl -fsSL "$API/Products?PageNumber=1&PageSize=30&SortBy=title&SortDescending=false" | jq -r '.items[] | select(.usesDefaultImage == true) | .mainImageUrl' | sort -u)
-          while IFS= read -r url; do
-            [ -z "$url" ] && continue
-            if [[ "$url" == /* ]]; then url="https://higiatrade.com$url"; fi
-            code=$(curl -L -s -o /dev/null -w '%{http_code}' "$url" || true)
-            type=$(curl -L -sI "$url" | awk -F': ' 'tolower($1)=="content-type" {print $2}' | tr -d '\r' | tail -1 || true)
-            printf '%s\t%s\t%s\n' "$code" "$type" "$url"
-          done <<< "$urls"
+          echo '=== IMAGE PAYLOAD ==='
+          url=$(curl -fsSL "$API/Brands" | jq -r '.[0].thumbnailImageUrl')
+          curl -sSL -D /tmp/headers.txt "$url" -o /tmp/default-image.bin
+          cat /tmp/headers.txt
+          echo "size=$(wc -c < /tmp/default-image.bin)"
+          file /tmp/default-image.bin
+          xxd -l 32 /tmp/default-image.bin
