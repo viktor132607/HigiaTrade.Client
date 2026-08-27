@@ -8,6 +8,7 @@ export interface Product {
   title: string;
   description: string;
   mainImageUrl: string;
+  usesDefaultImage?: boolean;
   regularPrice: number;
   quantity: number;
   categoryId: string;
