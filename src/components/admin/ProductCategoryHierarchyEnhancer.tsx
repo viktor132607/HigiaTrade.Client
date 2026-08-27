@@ -1,11 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { API_BASE_URL } from "../../config/api";
+import { XMarkIcon } from "@heroicons/react/24/outline";
+import { useSelector } from "react-redux";
+import { API_BASE_URL, readApiJson } from "../../config/api";
+import { RootState } from "../../store";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 
 type Category = {
   id: string;
   name: string;
+  imageURI?: string | null;
+  imageUri?: string | null;
   parentCategoryId?: string | null;
   parentCategoryName?: string | null;
 };
@@ -16,6 +21,21 @@ type Target = {
   mount: HTMLDivElement;
 };
 
+type CreateForm = {
+  name: string;
+  imageURI: string;
+  isSubcategory: boolean;
+  parentCategoryId: string;
+};
+
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+const emptyCreateForm: CreateForm = {
+  name: "",
+  imageURI: "",
+  isSubcategory: false,
+  parentCategoryId: "",
+};
+
 const setNativeValue = (input: HTMLInputElement, value: string) => {
   const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
   setter?.call(input, value);
@@ -24,34 +44,47 @@ const setNativeValue = (input: HTMLInputElement, value: string) => {
 };
 
 const ProductCategoryHierarchyEnhancer = () => {
+  const { token } = useSelector((state: RootState) => state.auth);
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [target, setTarget] = useState<Target | null>(null);
   const [mainCategoryId, setMainCategoryId] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState<CreateForm>(emptyCreateForm);
+  const [createError, setCreateError] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const loadCategories = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/Categories`, { cache: "no-store" });
+      if (!response.ok) return;
+      const data = await response.json();
+      setCategories(Array.isArray(data) ? data : []);
+    } catch {
+      setCategories([]);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/Categories`, { cache: "no-store" });
-        if (!response.ok) return;
-        const data = await response.json();
-        setCategories(Array.isArray(data) ? data : []);
-      } catch {
-        setCategories([]);
-      }
-    };
-    void load();
+    void loadCategories();
   }, []);
 
   const parents = useMemo(
-    () => categories.filter((category) => !category.parentCategoryId).sort((a, b) => a.name.localeCompare(b.name, "bg-BG", { sensitivity: "base" })),
+    () => categories
+      .filter((category) => !category.parentCategoryId)
+      .sort((a, b) => a.name.localeCompare(b.name, "bg-BG", { sensitivity: "base" })),
     [categories]
   );
 
   const children = useMemo(
-    () => categories.filter((category) => category.parentCategoryId === mainCategoryId).sort((a, b) => a.name.localeCompare(b.name, "bg-BG", { sensitivity: "base" })),
+    () => categories
+      .filter((category) => category.parentCategoryId === mainCategoryId)
+      .sort((a, b) => a.name.localeCompare(b.name, "bg-BG", { sensitivity: "base" })),
     [categories, mainCategoryId]
   );
 
@@ -67,6 +100,9 @@ const ProductCategoryHierarchyEnhancer = () => {
       setTarget(null);
       setMainCategoryId("");
       setSubcategoryId("");
+      setCreateOpen(false);
+      setCreateForm(emptyCreateForm);
+      setCreateError("");
     };
 
     const attach = () => {
@@ -96,7 +132,10 @@ const ProductCategoryHierarchyEnhancer = () => {
     attach();
     const observer = new MutationObserver(attach);
     observer.observe(document.body, { childList: true, subtree: true });
-    return () => { observer.disconnect(); detach(); };
+    return () => {
+      observer.disconnect();
+      detach();
+    };
   }, [language]);
 
   useEffect(() => {
@@ -105,6 +144,7 @@ const ProductCategoryHierarchyEnhancer = () => {
     if (!currentName) return;
     const current = categories.find((category) => category.name === currentName);
     if (!current) return;
+
     if (current.parentCategoryId) {
       setMainCategoryId(current.parentCategoryId);
       setSubcategoryId(current.id);
@@ -114,14 +154,12 @@ const ProductCategoryHierarchyEnhancer = () => {
     }
   }, [target, categories]);
 
-  if (!target) return null;
-
   const selectLegacy = (category: Category) => {
+    if (!target) return;
     setNativeValue(target.input, category.name);
     window.setTimeout(() => {
       const buttons = Array.from(target.container.querySelectorAll("button"));
-      const option = buttons.find((button) => button.textContent?.trim() === category.name);
-      option?.click();
+      buttons.find((button) => button.textContent?.trim() === category.name)?.click();
     }, 0);
   };
 
@@ -130,7 +168,7 @@ const ProductCategoryHierarchyEnhancer = () => {
     setSubcategoryId("");
     const category = parents.find((item) => item.id === id);
     if (category) selectLegacy(category);
-    else setNativeValue(target.input, "");
+    else if (target) setNativeValue(target.input, "");
   };
 
   const chooseSubcategory = (id: string) => {
@@ -144,12 +182,145 @@ const ProductCategoryHierarchyEnhancer = () => {
     if (category) selectLegacy(category);
   };
 
-  return createPortal(
+  const closeCreate = () => {
+    if (creating || uploading) return;
+    setCreateOpen(false);
+    setCreateForm(emptyCreateForm);
+    setCreateError("");
+  };
+
+  const uploadImage = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setCreateError(isBg ? "Избери валидно изображение." : "Choose a valid image.");
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      setCreateError(isBg ? "Изображението трябва да е до 10 MB." : "The image must be up to 10 MB.");
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setCreateError("");
+      const body = new FormData();
+      body.append("file", file);
+      const response = await fetch(`${API_BASE_URL}/Images/upload`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body,
+      });
+      const data = await readApiJson<{ url: string }>(response);
+      setCreateForm((current) => ({ ...current, imageURI: data.url }));
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : isBg ? "Изображението не можа да бъде качено." : "Image upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!createOpen) return;
+    const handlePaste = (event: ClipboardEvent) => {
+      const file = Array.from(event.clipboardData?.items ?? [])
+        .find((item) => item.kind === "file" && item.type.startsWith("image/"))
+        ?.getAsFile();
+      if (!file) return;
+      event.preventDefault();
+      void uploadImage(file);
+    };
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [createOpen, token]);
+
+  const createCategory = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const name = createForm.name.trim();
+    if (creating || uploading) return;
+
+    if (name.length < 2) {
+      setCreateError(isBg ? "Името трябва да е поне 2 символа." : "Name must be at least 2 characters.");
+      return;
+    }
+    if (categories.some((category) => category.name.trim().toLocaleLowerCase("bg-BG") === name.toLocaleLowerCase("bg-BG"))) {
+      setCreateError(isBg ? "Категория с това име вече съществува." : "A category with this name already exists.");
+      return;
+    }
+    if (createForm.isSubcategory && !createForm.parentCategoryId) {
+      setCreateError(isBg ? "Избери основна категория над подкатегорията." : "Choose a parent category for the subcategory.");
+      return;
+    }
+
+    try {
+      setCreating(true);
+      setCreateError("");
+      const response = await fetch(`${API_BASE_URL}/Categories`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          name,
+          imageURI: createForm.imageURI.trim() || null,
+          parentCategoryId: createForm.isSubcategory ? createForm.parentCategoryId : null,
+        }),
+      });
+      const data = await readApiJson<Category>(response);
+      const created: Category = {
+        id: String(data.id),
+        name: data.name || name,
+        imageURI: data.imageURI ?? data.imageUri ?? createForm.imageURI ?? null,
+        parentCategoryId: data.parentCategoryId ?? (createForm.isSubcategory ? createForm.parentCategoryId : null),
+        parentCategoryName: data.parentCategoryName ?? null,
+      };
+
+      setCategories((current) => [...current.filter((category) => category.id !== created.id), created]);
+      if (created.parentCategoryId) {
+        setMainCategoryId(created.parentCategoryId);
+        setSubcategoryId(created.id);
+      } else {
+        setMainCategoryId(created.id);
+        setSubcategoryId("");
+      }
+
+      window.dispatchEvent(new CustomEvent("admin-category-created", {
+        detail: { id: created.id, name: created.name },
+      }));
+      if (target) setNativeValue(target.input, created.name);
+      setCreateOpen(false);
+      setCreateForm(emptyCreateForm);
+      setCreateError("");
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : isBg ? "Категорията не можа да бъде създадена." : "Category could not be created.");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  if (!target) return null;
+
+  const hierarchyUi = createPortal(
     <div className="space-y-3 rounded-lg border border-slate-300 bg-slate-50/60 p-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm font-semibold text-slate-900">{isBg ? "Категория и подкатегория" : "Category and subcategory"}</div>
-        <div className="flex gap-3 text-xs font-semibold"><a href="/admin/categories" className="text-[#18b99f] hover:underline">{isBg ? "Категории" : "Categories"}</a><a href="/admin/subcategories" className="text-[#18b99f] hover:underline">{isBg ? "Подкатегории" : "Subcategories"}</a></div>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setCreateForm({ ...emptyCreateForm, parentCategoryId: mainCategoryId });
+              setCreateError("");
+              setCreateOpen(true);
+            }}
+            className="rounded-md bg-[#18b99f] px-3 py-2 text-xs font-semibold text-white hover:bg-[#149f8a]"
+          >
+            {isBg ? "+ Нова категория" : "+ New category"}
+          </button>
+          <a href="/admin/categories" className="text-xs font-semibold text-[#18b99f] hover:underline">
+            {isBg ? "Управление" : "Manage"}
+          </a>
+        </div>
       </div>
+
       <div className="grid gap-3 md:grid-cols-2">
         <label className="grid gap-1 text-sm font-semibold text-slate-800">
           {isBg ? "Категория" : "Category"}
@@ -158,6 +329,7 @@ const ProductCategoryHierarchyEnhancer = () => {
             {parents.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
           </select>
         </label>
+
         <label className="grid gap-1 text-sm font-semibold text-slate-800">
           {isBg ? "Подкатегория" : "Subcategory"}
           <select value={subcategoryId} onChange={(event) => chooseSubcategory(event.target.value)} disabled={!mainCategoryId || children.length === 0} className="min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-slate-900 outline-none disabled:bg-slate-100 disabled:text-slate-400 focus:border-[#18b99f] focus:ring-2 focus:ring-[#18b99f]/20">
@@ -166,10 +338,81 @@ const ProductCategoryHierarchyEnhancer = () => {
           </select>
         </label>
       </div>
-      <p className="text-xs text-slate-500">{isBg ? "Ако избереш подкатегория, продуктът се записва в нея и автоматично принадлежи към основната категория." : "Selecting a subcategory assigns the product to it and its main category."}</p>
+
+      <p className="text-xs text-slate-500">
+        {isBg ? "Създай категория или подкатегория директно оттук. Новият запис се избира автоматично за продукта." : "Create a category or subcategory here; it is selected for the product automatically."}
+      </p>
     </div>,
     target.mount
   );
+
+  const createModal = createOpen ? createPortal(
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) closeCreate(); }}>
+      <form onSubmit={createCategory} className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">{isBg ? "Създай категория" : "Create category"}</h2>
+            <p className="mt-1 text-sm text-slate-500">{isBg ? "Продуктът остава отворен отдолу." : "The product form stays open underneath."}</p>
+          </div>
+          <button type="button" onClick={closeCreate} disabled={creating || uploading} className="flex h-10 w-10 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 disabled:opacity-40">
+            <XMarkIcon className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="space-y-5 p-5">
+          <label className="grid gap-1.5 text-sm font-semibold text-slate-800">
+            {isBg ? "Име" : "Name"}
+            <input autoFocus type="text" value={createForm.name} onChange={(event) => { setCreateForm((current) => ({ ...current, name: event.target.value })); setCreateError(""); }} placeholder={isBg ? "Име на категорията" : "Category name"} className="min-h-11 rounded-md border border-slate-400 bg-white px-3 py-2 font-normal outline-none focus:border-[#18b99f] focus:ring-2 focus:ring-[#18b99f]/20" />
+          </label>
+
+          <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800">
+            <input type="checkbox" checked={createForm.isSubcategory} onChange={(event) => setCreateForm((current) => ({ ...current, isSubcategory: event.target.checked, parentCategoryId: event.target.checked ? (current.parentCategoryId || mainCategoryId) : "" }))} className="h-4 w-4 accent-[#18b99f]" />
+            {isBg ? "Това е подкатегория" : "This is a subcategory"}
+          </label>
+
+          {createForm.isSubcategory && (
+            <label className="grid gap-1.5 text-sm font-semibold text-slate-800">
+              {isBg ? "Основна категория" : "Parent category"}
+              <select value={createForm.parentCategoryId} onChange={(event) => { setCreateForm((current) => ({ ...current, parentCategoryId: event.target.value })); setCreateError(""); }} className="min-h-11 rounded-md border border-slate-400 bg-white px-3 py-2 font-normal outline-none focus:border-[#18b99f] focus:ring-2 focus:ring-[#18b99f]/20">
+                <option value="">{isBg ? "Избери основна категория" : "Choose parent category"}</option>
+                {parents.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+              </select>
+            </label>
+          )}
+
+          <div>
+            <div className="mb-1.5 text-sm font-semibold text-slate-800">{isBg ? "Изображение (по желание)" : "Image (optional)"}</div>
+            <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => { const file = event.currentTarget.files?.[0]; event.currentTarget.value = ""; if (file) void uploadImage(file); }} />
+            {createForm.imageURI ? (
+              <div className="flex items-center gap-3 rounded-lg border border-slate-200 p-3">
+                <img src={createForm.imageURI} alt="" className="h-20 w-20 rounded-lg object-contain" />
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => imageInputRef.current?.click()} disabled={uploading} className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">{isBg ? "Смени" : "Replace"}</button>
+                  <button type="button" onClick={() => setCreateForm((current) => ({ ...current, imageURI: "" }))} disabled={uploading} className="rounded-md border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50">{isBg ? "Премахни" : "Remove"}</button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" onClick={() => imageInputRef.current?.click()} disabled={uploading} className="min-h-24 w-full rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-4 text-sm font-semibold text-slate-700 hover:border-[#18b99f] hover:bg-emerald-50 disabled:opacity-50">
+                {uploading ? (isBg ? "Качване..." : "Uploading...") : (isBg ? "Избери изображение или постави с Ctrl+V" : "Choose image or paste with Ctrl+V")}
+              </button>
+            )}
+          </div>
+
+          {createError && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{createError}</div>}
+        </div>
+
+        <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end">
+          <button type="button" onClick={closeCreate} disabled={creating || uploading} className="rounded-md border border-slate-300 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50 disabled:opacity-50">{isBg ? "Отказ" : "Cancel"}</button>
+          <button type="submit" disabled={creating || uploading} className="rounded-md bg-[#18b99f] px-5 py-2 font-semibold text-white hover:bg-[#149f8a] disabled:opacity-50">
+            {creating ? (isBg ? "Създаване..." : "Creating...") : (isBg ? "Създай и избери" : "Create and select")}
+          </button>
+        </div>
+      </form>
+    </div>,
+    document.body
+  ) : null;
+
+  return <>{hierarchyUi}{createModal}</>;
 };
 
 export default ProductCategoryHierarchyEnhancer;
