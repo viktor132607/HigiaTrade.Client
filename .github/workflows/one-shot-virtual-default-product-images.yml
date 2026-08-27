@@ -24,19 +24,10 @@ jobs:
 
           brand_path = Path('src/components/admin/ProductBrandEnhancer.tsx')
           brand = brand_path.read_text(encoding='utf-8')
-
-          old = '''        if (!String(payload.mainImageUrl ?? "").trim()) {
-          const selectedBrandData = brandsRef.current.find(
-            (item) => item.name.trim().toLocaleLowerCase("bg-BG") === selectedBrand.toLocaleLowerCase("bg-BG")
-          );
-          payload.mainImageUrl = selectedBrandData?.thumbnailImageUrl?.trim() || "/higiqlogo.png";
-        }
-
-'''
+          old = '        if (!String(payload.mainImageUrl ?? "").trim()) {\n          const selectedBrandData = brandsRef.current.find(\n            (item) => item.name.trim().toLocaleLowerCase("bg-BG") === selectedBrand.toLocaleLowerCase("bg-BG")\n          );\n          payload.mainImageUrl = selectedBrandData?.thumbnailImageUrl?.trim() || "/higiqlogo.png";\n        }\n\n'
           if old not in brand:
               raise SystemExit('default image persistence block not found')
           brand = brand.replace(old, '', 1)
-
           brand = brand.replace('  const brandsRef = useRef<BrandOption[]>([]);\n', '', 1)
           brand = brand.replace('      brandsRef.current = normalizedBrands;\n', '', 1)
           brand = brand.replace('        brandsRef.current = next;\n', '', 1)
@@ -44,18 +35,11 @@ jobs:
 
           products_path = Path('src/components/admin/AdminProductsLegacy.tsx')
           products = products_path.read_text(encoding='utf-8')
-
-          interface_old = '''  mainImageUrl: string;
-  secondaryImages: ProductImage[];
-'''
-          interface_new = '''  mainImageUrl: string;
-  usesDefaultImage?: boolean;
-  secondaryImages: ProductImage[];
-'''
+          interface_old = '  mainImageUrl: string;\n  secondaryImages: ProductImage[];\n'
+          interface_new = '  mainImageUrl: string;\n  usesDefaultImage?: boolean;\n  secondaryImages: ProductImage[];\n'
           if interface_old not in products:
               raise SystemExit('product interface anchor not found')
           products = products.replace(interface_old, interface_new, 1)
-
           edit_old = '      mainImageUrl: product.mainImageUrl || "",\n'
           edit_new = '      mainImageUrl: product.usesDefaultImage ? "" : product.mainImageUrl || "",\n'
           if edit_old not in products:
