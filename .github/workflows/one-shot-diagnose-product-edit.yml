@@ -19,14 +19,14 @@ jobs:
           import json, urllib.parse, urllib.request
 
           base = 'https://higiatrade-server.onrender.com/api'
-          title = 'SANO PROFESSIONALS-255 FRESH'
+          search = 'Sano Professionals'
 
           def get(path):
               with urllib.request.urlopen(base + path, timeout=60) as r:
                   return r.status, json.loads(r.read().decode('utf-8'))
 
           status, products_payload = get('/Products?' + urllib.parse.urlencode({
-              'Title': title,
+              'Title': search,
               'PageNumber': 1,
               'PageSize': 100,
               'SortBy': 'title',
@@ -34,26 +34,30 @@ jobs:
           }))
           print('PRODUCTS_STATUS', status)
           items = products_payload.get('items', []) if isinstance(products_payload, dict) else products_payload
-          exact = next((p for p in items if str(p.get('title','')).strip().lower() == title.lower()), None)
-          print('EXACT_PRODUCT_FOUND', bool(exact))
-          print('PRODUCT_JSON', json.dumps(exact, ensure_ascii=False, sort_keys=True))
+          print('MATCH_COUNT', len(items))
 
           cstatus, categories = get('/Categories')
           print('CATEGORIES_STATUS', cstatus)
           print('CATEGORY_COUNT', len(categories) if isinstance(categories, list) else 'not-list')
-          if exact:
-              cid = str(exact.get('categoryId') or '')
+
+          for p in items:
+              title = str(p.get('title',''))
+              if '255' not in title.lower() and 'fresh' not in title.lower():
+                  continue
+              cid = str(p.get('categoryId') or '')
               match = next((c for c in categories if str(c.get('id') or '') == cid), None) if isinstance(categories, list) else None
+              print('--- CANDIDATE ---')
+              print('PRODUCT_JSON', json.dumps(p, ensure_ascii=False, sort_keys=True))
               print('PRODUCT_CATEGORY_ID', cid)
-              print('PRODUCT_CATEGORY_NAME', exact.get('categoryName'))
+              print('PRODUCT_CATEGORY_NAME', p.get('categoryName'))
               print('ACTIVE_CATEGORY_MATCH', json.dumps(match, ensure_ascii=False, sort_keys=True))
               print('CATEGORY_IS_ACTIVE', bool(match))
-              print('DISCOUNT_PERCENTAGE', exact.get('discountPercentage'))
-              print('DISCOUNTED_PRICE', exact.get('discountedPrice'))
-              print('REGULAR_PRICE', exact.get('regularPrice'))
-              print('WHOLESALE_PRICE', exact.get('wholesalePriceInclVat', exact.get('wholesalePrice')))
-              print('WHOLESALE_MIN_QUANTITY', exact.get('wholesaleMinQuantity'))
-              print('VAT_RATE', exact.get('vatRate'))
-              print('MAIN_IMAGE_URL', exact.get('mainImageUrl'))
-              print('SECONDARY_IMAGES_COUNT', len(exact.get('secondaryImages') or []))
+              print('DISCOUNT_PERCENTAGE', p.get('discountPercentage'))
+              print('DISCOUNTED_PRICE', p.get('discountedPrice'))
+              print('REGULAR_PRICE', p.get('regularPrice'))
+              print('WHOLESALE_PRICE', p.get('wholesalePriceInclVat', p.get('wholesalePrice')))
+              print('WHOLESALE_MIN_QUANTITY', p.get('wholesaleMinQuantity'))
+              print('VAT_RATE', p.get('vatRate'))
+              print('MAIN_IMAGE_URL', p.get('mainImageUrl'))
+              print('SECONDARY_IMAGES_COUNT', len(p.get('secondaryImages') or []))
           PY
