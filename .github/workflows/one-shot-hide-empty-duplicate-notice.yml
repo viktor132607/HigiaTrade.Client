@@ -1,0 +1,65 @@
+name: One-shot hide empty duplicate notice
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-hide-empty-duplicate-notice.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+
+      - name: Patch duplicate notice
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/components/admin/AdminProductsLegacy.tsx')
+          text = path.read_text(encoding='utf-8')
+
+          old = '''                {!editingProduct && formData.name.trim().length >= 2 && (\n                  <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3">'''
+          new = '''                {!editingProduct &&\n                  formData.name.trim().length >= 2 &&\n                  (checkingDuplicateProducts || duplicateProductMatches.length > 0) && (\n                  <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3">'''
+
+          if old not in text:
+              raise SystemExit('duplicate notice wrapper anchor not found')
+          text = text.replace(old, new, 1)
+
+          empty_notice = '''                    {!checkingDuplicateProducts && duplicateProductMatches.length === 0 && <p className="mt-1 text-sm text-emerald-700">Не е намерен съществуващ продукт с това име.</p>}\n'''
+          if empty_notice not in text:
+              raise SystemExit('empty duplicate notice anchor not found')
+          text = text.replace(empty_notice, '', 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.0'
+          cache: npm
+
+      - name: Install
+        run: npm install
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Commit fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/one-shot-hide-empty-duplicate-notice.yml
+          git add src/components/admin/AdminProductsLegacy.tsx
+          git commit -m "Hide empty duplicate product notice"
+          git push
