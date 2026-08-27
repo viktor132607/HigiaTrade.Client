@@ -36,7 +36,6 @@ const ProductBrandEnhancer = () => {
   const [brandCreateError, setBrandCreateError] = useState("");
   const targetRef = useRef<Target | null>(null);
   const brandRef = useRef("");
-  const brandsRef = useRef<BrandOption[]>([]);
 
   useEffect(() => { brandRef.current = brand; }, [brand]);
 
@@ -46,7 +45,6 @@ const ProductBrandEnhancer = () => {
       if (!response.ok) throw new Error();
       const data = await response.json();
       const normalizedBrands: BrandOption[] = Array.isArray(data) ? data : [];
-      brandsRef.current = normalizedBrands;
       setBrands(normalizedBrands);
     } catch {
       setBrands([]);
@@ -91,7 +89,6 @@ const ProductBrandEnhancer = () => {
       };
       setBrands((current) => {
         const next = [...current.filter((item) => item.name.toLocaleLowerCase("bg-BG") !== created.name.toLocaleLowerCase("bg-BG")), created].sort((a, b) => a.name.localeCompare(b.name, "bg-BG"));
-        brandsRef.current = next;
         return next;
       });
       setBrand(created.name);
@@ -171,13 +168,6 @@ const ProductBrandEnhancer = () => {
         const payload = JSON.parse(init.body);
         const selectedBrand = brandRef.current.trim();
         payload.brand = selectedBrand || null;
-
-        if (!String(payload.mainImageUrl ?? "").trim()) {
-          const selectedBrandData = brandsRef.current.find(
-            (item) => item.name.trim().toLocaleLowerCase("bg-BG") === selectedBrand.toLocaleLowerCase("bg-BG")
-          );
-          payload.mainImageUrl = selectedBrandData?.thumbnailImageUrl?.trim() || "/higiqlogo.png";
-        }
 
         return originalFetch(input, { ...init, body: JSON.stringify(payload) });
       } catch {

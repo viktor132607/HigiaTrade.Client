@@ -41,6 +41,7 @@ interface Product {
   vatRate?: number;
   isActive?: boolean;
   mainImageUrl: string;
+  usesDefaultImage?: boolean;
   secondaryImages: ProductImage[];
 }
 
@@ -378,7 +379,7 @@ const AdminProducts = () => {
       discountedPrice: (product.discountedPrice || 0).toString(),
       stock: (product.quantity || 0).toString(),
       discountPercentage: (product.discountPercentage || 0).toString(),
-      mainImageUrl: product.mainImageUrl || "",
+      mainImageUrl: product.usesDefaultImage ? "" : product.mainImageUrl || "",
       secondaryImages: product.secondaryImages?.length > 0 ? product.secondaryImages : [],
       isActive: product.isActive !== false,
     });
