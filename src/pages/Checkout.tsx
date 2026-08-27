@@ -67,7 +67,7 @@ const Checkout = () => {
         singlePrice: unitPrice,
         totalPrice: unitPrice * item.quantity,
         primaryImageUri:
-          item.mainImageUrl || item.imageUrl || "/placeholder-image.jpg",
+          item.mainImageUrl || item.imageUrl || "/higiqlogo.png",
       };
     });
 
@@ -142,7 +142,7 @@ const Checkout = () => {
                 item.primaryImageUri ||
                 localItem?.mainImageUrl ||
                 localItem?.imageUrl ||
-                "/placeholder-image.jpg",
+                "/higiqlogo.png",
             };
           })
         : [];
@@ -558,12 +558,12 @@ const Checkout = () => {
                   className="flex gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3"
                 >
                   <img
-                    src={item.primaryImageUri || "/placeholder-image.jpg"}
+                    src={item.primaryImageUri || "/higiqlogo.png"}
                     alt={item.title}
                     className="h-20 w-20 shrink-0 rounded-xl bg-white object-contain"
                     onError={(event) => {
-                      if (!event.currentTarget.src.endsWith("/placeholder-image.jpg")) {
-                        event.currentTarget.src = "/placeholder-image.jpg";
+                      if (!event.currentTarget.src.endsWith("/higiqlogo.png")) {
+                        event.currentTarget.src = "/higiqlogo.png";
                       }
                     }}
                   />

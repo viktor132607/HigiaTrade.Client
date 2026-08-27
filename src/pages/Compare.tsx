@@ -81,7 +81,7 @@ const Compare = () => {
                 <div className="relative p-4">
                   <button type="button" onClick={() => dispatch(removeFromCompare(product.id))} className="absolute right-3 top-3 z-10 flex min-h-10 min-w-10 items-center justify-center rounded-full border border-slate-200 bg-white p-2 text-slate-500 shadow-sm" title={isBg ? "Премахни" : "Remove"}><XMarkIcon className="h-4 w-4" /></button>
                   <Link to={`/products/${product.id}`} className="block pr-12">
-                    <img src={product.mainImageUrl || "/placeholder-image.jpg"} alt={product.title} className="mx-auto h-44 w-full object-contain" />
+                    <img src={product.mainImageUrl || "/higiqlogo.png"} alt={product.title} className="mx-auto h-44 w-full object-contain" />
                     <h2 className="mt-3 text-base font-semibold text-slate-950">{product.title}</h2>
                   </Link>
                   <div className="mt-3"><ProductActions productId={product.id} showLabels compact /></div>
@@ -107,7 +107,7 @@ const Compare = () => {
                     <td key={product.id} className="min-w-52 border-l border-slate-200 p-4">
                       <div className="relative">
                         <button type="button" onClick={() => dispatch(removeFromCompare(product.id))} className="absolute right-0 top-0 rounded-full border border-slate-200 bg-white p-1.5 text-slate-500 hover:text-rose-600" title={isBg ? "Премахни" : "Remove"}><XMarkIcon className="h-4 w-4" /></button>
-                        <Link to={`/products/${product.id}`}><img src={product.mainImageUrl || "/placeholder-image.jpg"} alt={product.title} className="mx-auto h-36 w-36 object-contain" /><div className="mt-3 pr-7 font-semibold text-slate-950 hover:text-[#18b99f]">{product.title}</div></Link>
+                        <Link to={`/products/${product.id}`}><img src={product.mainImageUrl || "/higiqlogo.png"} alt={product.title} className="mx-auto h-36 w-36 object-contain" /><div className="mt-3 pr-7 font-semibold text-slate-950 hover:text-[#18b99f]">{product.title}</div></Link>
                         <div className="mt-3"><ProductActions productId={product.id} showLabels compact /></div>
                       </div>
                     </td>

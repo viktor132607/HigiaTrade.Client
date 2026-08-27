@@ -310,7 +310,7 @@ const ProductDetails = () => {
   };
   const imageErrorFallback = (event: React.SyntheticEvent<HTMLImageElement>) => {
     const image = event.currentTarget;
-    if (!image.src.endsWith("/placeholder-image.jpg")) image.src = "/placeholder-image.jpg";
+    if (!image.src.endsWith("/higiqlogo.png")) image.src = "/higiqlogo.png";
   };
 
   return (
@@ -330,7 +330,7 @@ const ProductDetails = () => {
               )}
 
               <button type="button" onClick={() => setGalleryOpen(true)} className="relative block aspect-square min-w-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 text-left" aria-label={tr("Отвори галерията", "Open gallery")}>
-                <img src={images[selectedImage] || "/placeholder-image.jpg"} alt={product.title} onError={imageErrorFallback} className="h-full w-full object-cover transition duration-200 hover:scale-[1.015]" />
+                <img src={images[selectedImage] || "/higiqlogo.png"} alt={product.title} onError={imageErrorFallback} className="h-full w-full object-cover transition duration-200 hover:scale-[1.015]" />
               </button>
             </div>
           </section>
@@ -470,7 +470,7 @@ const ProductDetails = () => {
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4" onClick={() => setGalleryOpen(false)} role="dialog" aria-modal="true">
           <button type="button" onClick={(event) => { event.stopPropagation(); setGalleryOpen(false); }} className="absolute right-5 top-5 z-30 rounded-full bg-black/50 p-3 text-white hover:bg-black/70" aria-label={tr("Затвори", "Close")}><XMarkIcon className="h-7 w-7" /></button>
           {images.length > 1 && <button type="button" onClick={(event) => { event.stopPropagation(); previousImage(); }} className="absolute left-4 top-1/2 z-30 -translate-y-1/2 rounded-full bg-black/50 p-3 text-white hover:bg-black/70" aria-label={tr("Предишна снимка", "Previous image")}><ChevronLeftIcon className="h-8 w-8" /></button>}
-          <img src={images[selectedImage] || "/placeholder-image.jpg"} alt={product.title} onError={imageErrorFallback} onClick={(event) => event.stopPropagation()} className="max-h-[86vh] max-w-[86vw] object-contain" />
+          <img src={images[selectedImage] || "/higiqlogo.png"} alt={product.title} onError={imageErrorFallback} onClick={(event) => event.stopPropagation()} className="max-h-[86vh] max-w-[86vw] object-contain" />
           {images.length > 1 && <button type="button" onClick={(event) => { event.stopPropagation(); nextImage(); }} className="absolute right-4 top-1/2 z-30 -translate-y-1/2 rounded-full bg-black/50 p-3 text-white hover:bg-black/70" aria-label={tr("Следваща снимка", "Next image")}><ChevronRightIcon className="h-8 w-8" /></button>}
           {images.length > 1 && (
             <div className="absolute bottom-5 left-1/2 z-30 flex max-w-[90vw] -translate-x-1/2 gap-2 overflow-x-auto rounded-2xl bg-black/55 p-2" onClick={(event) => event.stopPropagation()}>
