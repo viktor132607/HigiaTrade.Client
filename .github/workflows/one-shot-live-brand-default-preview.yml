@@ -1,0 +1,142 @@
+name: One-shot live brand default image preview
+
+"on":
+  push:
+    paths:
+      - '.github/workflows/one-shot-live-brand-default-preview.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+
+      - name: Patch live brand fallback preview
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          brand_path = Path('src/components/admin/ProductBrandEnhancer.tsx')
+          brand = brand_path.read_text(encoding='utf-8')
+
+          anchor = '  useEffect(() => { brandRef.current = brand; }, [brand]);\n\n'
+          addition = '''  useEffect(() => { brandRef.current = brand; }, [brand]);
+
+  useEffect(() => {
+    if (!target) return;
+
+    const selectedBrand = brand.trim();
+    const selectedBrandData = brands.find(
+      (item) => item.name.trim().toLocaleLowerCase("bg-BG") === selectedBrand.toLocaleLowerCase("bg-BG")
+    );
+    const imageUrl = selectedBrandData?.thumbnailImageUrl?.trim() || "/higiqlogo.png";
+
+    window.dispatchEvent(
+      new CustomEvent("product-default-image-change", {
+        detail: { imageUrl, brand: selectedBrand || null },
+      })
+    );
+  }, [brand, brands, target]);
+
+'''
+          if anchor not in brand:
+              raise SystemExit('brand effect anchor missing')
+          brand = brand.replace(anchor, addition, 1)
+          brand_path.write_text(brand, encoding='utf-8')
+
+          upload_path = Path('src/components/admin/ProductPricingAndUploadFields.tsx')
+          upload = upload_path.read_text(encoding='utf-8')
+
+          state_anchor = '''  const [uploadedImages, setUploadedImages] = useState<ProductImage[]>(initialImages);
+  const [mainImageUri, setMainImageUri] = useState(
+    initialMainImageUrl || initialImages[0]?.uri || ""
+  );
+'''
+          state_replacement = '''  const [uploadedImages, setUploadedImages] = useState<ProductImage[]>(initialImages);
+  const [mainImageUri, setMainImageUri] = useState(
+    initialMainImageUrl || initialImages[0]?.uri || ""
+  );
+  const [defaultPreviewImage, setDefaultPreviewImage] = useState("/higiqlogo.png");
+'''
+          if state_anchor not in upload:
+              raise SystemExit('upload state anchor missing')
+          upload = upload.replace(state_anchor, state_replacement, 1)
+
+          effect_anchor = '''  useEffect(() => {
+    const handlePaste = (event: ClipboardEvent) => {
+'''
+          effect_replacement = '''  useEffect(() => {
+    const handleDefaultImageChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ imageUrl?: string }>).detail;
+      setDefaultPreviewImage(detail?.imageUrl?.trim() || "/higiqlogo.png");
+    };
+
+    window.addEventListener("product-default-image-change", handleDefaultImageChange as EventListener);
+    return () => window.removeEventListener("product-default-image-change", handleDefaultImageChange as EventListener);
+  }, []);
+
+  useEffect(() => {
+    const handlePaste = (event: ClipboardEvent) => {
+'''
+          if effect_anchor not in upload:
+              raise SystemExit('paste effect anchor missing')
+          upload = upload.replace(effect_anchor, effect_replacement, 1)
+
+          render_anchor = '''        {uploadedImages.length > 0 && (
+          <div className="mt-4">
+'''
+          render_replacement = '''        {uploadedImages.length === 0 && (
+          <div className="mt-4">
+            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+              Default изображение — използва се автоматично и не се записва като продуктова снимка
+            </div>
+            <div className="w-40 overflow-hidden rounded-md border border-dashed border-slate-300 bg-slate-50 shadow-sm">
+              <div className="aspect-square w-full overflow-hidden bg-white">
+                <img src={defaultPreviewImage} alt="Default изображение" className="h-full w-full object-contain" />
+              </div>
+              <div className="border-t border-slate-200 px-2 py-2 text-center text-xs font-semibold text-slate-600">
+                Default
+              </div>
+            </div>
+          </div>
+        )}
+
+        {uploadedImages.length > 0 && (
+          <div className="mt-4">
+'''
+          if render_anchor not in upload:
+              raise SystemExit('uploaded render anchor missing')
+          upload = upload.replace(render_anchor, render_replacement, 1)
+          upload_path.write_text(upload, encoding='utf-8')
+          PY
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.0'
+          cache: npm
+
+      - name: Install
+        run: npm install
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Commit client changes
+        shell: bash
+        run: |
+          git checkout -- package-lock.json package.json 2>/dev/null || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/one-shot-live-brand-default-preview.yml
+          git add src/components/admin/ProductBrandEnhancer.tsx src/components/admin/ProductPricingAndUploadFields.tsx
+          git commit -m "Refresh default image when product brand changes"
+          git push
