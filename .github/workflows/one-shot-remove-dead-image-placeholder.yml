@@ -1,0 +1,62 @@
+name: One-shot remove dead image placeholder
+
+"on":
+  push:
+    paths:
+      - '.github/workflows/one-shot-remove-dead-image-placeholder.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+
+      - name: Replace missing product image fallback
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          changed=[]
+          for path in Path('src').rglob('*'):
+              if not path.is_file() or path.suffix not in {'.ts', '.tsx', '.js', '.jsx'}:
+                  continue
+              text=path.read_text(encoding='utf-8')
+              new=text.replace('/placeholder-image.jpg', '/higiqlogo.png')
+              if new != text:
+                  path.write_text(new, encoding='utf-8')
+                  changed.append(str(path))
+          print('\n'.join(changed) if changed else 'No stale placeholder references found')
+          PY
+          if grep -R --line-number --fixed-strings '/placeholder-image.jpg' src; then
+            echo 'Stale placeholder references remain' >&2
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.0'
+          cache: npm
+
+      - run: npm install
+      - run: npm run typecheck
+      - run: npm run build
+
+      - name: Commit source cleanup
+        shell: bash
+        run: |
+          git checkout -- package-lock.json package.json 2>/dev/null || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/one-shot-remove-dead-image-placeholder.yml
+          git add src
+          if git diff --cached --quiet; then
+            echo 'Nothing to commit'
+            exit 0
+          fi
+          git commit -m "Remove broken product image placeholder fallback"
+          git push
