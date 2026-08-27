@@ -955,13 +955,14 @@ const AdminProducts = () => {
                   className={`${regularInputClass} border-2 border-slate-600`}
                 />
                 {validationErrors.name && <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>}
-                {!editingProduct && formData.name.trim().length >= 2 && (
+                {!editingProduct &&
+                  formData.name.trim().length >= 2 &&
+                  (checkingDuplicateProducts || duplicateProductMatches.length > 0) && (
                   <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold text-amber-900">Проверка за вече съществуващ продукт</p>
                       {checkingDuplicateProducts && <span className="text-xs text-amber-700">Проверка...</span>}
                     </div>
-                    {!checkingDuplicateProducts && duplicateProductMatches.length === 0 && <p className="mt-1 text-sm text-emerald-700">Не е намерен съществуващ продукт с това име.</p>}
                     {duplicateProductMatches.length > 0 && (
                       <div className="mt-2 space-y-1">
                         <p className="text-sm font-medium text-red-700">Намерени са сходни или съществуващи продукти:</p>
