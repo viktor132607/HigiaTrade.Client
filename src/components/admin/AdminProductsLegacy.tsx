@@ -288,7 +288,34 @@ const AdminProducts = () => {
     }
   };
 
-  const fetchBrands = async () => {
+  useEffect(() => {
+  const handleExternalCategoryCreated = (event: Event) => {
+    const detail = (event as CustomEvent<{ id?: string; name?: string }>).detail;
+    const id = String(detail?.id ?? "").trim();
+    const name = String(detail?.name ?? "").trim();
+    if (!id || !name) return;
+
+    const createdCategory: Category = { id, name };
+    setCategories((current) => [
+      ...current.filter(
+        (category) =>
+          category.id !== id &&
+          category.name.trim().toLocaleLowerCase("bg-BG") !== name.toLocaleLowerCase("bg-BG")
+      ),
+      createdCategory,
+    ].sort((a, b) => a.name.localeCompare(b.name, "bg-BG", { sensitivity: "base" })));
+    setCategorySearch(name);
+    setFormData((previous) => ({ ...previous, categoryId: id }));
+    setValidationErrors((previous) => ({ ...previous, categoryId: undefined }));
+    setCategoryCreateError("");
+    setIsCategoryMenuOpen(false);
+  };
+
+  window.addEventListener("admin-category-created", handleExternalCategoryCreated as EventListener);
+  return () => window.removeEventListener("admin-category-created", handleExternalCategoryCreated as EventListener);
+}, []);
+
+const fetchBrands = async () => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Brands`);
       if (!response.ok) throw new Error("Марките не можаха да бъдат заредени.");
