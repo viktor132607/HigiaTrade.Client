@@ -8,10 +8,10 @@ import { invoiceFileKey, loadPendingInvoiceFiles, persistPendingInvoiceFiles, re
 
 type ProductCandidate = { id: string; name: string; confidence: number };
 type CatalogProduct = { id: string; name: string };
-type CategoryOption = { id: string; name: string };
+type CategoryOption = { id: string; name: string; parentCategoryId: string | null; parentCategoryName: string | null };
 type ExtractedItem = { rawName: string; quantity: number; matchedProductId: string | null; matchedProductName: string | null; matchConfidence: number; quantityConfidence: number; candidates: ProductCandidate[]; sourceLine: string };
 type ExtractResponse = { fileName: string; detectedLanguage: string; invoiceNumber: string | null; invoiceDate: string | null; duplicateInvoice: boolean; items: ExtractedItem[]; textPreview: string };
-type EditableItem = ExtractedItem & { selectedProductId: string; editableProductName: string; editableQuantity: string };
+type EditableItem = ExtractedItem & { selectedProductId: string; editableProductName: string; editableQuantity: string; selectedCategoryId: string; selectedSubcategoryId: string };
 
 const ACCEPTED_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg", ".webp"];
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
@@ -40,6 +40,30 @@ const collectNamed = (value: unknown): CatalogProduct[] => {
   return [];
 };
 
+const collectCategories = (value: unknown): CategoryOption[] => {
+  const source = Array.isArray(value)
+    ? value
+    : value && typeof value === "object"
+      ? ((value as Record<string, unknown>).items ?? (value as Record<string, unknown>).Items ?? (value as Record<string, unknown>).categories ?? (value as Record<string, unknown>).Categories ?? [])
+      : [];
+  if (!Array.isArray(source)) return [];
+  return source.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const o = item as Record<string, unknown>;
+    const id = String(o.id ?? o.Id ?? "");
+    const name = String(o.name ?? o.Name ?? "").trim();
+    if (!id || !name) return [];
+    const parentIdRaw = o.parentCategoryId ?? o.ParentCategoryId ?? null;
+    const parentNameRaw = o.parentCategoryName ?? o.ParentCategoryName ?? null;
+    return [{
+      id,
+      name,
+      parentCategoryId: parentIdRaw ? String(parentIdRaw) : null,
+      parentCategoryName: parentNameRaw ? String(parentNameRaw) : null,
+    }];
+  });
+};
+
 const InvoiceImport = () => {
   const { token } = useSelector((state: RootState) => state.auth);
   const { language } = useLanguageTheme();
@@ -64,9 +88,13 @@ const InvoiceImport = () => {
   const file = files[activeFileIndex] ?? null;
   const isPdf = Boolean(file && (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")));
   const previewUrl = useMemo(() => file ? URL.createObjectURL(file) : "", [file]);
-  const validRowsWithIndexes = useMemo(() => rows.map((row, index) => ({ row, index })).filter(({ row }) => Boolean(row.selectedProductId || row.editableProductName.trim()) && Number.isInteger(Number(row.editableQuantity)) && Number(row.editableQuantity) > 0), [rows]);
-  const allConfirmed = rows.length > 0 && rows.every((row, index) => Boolean(row.selectedProductId || row.editableProductName.trim()) && Number.isInteger(Number(row.editableQuantity)) && Number(row.editableQuantity) > 0 && confirmedQuantities.has(index));
+  const validRowsWithIndexes = useMemo(() => rows.map((row, index) => ({ row, index })).filter(({ row }) => Boolean(row.selectedProductId || (row.editableProductName.trim() && row.selectedCategoryId)) && Number.isInteger(Number(row.editableQuantity)) && Number(row.editableQuantity) > 0), [rows]);
+  const allConfirmed = rows.length > 0 && rows.every((row, index) => Boolean(row.selectedProductId || (row.editableProductName.trim() && row.selectedCategoryId)) && Number.isInteger(Number(row.editableQuantity)) && Number(row.editableQuantity) > 0 && confirmedQuantities.has(index));
   const authHeaders = token ? { Authorization: `Bearer ${token}` } : undefined;
+const mainCategories = useMemo(
+  () => categories.filter((category) => !category.parentCategoryId).sort((a, b) => a.name.localeCompare(b.name, "bg-BG", { sensitivity: "base" })),
+  [categories]
+);
 
   const loadCatalog = async () => {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products?PageNumber=1&PageSize=200&IncludeInactive=true`, { headers: authHeaders });
@@ -100,7 +128,7 @@ const InvoiceImport = () => {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Categories`, { headers: authHeaders });
         const payload = await response.json().catch(() => null);
         if (!response.ok) return;
-        setCategories(collectNamed(payload));
+        setCategories(collectCategories(payload).sort((a, b) => a.name.localeCompare(b.name, "bg-BG", { sensitivity: "base" })));
       } catch { }
     };
     void loadCategories();
@@ -153,18 +181,17 @@ const InvoiceImport = () => {
       setResult({ ...data, items: cleanItems });
       setInvoiceNumber(data.invoiceNumber ?? "");
       setInvoiceDate(data.invoiceDate ?? "");
-      setRows(cleanItems.map((item) => ({ ...item, selectedProductId: item.matchedProductId ?? "", editableProductName: item.matchedProductName ?? item.rawName, editableQuantity: String(item.quantity || "") })));
+      setRows(cleanItems.map((item) => ({ ...item, selectedProductId: item.matchedProductId ?? "", editableProductName: item.matchedProductName ?? item.rawName, editableQuantity: String(item.quantity || ""), selectedCategoryId: "", selectedSubcategoryId: "" })));
       setConfirmedQuantities(new Set()); setProgress(100); setReviewOpen(true);
     } catch (e) { setError(e instanceof Error ? e.message : "OCR error"); }
     finally { setExtracting(false); }
   };
 
-  const createPlaceholderProduct = async (title: string): Promise<string> => {
+  const createPlaceholderProduct = async (title: string, categoryId: string): Promise<string> => {
     const normalized = title.trim().toLocaleLowerCase();
     const existing = catalog.find((product) => product.name.trim().toLocaleLowerCase() === normalized);
     if (existing) return existing.id;
-    const categoryId = categories[0]?.id;
-    if (!categoryId) throw new Error(isBg ? "Няма налична категория за автоматично добавяне на нов продукт." : "No category is available for automatic product creation.");
+    if (!categoryId) throw new Error(isBg ? "Избери категория за новия продукт." : "Choose a category for the new product.");
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -186,7 +213,7 @@ const InvoiceImport = () => {
     try {
       setImporting(true); setError("");
       const missing = rows.map((row, index) => ({ row, index })).filter(({ row }) => !row.selectedProductId && row.editableProductName.trim());
-      const created = await Promise.all(missing.map(async ({ row, index }) => ({ index, id: await createPlaceholderProduct(row.editableProductName) })));
+      const created = await Promise.all(missing.map(async ({ row, index }) => ({ index, id: await createPlaceholderProduct(row.editableProductName, row.selectedSubcategoryId || row.selectedCategoryId) })));
       const createdMap = new Map(created.map((item) => [item.index, item.id]));
       const items = rows.map((row, index) => ({ productId: row.selectedProductId || createdMap.get(index) || "", quantity: Number(row.editableQuantity) }));
       if (items.some((item) => !item.productId)) throw new Error(isBg ? "Има ред без валиден продукт." : "A row has no valid product.");
@@ -223,7 +250,7 @@ const InvoiceImport = () => {
         <section className="min-h-0 border-r bg-slate-100"><div className="border-b bg-white px-4 py-2 text-xs font-black uppercase text-slate-600">{isBg ? "Оригинална фактура" : "Original invoice"}</div><div className="h-[calc(100%-37px)] overflow-auto p-2">{isPdf ? <iframe title="Original invoice" src={previewUrl} className="h-full min-h-[700px] w-full border-0 bg-white" /> : <img src={previewUrl} alt={file?.name || "Invoice"} className="mx-auto max-h-none w-full object-contain bg-white" />}</div></section>
         <section className="min-h-0 overflow-auto p-3"><table className="w-full min-w-[760px] text-sm"><thead className="sticky top-0 z-10 bg-slate-100 text-left text-xs font-black uppercase text-slate-600"><tr><th className="w-[62%] px-3 py-3">{isBg ? `Продукт (${catalog.length} в каталога)` : `Product (${catalog.length} in catalog)`}</th><th className="w-[16%] px-3 py-3 text-right">{isBg ? "Количество" : "Quantity"}</th><th className="w-[22%] px-3 py-3 text-center"><button type="button" onClick={confirmAllQuantities} className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 font-black text-emerald-800">{isBg ? "Потвърди всички количества" : "Confirm all quantities"}</button></th></tr></thead>
         <tbody className="divide-y">{rows.map((row, index) => { const qty = Number(row.editableQuantity); const qtyValid = Number.isInteger(qty) && qty > 0; const qc = confirmedQuantities.has(index); const missing = !row.selectedProductId; return <tr key={`${row.sourceLine}-${index}`} className={qc ? "bg-emerald-50/50" : "bg-white"}>
-          <td className="px-3 py-3"><div className="mb-1 text-xs font-bold text-slate-500">{isBg ? "От фактурата:" : "From invoice:"} <span className="text-slate-950">{row.rawName}</span></div><select value={row.selectedProductId} onChange={(e) => { const id=e.target.value; const p=catalog.find((x)=>x.id===id); setRows((current)=>current.map((item,i)=>i===index?{...item,selectedProductId:id,editableProductName:p?.name ?? item.editableProductName}:item)); }} className="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 font-semibold"><option value="">— {isBg ? "Няма в каталога — ще се добави автоматично" : "Not in catalog — will be added automatically"} —</option>{catalog.map((p)=><option key={p.id} value={p.id}>{p.name}</option>)}</select><input value={row.editableProductName} onChange={(e)=>{const value=e.target.value;setRows((current)=>current.map((item,i)=>i===index?{...item,editableProductName:value,selectedProductId:""}:item));}} className="mt-2 min-h-10 w-full rounded-lg border border-slate-300 px-3 font-semibold" placeholder={isBg?"Име на продукта":"Product name"}/>{missing && <div className="mt-1 text-xs font-bold text-amber-700">{isBg ? "Ще се създаде автоматично като неактивен продукт за допълване." : "Will be auto-created as an inactive product to complete later."}</div>}</td>
+          <td className="px-3 py-3"><div className="mb-1 text-xs font-bold text-slate-500">{isBg ? "От фактурата:" : "From invoice:"} <span className="text-slate-950">{row.rawName}</span></div><select value={row.selectedProductId} onChange={(e) => { const id=e.target.value; const p=catalog.find((x)=>x.id===id); setRows((current)=>current.map((item,i)=>i===index?{...item,selectedProductId:id,editableProductName:p?.name ?? item.editableProductName,selectedCategoryId:id?"":item.selectedCategoryId,selectedSubcategoryId:id?"":item.selectedSubcategoryId}:item)); }} className="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 font-semibold"><option value="">— {isBg ? "Няма в каталога — ще се добави автоматично" : "Not in catalog — will be added automatically"} —</option>{catalog.map((p)=><option key={p.id} value={p.id}>{p.name}</option>)}</select><input value={row.editableProductName} onChange={(e)=>{const value=e.target.value;setRows((current)=>current.map((item,i)=>i===index?{...item,editableProductName:value,selectedProductId:""}:item));}} className="mt-2 min-h-10 w-full rounded-lg border border-slate-300 px-3 font-semibold" placeholder={isBg?"Име на продукта":"Product name"}/>{missing && <div className="mt-2 grid gap-2 sm:grid-cols-2"><label className="text-xs font-bold text-slate-600"><span className="mb-1 block">{isBg ? "Категория *" : "Category *"}</span><select value={row.selectedCategoryId} onChange={(e)=>{const value=e.target.value;setRows((current)=>current.map((item,i)=>i===index?{...item,selectedCategoryId:value,selectedSubcategoryId:""}:item));}} className={`min-h-10 w-full rounded-lg border bg-white px-3 text-sm font-semibold ${row.selectedCategoryId?"border-slate-300":"border-amber-400"}`}><option value="">— {isBg ? "Избери категория" : "Choose category"} —</option>{mainCategories.map((category)=><option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label className="text-xs font-bold text-slate-600"><span className="mb-1 block">{isBg ? "Подкатегория" : "Subcategory"}</span><select value={row.selectedSubcategoryId} disabled={!row.selectedCategoryId} onChange={(e)=>{const value=e.target.value;setRows((current)=>current.map((item,i)=>i===index?{...item,selectedSubcategoryId:value}:item));}} className="min-h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold disabled:bg-slate-100 disabled:text-slate-400"><option value="">— {isBg ? "Без подкатегория" : "No subcategory"} —</option>{categories.filter((category)=>category.parentCategoryId===row.selectedCategoryId).map((category)=><option key={category.id} value={category.id}>{category.name}</option>)}</select></label></div>}{missing && <div className="mt-1 text-xs font-bold text-amber-700">{row.selectedCategoryId ? (isBg ? "Ще се създаде автоматично като неактивен продукт за допълване." : "Will be auto-created as an inactive product to complete later.") : (isBg ? "Избери категория, за да може новият продукт да бъде създаден." : "Choose a category so the new product can be created.")}</div>}</td>
           <td className="px-3 py-3 text-right"><input type="number" min="1" step="1" value={row.editableQuantity} onChange={(e)=>{const value=e.target.value;setRows((c)=>c.map((x,i)=>i===index?{...x,editableQuantity:value}:x));resetQuantityConfirmation(index);}} className="w-24 rounded-lg border px-2 py-2 text-right text-base font-black" /></td>
           <td className="px-3 py-3 text-center"><button disabled={!qtyValid} onClick={()=>toggleQuantity(index)} className={`rounded-lg border px-3 py-2 font-black ${qc?"bg-emerald-500 text-white":qtyValid?"border-emerald-300 bg-emerald-50 text-emerald-800":"bg-slate-100 text-slate-400"}`}>{qc?(isBg?"Потвърдено":"Confirmed"):(isBg?"Потвърди количество":"Confirm quantity")}</button></td>
         </tr>; })}</tbody></table></section>
