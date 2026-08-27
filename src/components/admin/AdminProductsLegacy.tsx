@@ -91,6 +91,38 @@ const getInitialPageSize = () => {
   return PAGE_SIZE_OPTIONS.includes(saved) ? saved : PAGE_SIZE_OPTIONS[0];
 };
 
+const getApiErrorMessage = (payload: unknown, status: number) => {
+  if (payload && typeof payload === "object") {
+    const record = payload as Record<string, unknown>;
+    for (const key of ["message", "Message", "detail", "Detail", "title", "Title"]) {
+      const value = record[key];
+      if (typeof value === "string" && value.trim()) return value.trim();
+    }
+
+    const errorSource = record.errors ?? record.Errors;
+    if (errorSource && typeof errorSource === "object") {
+      const messages: string[] = [];
+      for (const [field, value] of Object.entries(errorSource as Record<string, unknown>)) {
+        if (Array.isArray(value)) {
+          for (const item of value) {
+            if (typeof item === "string" && item.trim()) messages.push(`${field}: ${item.trim()}`);
+            else if (item && typeof item === "object") {
+              const itemRecord = item as Record<string, unknown>;
+              const message = itemRecord.errorMessage ?? itemRecord.ErrorMessage ?? itemRecord.message ?? itemRecord.Message;
+              if (typeof message === "string" && message.trim()) messages.push(`${field}: ${message.trim()}`);
+            }
+          }
+        } else if (typeof value === "string" && value.trim()) {
+          messages.push(`${field}: ${value.trim()}`);
+        }
+      }
+      if (messages.length) return messages.join(" ");
+    }
+  }
+
+  return `Продуктът не можа да бъде запазен (HTTP ${status}).`;
+};
+
 const AdminProducts = () => {
   const { token } = useSelector((state: RootState) => state.auth);
 
@@ -327,13 +359,21 @@ const AdminProducts = () => {
   };
 
   const handleEditProduct = (product: Product) => {
-    const category = categories.find((item) => item.id === product.categoryId);
+    const categoryById = categories.find((item) => item.id === product.categoryId);
+    const categoryByName = product.categoryName
+      ? categories.find(
+          (item) =>
+            item.name.trim().toLocaleLowerCase("bg-BG") ===
+            product.categoryName?.trim().toLocaleLowerCase("bg-BG")
+        )
+      : undefined;
+    const resolvedCategory = categoryById ?? categoryByName;
 
     setEditingProduct(product);
     setFormData({
       name: product.title || "",
       description: product.description || "",
-      categoryId: product.categoryId || "",
+      categoryId: resolvedCategory?.id || "",
       regularPrice: (product.regularPrice || 0).toString(),
       discountedPrice: (product.discountedPrice || 0).toString(),
       stock: (product.quantity || 0).toString(),
@@ -342,11 +382,21 @@ const AdminProducts = () => {
       secondaryImages: product.secondaryImages?.length > 0 ? product.secondaryImages : [],
       isActive: product.isActive !== false,
     });
-    setCategorySearch(category?.name || product.categoryName || "");
-    setValidationErrors({});
+    setCategorySearch(resolvedCategory?.name || product.categoryName || "");
+    setValidationErrors(
+      resolvedCategory
+        ? {}
+        : { categoryId: "Старата категория на продукта вече не съществува. Избери актуална категория." }
+    );
     setIsCategoryMenuOpen(false);
     setCategoryCreateError("");
     setIsModalOpen(true);
+
+    if (!categoryById && categoryByName) {
+      toast.info(`Категорията „${product.categoryName}“ беше свързана към актуалния запис.`);
+    } else if (!resolvedCategory && product.categoryName) {
+      toast.error(`Категорията „${product.categoryName}“ вече не съществува. Избери нова категория преди запис.`);
+    }
   };
 
   const handleInputChange = (
@@ -464,7 +514,11 @@ const AdminProducts = () => {
     }
 
     setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
+    if (Object.keys(errors).length > 0) {
+      toast.error(`Не може да се запази: ${Object.values(errors).filter(Boolean).join(" ")}`);
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -495,7 +549,7 @@ const AdminProducts = () => {
       wholesalePrice,
       wholesaleMinQuantity: wholesalePrice > 0 ? 2 : 0,
       vatRate,
-      discountPercentage: Number.parseFloat(formData.discountPercentage) || 0,
+      discountPercentage: Math.min(100, Math.max(0, Math.round(Number.parseFloat(formData.discountPercentage) || 0))),
       discountedPrice: Number.parseFloat(formData.discountedPrice) || 0,
       quantity: Number.parseInt(formData.stock, 10) || 0,
       categoryId: formData.categoryId,
@@ -515,8 +569,8 @@ const AdminProducts = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || "Продуктът не можа да бъде запазен.");
+        const errorData: unknown = await response.json().catch(() => null);
+        throw new Error(getApiErrorMessage(errorData, response.status));
       }
 
       await fetchProducts();
