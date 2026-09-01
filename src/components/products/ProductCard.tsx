@@ -66,7 +66,6 @@ const ProductCard = ({ product }: ProductCardProps) => {
     <div className="flex flex-1 flex-col p-3 sm:p-5">
       <div className="flex items-center justify-between gap-2"><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 sm:text-xs sm:tracking-[0.24em]">{isBg?"Продукт":"Product"}</p><div className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 sm:px-2.5 sm:py-1 sm:text-xs"><StarIcon className="h-3.5 w-3.5"/>{(product.rating??0).toFixed(1)}</div></div>
       <Link to={productPath} onClick={event=>event.stopPropagation()} className="mt-2 min-h-[2.5rem] line-clamp-2 font-display text-sm font-semibold leading-5 text-slate-950 hover:text-[#18b99f] sm:mt-4 sm:min-h-[3.25rem] sm:text-xl sm:leading-tight">{product.title}</Link>
-      <p className="mt-3 hidden min-h-[4.5rem] line-clamp-3 text-sm leading-6 text-slate-600 sm:block">{product.description.replace(/<[^>]+>/g," ")}</p>
 
       <div className="mt-auto pt-4 sm:pt-6">
         <div className="flex min-h-[4.25rem] items-end justify-between gap-2 sm:min-h-[4.75rem] sm:gap-4">
