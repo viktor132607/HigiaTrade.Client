@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -22,6 +22,16 @@ const gradientOptions = [
 ];
 
 type PreviewMode = "desktop" | "mobile";
+type BgTranslationKey = "eyebrowBg" | "titleBg" | "badgeBg" | "noteBg" | "ctaBg";
+type EnTranslationKey = "eyebrowEn" | "titleEn" | "badgeEn" | "noteEn" | "ctaEn";
+
+const translationTargets: Record<BgTranslationKey, EnTranslationKey> = {
+  eyebrowBg: "eyebrowEn",
+  titleBg: "titleEn",
+  badgeBg: "badgeEn",
+  noteBg: "noteEn",
+  ctaBg: "ctaEn",
+};
 
 const newSlide = (order: number): HomeSlide => ({
   id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${order}`,
@@ -78,6 +88,9 @@ const AdminSlideshow = () => {
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("desktop");
+  const [translatingFields, setTranslatingFields] = useState<Record<string, boolean>>({});
+  const translationTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const translationRequestIds = useRef<Record<string, number>>({});
 
   const load = async () => {
     try {
@@ -95,9 +108,65 @@ const AdminSlideshow = () => {
 
   useEffect(() => { void load(); }, []);
 
+  useEffect(() => () => {
+    Object.values(translationTimers.current).forEach((timer) => clearTimeout(timer));
+  }, []);
+
   const updateSlide = <K extends keyof HomeSlide>(id: string, key: K, value: HomeSlide[K]) => {
     setSaved(false);
     setSlides((current) => current.map((slide) => (slide.id === id ? { ...slide, [key]: value } : slide)));
+  };
+
+  const updateBgAndTranslate = (slideId: string, key: BgTranslationKey, value: string) => {
+    const enKey = translationTargets[key];
+    const fieldId = `${slideId}:${key}`;
+
+    updateSlide(slideId, key, value);
+
+    if (translationTimers.current[fieldId]) {
+      clearTimeout(translationTimers.current[fieldId]);
+    }
+
+    translationRequestIds.current[fieldId] = (translationRequestIds.current[fieldId] ?? 0) + 1;
+    const requestId = translationRequestIds.current[fieldId];
+
+    if (!value.trim()) {
+      updateSlide(slideId, enKey, "");
+      setTranslatingFields((current) => ({ ...current, [fieldId]: false }));
+      return;
+    }
+
+    translationTimers.current[fieldId] = setTimeout(async () => {
+      try {
+        setTranslatingFields((current) => ({ ...current, [fieldId]: true }));
+        const response = await fetch(`${API_BASE_URL}/translation/bg-to-en`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ text: value }),
+        });
+        const data = await readApiJson<{ translation: string }>(response);
+
+        if (translationRequestIds.current[fieldId] !== requestId) return;
+
+        setSlides((current) => current.map((slide) => (
+          slide.id === slideId && slide[key] === value
+            ? { ...slide, [enKey]: data.translation }
+            : slide
+        )));
+        setSaved(false);
+      } catch (err) {
+        if (translationRequestIds.current[fieldId] === requestId) {
+          setError(err instanceof Error ? err.message : isBg ? "Автоматичният превод не успя." : "Automatic translation failed.");
+        }
+      } finally {
+        if (translationRequestIds.current[fieldId] === requestId) {
+          setTranslatingFields((current) => ({ ...current, [fieldId]: false }));
+        }
+      }
+    }, 700);
   };
 
   const moveSlide = (index: number, direction: -1 | 1) => {
@@ -177,7 +246,7 @@ const AdminSlideshow = () => {
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-950">{isBg ? "Слайдшоу на началната страница" : "Home page slideshow"}</h1>
-          <p className="mt-1 text-sm text-slate-500">{isBg ? "Променяй снимките, текста, бутоните, реда и видимостта на слайдовете." : "Edit slide images, text, buttons, order and visibility."}</p>
+          <p className="mt-1 text-sm text-slate-500">{isBg ? "Променяй снимките, текста, бутоните, реда и видимостта на слайдовете. BG полетата се превеждат автоматично на EN." : "Edit slide images, text, buttons, order and visibility. BG fields are translated automatically to EN."}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <div className="inline-flex rounded-lg border border-slate-300 bg-white p-1">
@@ -230,20 +299,20 @@ const AdminSlideshow = () => {
 
               <div className="space-y-4">
                 <div className="grid gap-3 lg:grid-cols-2">
-                  <TextInput label="Горен текст (BG)" value={slide.eyebrowBg} onChange={(value) => updateSlide(slide.id, "eyebrowBg", value)} />
-                  <TextInput label="Eyebrow (EN)" value={slide.eyebrowEn} onChange={(value) => updateSlide(slide.id, "eyebrowEn", value)} />
-                  <TextInput label="Заглавие (BG)" value={slide.titleBg} onChange={(value) => updateSlide(slide.id, "titleBg", value)} />
-                  <TextInput label="Title (EN)" value={slide.titleEn} onChange={(value) => updateSlide(slide.id, "titleEn", value)} />
-                  <TextInput label="Етикет (BG)" value={slide.badgeBg} onChange={(value) => updateSlide(slide.id, "badgeBg", value)} />
-                  <TextInput label="Badge (EN)" value={slide.badgeEn} onChange={(value) => updateSlide(slide.id, "badgeEn", value)} />
+                  <TextInput label="Горен текст (BG)" value={slide.eyebrowBg} onChange={(value) => updateBgAndTranslate(slide.id, "eyebrowBg", value)} />
+                  <TextInput label={`Eyebrow (EN)${translatingFields[`${slide.id}:eyebrowBg`] ? " — translating..." : ""}`} value={slide.eyebrowEn} onChange={(value) => updateSlide(slide.id, "eyebrowEn", value)} />
+                  <TextInput label="Заглавие (BG)" value={slide.titleBg} onChange={(value) => updateBgAndTranslate(slide.id, "titleBg", value)} />
+                  <TextInput label={`Title (EN)${translatingFields[`${slide.id}:titleBg`] ? " — translating..." : ""}`} value={slide.titleEn} onChange={(value) => updateSlide(slide.id, "titleEn", value)} />
+                  <TextInput label="Етикет (BG)" value={slide.badgeBg} onChange={(value) => updateBgAndTranslate(slide.id, "badgeBg", value)} />
+                  <TextInput label={`Badge (EN)${translatingFields[`${slide.id}:badgeBg`] ? " — translating..." : ""}`} value={slide.badgeEn} onChange={(value) => updateSlide(slide.id, "badgeEn", value)} />
                 </div>
                 <div className="grid gap-3 lg:grid-cols-2">
-                  <TextArea label="Описание (BG)" value={slide.noteBg} onChange={(value) => updateSlide(slide.id, "noteBg", value)} />
-                  <TextArea label="Description (EN)" value={slide.noteEn} onChange={(value) => updateSlide(slide.id, "noteEn", value)} />
+                  <TextArea label="Описание (BG)" value={slide.noteBg} onChange={(value) => updateBgAndTranslate(slide.id, "noteBg", value)} />
+                  <TextArea label={`Description (EN)${translatingFields[`${slide.id}:noteBg`] ? " — translating..." : ""}`} value={slide.noteEn} onChange={(value) => updateSlide(slide.id, "noteEn", value)} />
                 </div>
                 <div className="grid gap-3 lg:grid-cols-3">
-                  <TextInput label="Бутон (BG)" value={slide.ctaBg} onChange={(value) => updateSlide(slide.id, "ctaBg", value)} />
-                  <TextInput label="Button (EN)" value={slide.ctaEn} onChange={(value) => updateSlide(slide.id, "ctaEn", value)} />
+                  <TextInput label="Бутон (BG)" value={slide.ctaBg} onChange={(value) => updateBgAndTranslate(slide.id, "ctaBg", value)} />
+                  <TextInput label={`Button (EN)${translatingFields[`${slide.id}:ctaBg`] ? " — translating..." : ""}`} value={slide.ctaEn} onChange={(value) => updateSlide(slide.id, "ctaEn", value)} />
                   <TextInput label={isBg ? "Линк на бутона" : "Button URL"} value={slide.ctaUrl} onChange={(value) => updateSlide(slide.id, "ctaUrl", value)} />
                 </div>
               </div>
