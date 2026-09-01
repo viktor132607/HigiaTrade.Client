@@ -5,6 +5,7 @@ import {
   DocumentArrowUpIcon,
   DocumentChartBarIcon,
   GlobeAltIcon,
+  MapIcon,
   PhotoIcon,
   QueueListIcon,
   Squares2X2Icon,
@@ -22,6 +23,7 @@ const INCOMPLETE_MARKER = "[INVOICE_IMPORT_INCOMPLETE]";
 const navigation = [
   { to: "/admin", labelBg: "Табло", labelEn: "Overview", icon: Squares2X2Icon, end: true },
   { to: "/admin/orders", labelBg: "Поръчки", labelEn: "Orders", icon: QueueListIcon },
+  { to: "/admin/routes", labelBg: "Маршрути", labelEn: "Routes", icon: MapIcon },
   { to: "/admin/products", labelBg: "Продукти", labelEn: "Products", icon: CubeIcon, notification: "products" as const },
   { to: "/admin/invoice-import", labelBg: "Фактури", labelEn: "Invoices", icon: DocumentArrowUpIcon, notification: "invoices" as const },
   { to: "/admin/categories", labelBg: "Категории", labelEn: "Categories", icon: ChartBarSquareIcon },
