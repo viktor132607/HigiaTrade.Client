@@ -42,6 +42,7 @@ import AdminCategories from "./pages/admin/Categories";
 import AdminBrands from "./pages/admin/Brands";
 import AdminUsers from "./pages/admin/Users";
 import AdminOrders from "./pages/admin/AdminOrders";
+import DistributionRoutes from "./pages/admin/DistributionRoutes";
 import AdminReports from "./pages/admin/Reports";
 import InvoiceImport from "./pages/admin/InvoiceImport";
 import SeoDashboard from "./pages/admin/SeoDashboard";
@@ -94,6 +95,7 @@ function App() {
                 <Route path="brands" element={<AdminBrands />} />
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="orders" element={<AdminOrders />} />
+                <Route path="routes" element={<DistributionRoutes />} />
                 <Route path="reports" element={<AdminReports />} />
                 <Route path="invoice-import" element={<InvoiceImport />} />
                 <Route path="slideshow" element={<AdminSlideshow />} />
