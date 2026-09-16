@@ -32,8 +32,18 @@ const readError = async (response: Response, fallback: string) => {
   const contentType = response.headers.get("content-type") ?? "";
 
   if (contentType.includes("application/json")) {
-    const payload = await response.json().catch(() => null);
-    return payload?.message ?? payload?.title ?? payload?.error ?? fallback;
+    const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
+    const message =
+      payload?.message ??
+      payload?.Message ??
+      payload?.title ??
+      payload?.Title ??
+      payload?.error ??
+      payload?.Error;
+
+    if (typeof message === "string" && message.trim()) {
+      return message.trim();
+    }
   }
 
   const text = await response.text().catch(() => "");
