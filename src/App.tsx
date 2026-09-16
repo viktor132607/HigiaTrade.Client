@@ -47,6 +47,7 @@ import AdminReports from "./pages/admin/Reports";
 import InvoiceImport from "./pages/admin/InvoiceImport";
 import SeoDashboard from "./pages/admin/SeoDashboard";
 import AdminSlideshow from "./pages/admin/Slideshow";
+import DatabaseBackup from "./pages/admin/DatabaseBackup";
 
 function App() {
   return (
@@ -100,6 +101,7 @@ function App() {
                 <Route path="invoice-import" element={<InvoiceImport />} />
                 <Route path="slideshow" element={<AdminSlideshow />} />
                 <Route path="seo" element={<SeoDashboard />} />
+                <Route path="database-backup" element={<DatabaseBackup />} />
                 <Route path="*" element={<Navigate to="/admin" replace />} />
               </Route>
               <Route path="/:categorySlug/:region" element={<RegionalCategory />} />

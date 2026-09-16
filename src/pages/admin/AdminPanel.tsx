@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import {
   ChartBarSquareIcon,
+  CircleStackIcon,
   CubeIcon,
   DocumentArrowUpIcon,
   DocumentChartBarIcon,
@@ -32,6 +33,7 @@ const navigation = [
   { to: "/admin/users", labelBg: "Клиенти", labelEn: "Customers", icon: UsersIcon },
   { to: "/admin/reports", labelBg: "Справки", labelEn: "Reports", icon: DocumentChartBarIcon },
   { to: "/admin/seo", labelBg: "SEO", labelEn: "SEO", icon: GlobeAltIcon },
+  { to: "/admin/database-backup", labelBg: "Backup", labelEn: "Backup", icon: CircleStackIcon },
 ];
 
 type AdminPanelProps = {
