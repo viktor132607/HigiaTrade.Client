@@ -8,10 +8,12 @@ import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 type PreviewPosition = {
   top: number;
   left: number;
+  width: number;
 };
 
 const PANEL_WIDTH = 384;
 const HIDE_DELAY_MS = 140;
+const AUTO_HIDE_MS = 2600;
 
 const CartHoverPreview = () => {
   const cartItems = useSelector((state: RootState) => state.cart.items);
@@ -20,14 +22,22 @@ const CartHoverPreview = () => {
   const isBg = language === "bg";
 
   const [isOpen, setIsOpen] = useState(false);
-  const [position, setPosition] = useState<PreviewPosition>({ top: 0, left: 0 });
+  const [position, setPosition] = useState<PreviewPosition>({ top: 0, left: 0, width: PANEL_WIDTH });
   const activeTargetRef = useRef<HTMLElement | null>(null);
   const hideTimerRef = useRef<number | null>(null);
+  const autoHideTimerRef = useRef<number | null>(null);
 
   const clearHideTimer = () => {
     if (hideTimerRef.current !== null) {
       window.clearTimeout(hideTimerRef.current);
       hideTimerRef.current = null;
+    }
+  };
+
+  const clearAutoHideTimer = () => {
+    if (autoHideTimerRef.current !== null) {
+      window.clearTimeout(autoHideTimerRef.current);
+      autoHideTimerRef.current = null;
     }
   };
 
@@ -37,20 +47,23 @@ const CartHoverPreview = () => {
 
     const rect = target.getBoundingClientRect();
     const viewportPadding = 16;
+    const width = Math.max(240, Math.min(PANEL_WIDTH, window.innerWidth - viewportPadding * 2));
     const left = Math.max(
       viewportPadding,
-      Math.min(window.innerWidth - PANEL_WIDTH - viewportPadding, rect.right - PANEL_WIDTH)
+      Math.min(window.innerWidth - width - viewportPadding, rect.right - width)
     );
 
     setPosition({
       top: rect.bottom + 8,
       left,
+      width,
     });
   };
 
-  const showPreview = (target: HTMLElement) => {
-    if (window.innerWidth < 1280) return;
+  const showPreview = (target: HTMLElement, force = false) => {
+    if (!force && window.innerWidth < 1280) return;
     clearHideTimer();
+    clearAutoHideTimer();
     activeTargetRef.current = target;
     updatePosition();
     setIsOpen(true);
@@ -62,6 +75,18 @@ const CartHoverPreview = () => {
       setIsOpen(false);
       activeTargetRef.current = null;
     }, HIDE_DELAY_MS);
+  };
+
+  const findVisibleCartLink = () => {
+    const cartLinks = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>('header a[href="/cart"]')
+    );
+
+    return cartLinks.find((link) => {
+      const rect = link.getBoundingClientRect();
+      const style = window.getComputedStyle(link);
+      return rect.width > 0 && rect.height > 0 && style.display !== "none" && style.visibility !== "hidden";
+    }) ?? cartLinks[0] ?? null;
   };
 
   useEffect(() => {
@@ -88,9 +113,24 @@ const CartHoverPreview = () => {
       };
     });
 
+    const openAfterAdd = () => {
+      const target = findVisibleCartLink();
+      if (!target) return;
+      showPreview(target, true);
+      autoHideTimerRef.current = window.setTimeout(() => {
+        setIsOpen(false);
+        activeTargetRef.current = null;
+        autoHideTimerRef.current = null;
+      }, AUTO_HIDE_MS);
+    };
+
+    window.addEventListener("higiatrade:cart-preview-open", openAfterAdd);
+
     return () => {
       cleanups.forEach((cleanup) => cleanup());
+      window.removeEventListener("higiatrade:cart-preview-open", openAfterAdd);
       clearHideTimer();
+      clearAutoHideTimer();
     };
   }, []);
 
@@ -119,9 +159,12 @@ const CartHoverPreview = () => {
 
   return createPortal(
     <div
-      className="fixed z-[100] w-96 overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-900 shadow-2xl dark:border-white/15 dark:bg-slate-950 dark:text-white"
-      style={{ top: position.top, left: position.left }}
-      onMouseEnter={clearHideTimer}
+      className="fixed z-[100] overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-900 shadow-2xl dark:border-white/15 dark:bg-slate-950 dark:text-white"
+      style={{ top: position.top, left: position.left, width: position.width }}
+      onMouseEnter={() => {
+        clearHideTimer();
+        clearAutoHideTimer();
+      }}
       onMouseLeave={scheduleHide}
     >
       <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-white/10">
