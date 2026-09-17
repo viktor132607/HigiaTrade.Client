@@ -40,6 +40,22 @@ const normalizeList = <T,>(payload: unknown): T[] => {
   return [];
 };
 
+const isSearchInput = (input: HTMLInputElement) => {
+  if (input.dataset.searchAutocomplete === "off") return false;
+  if (input.type === "search" || input.getAttribute("role") === "searchbox") return true;
+
+  const searchableText = [
+    input.id,
+    input.name,
+    input.placeholder,
+    input.getAttribute("aria-label") ?? "",
+  ]
+    .join(" ")
+    .toLocaleLowerCase("bg-BG");
+
+  return searchableText.includes("search") || searchableText.includes("търс");
+};
+
 const ProductSearchEnhancer = () => {
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
@@ -91,11 +107,8 @@ const ProductSearchEnhancer = () => {
     const targets = targetsRef.current;
 
     const syncInputs = () => {
-      const inputs = Array.from(
-        document.querySelectorAll<HTMLInputElement>(
-          'input[type="search"]:not([data-search-autocomplete="off"])'
-        )
-      );
+      const inputs = Array.from(document.querySelectorAll<HTMLInputElement>("input"))
+        .filter(isSearchInput);
       const currentInputs = new Set(inputs);
 
       for (const [input, target] of targets.entries()) {
