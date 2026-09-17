@@ -229,6 +229,7 @@ const ProductDetails = () => {
       const item = cartItem();
       if (!item) return;
       dispatch(addItem(item));
+      window.dispatchEvent(new CustomEvent("higiatrade:cart-preview-open"));
       toast.success(tr("Продуктът е добавен в количката.", "Product added to cart."));
       if (token) {
         void fetch(`${process.env.NEXT_PUBLIC_API_URL}/Orders`, {
@@ -257,7 +258,7 @@ const ProductDetails = () => {
       const item = cartItem();
       if (!item) return;
       dispatch(addItem(item));
-      navigate("/checkout");
+      navigate("/cart");
     } catch {
       toast.error(tr("Покупката не можа да бъде започната.", "We could not start checkout."));
     }
@@ -401,11 +402,11 @@ const ProductDetails = () => {
 
             <div className="mt-auto pt-4">
               <div className="grid grid-cols-2 gap-2.5">
-                <button onClick={() => void addToCart()} disabled={product.quantity <= 0} className="rounded-xl bg-slate-950 px-4 py-3 font-bold text-white disabled:opacity-40">
-                  {product.quantity > 0 ? tr("Добави в количката", "Add to cart") : tr("Изчерпан продукт", "Unavailable")}
-                </button>
                 <button onClick={() => void buyNow()} disabled={product.quantity <= 0} className="rounded-xl bg-[#18b99f] px-4 py-3 font-bold text-white transition hover:bg-[#149f8a] disabled:opacity-40">
-                  {product.quantity > 0 ? tr("Купи", "Buy now") : tr("Изчерпан", "Unavailable")}
+                  {product.quantity > 0 ? tr("Купи", "Buy") : tr("Изчерпан", "Unavailable")}
+                </button>
+                <button onClick={() => void addToCart()} disabled={product.quantity <= 0} className="rounded-xl bg-slate-950 px-4 py-3 font-bold text-white disabled:opacity-40">
+                  {product.quantity > 0 ? tr("Добави в количка", "Add to cart") : tr("Изчерпан продукт", "Unavailable")}
                 </button>
               </div>
               <ProductActions productId={product.id} showLabels />
