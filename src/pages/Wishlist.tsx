@@ -3,11 +3,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
 import { removeFromWishlist } from "../store/slices/userSlice";
 import { HeartIcon, ShoppingCartIcon } from "@heroicons/react/24/solid";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { addItem } from "../store/slices/cartSlice";
 import { formatCurrency } from "../utils/currency";
 import ProductActions from "../components/products/ProductActions";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
+import { toast } from "react-toastify";
 
 interface Product {
   id: string;
@@ -30,6 +31,7 @@ const Wishlist = () => {
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchWishlistProducts = async () => {
@@ -52,19 +54,41 @@ const Wishlist = () => {
 
     if (wishlist.length > 0) void fetchWishlistProducts();
     else setLoading(false);
-  }, [wishlist, token]);
+  }, [wishlist, token, isBg]);
 
-  const handleAddToCart = (product: Product) => {
-    dispatch(addItem({
-      id: product.id,
-      title: product.title,
-      regularPrice: product.regularPrice,
-      discountedPrice: product.discountedPrice,
-      discountPercentage: product.discountPercentage,
-      quantity: 1,
-      mainImageUrl: product.mainImageUrl,
-      imageUrl: "",
-    }));
+  const handleCartAction = async (product: Product, openCart: boolean) => {
+    if (product.quantity <= 0) return;
+
+    try {
+      if (token) {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Orders`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ productId: product.id, quantity: 1 }),
+        });
+        if (!response.ok) throw new Error("Unable to add product to cart.");
+      }
+
+      dispatch(addItem({
+        id: product.id,
+        title: product.title,
+        regularPrice: product.regularPrice,
+        discountedPrice: product.discountedPrice,
+        discountPercentage: product.discountPercentage,
+        quantity: 1,
+        mainImageUrl: product.mainImageUrl,
+        imageUrl: product.mainImageUrl,
+      }));
+
+      if (openCart) {
+        navigate("/cart");
+      } else {
+        window.dispatchEvent(new CustomEvent("higiatrade:cart-preview-open"));
+        toast.success(isBg ? "Продуктът е добавен в количката." : "Product added to cart.");
+      }
+    } catch {
+      toast.error(isBg ? "Продуктът не можа да бъде добавен." : "Unable to add the selected product.");
+    }
   };
 
   if (loading) return <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center"><div className="h-10 w-10 animate-spin rounded-full border-b-2 border-primary-500" /></div>;
@@ -105,9 +129,9 @@ const Wishlist = () => {
                   <h2 className="mb-2 line-clamp-2 text-base font-semibold text-gray-900 sm:text-lg"><Link to={`/products/${product.id}`} className="hover:text-primary-500">{product.title}</Link></h2>
                   <div className="mb-4 space-y-1"><p className="text-lg font-bold text-gray-900">{formatCurrency(displayPrice)}</p>{product.discountedPrice && product.discountedPrice > 0 ? <p className="text-sm text-gray-500 line-through">{formatCurrency(product.regularPrice)}</p> : null}</div>
                   <div className="mb-3"><ProductActions productId={product.id} showLabels compact /></div>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <button type="button" onClick={() => handleAddToCart(product)} className="flex min-h-11 items-center justify-center rounded-md bg-primary-500 px-3 py-2 text-sm text-white hover:bg-primary-600"><ShoppingCartIcon className="mr-2 h-5 w-5" />{isBg ? "В количката" : "Add to cart"}</button>
-                    <Link to={`/products/${product.id}`} className="flex min-h-11 items-center justify-center rounded-md bg-gray-100 px-3 py-2 text-center text-sm text-gray-700 hover:bg-gray-200">{isBg ? "Детайли" : "View details"}</Link>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => void handleCartAction(product, true)} disabled={product.quantity <= 0} className={`flex min-h-11 items-center justify-center rounded-md px-3 py-2 text-sm font-semibold text-white ${product.quantity <= 0 ? "cursor-not-allowed bg-slate-300" : "bg-[#18b99f] hover:bg-[#149f8a]"}`}>{product.quantity <= 0 ? (isBg ? "Изчерпан" : "Unavailable") : (isBg ? "Купи" : "Buy")}</button>
+                    <button type="button" onClick={() => void handleCartAction(product, false)} disabled={product.quantity <= 0} className={`flex min-h-11 items-center justify-center gap-1.5 rounded-md px-2 py-2 text-[11px] font-semibold text-white sm:text-xs ${product.quantity <= 0 ? "cursor-not-allowed bg-slate-300" : "bg-slate-950 hover:bg-slate-800"}`}><ShoppingCartIcon className="h-4 w-4 shrink-0" />{product.quantity <= 0 ? (isBg ? "Няма" : "Out") : (isBg ? "Добави в количка" : "Add to cart")}</button>
                   </div>
                 </div>
               </article>
