@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { XMarkIcon } from "@heroicons/react/24/outline";
+import { Link, useNavigate } from "react-router-dom";
+import { ShoppingCartIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
 import { RootState } from "../store";
+import { addItem } from "../store/slices/cartSlice";
 import { clearCompare, removeFromCompare } from "../store/slices/compareSlice";
 import { Product } from "../types";
 import { formatCurrency } from "../utils/currency";
@@ -11,7 +13,9 @@ import ProductActions from "../components/products/ProductActions";
 
 const Compare = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const productIds = useSelector((state: RootState) => state.compare.items);
+  const token = useSelector((state: RootState) => state.auth.token);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const { language } = useLanguageTheme();
@@ -36,6 +40,48 @@ const Compare = () => {
     };
     void load();
   }, [productIds]);
+
+  const cartAction = async (product: Product, openCart: boolean) => {
+    if (product.quantity <= 0) return;
+
+    try {
+      if (token) {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Orders`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ productId: product.id, quantity: 1 }),
+        });
+        if (!response.ok) throw new Error("Unable to add product to cart.");
+      }
+
+      dispatch(addItem({
+        id: product.id,
+        title: product.title,
+        regularPrice: product.regularPrice,
+        discountedPrice: product.discountedPrice,
+        discountPercentage: product.discountPercentage,
+        quantity: 1,
+        imageUrl: product.mainImageUrl,
+        mainImageUrl: product.mainImageUrl,
+      }));
+
+      if (openCart) {
+        navigate("/cart");
+      } else {
+        window.dispatchEvent(new CustomEvent("higiatrade:cart-preview-open"));
+        toast.success(isBg ? "Продуктът е добавен в количката." : "Product added to cart.");
+      }
+    } catch {
+      toast.error(isBg ? "Продуктът не можа да бъде добавен." : "Unable to add the selected product.");
+    }
+  };
+
+  const purchaseButtons = (product: Product) => (
+    <div className="mt-3 grid grid-cols-2 gap-2">
+      <button type="button" onClick={() => void cartAction(product, true)} disabled={product.quantity <= 0} className={`min-h-9 rounded-md px-2 py-2 text-xs font-semibold text-white ${product.quantity <= 0 ? "cursor-not-allowed bg-slate-300" : "bg-[#18b99f] hover:bg-[#149f8a]"}`}>{product.quantity <= 0 ? (isBg ? "Изчерпан" : "Unavailable") : (isBg ? "Купи" : "Buy")}</button>
+      <button type="button" onClick={() => void cartAction(product, false)} disabled={product.quantity <= 0} className={`inline-flex min-h-9 items-center justify-center gap-1 rounded-md px-2 py-2 text-[11px] font-semibold text-white ${product.quantity <= 0 ? "cursor-not-allowed bg-slate-300" : "bg-slate-950 hover:bg-slate-800"}`}><ShoppingCartIcon className="h-4 w-4 shrink-0" />{product.quantity <= 0 ? (isBg ? "Няма" : "Out") : (isBg ? "Добави в количка" : "Add to cart")}</button>
+    </div>
+  );
 
   const rows = [
     { labelBg: "Цена", labelEn: "Price", render: (p: Product) => formatCurrency(p.discountedPrice && p.discountedPrice > 0 ? p.discountedPrice : p.regularPrice) },
@@ -85,6 +131,7 @@ const Compare = () => {
                     <h2 className="mt-3 text-base font-semibold text-slate-950">{product.title}</h2>
                   </Link>
                   <div className="mt-3"><ProductActions productId={product.id} showLabels compact /></div>
+                  {purchaseButtons(product)}
                 </div>
                 <dl className="divide-y divide-slate-100 border-t border-slate-200">
                   {rows.map((row) => (
@@ -109,6 +156,7 @@ const Compare = () => {
                         <button type="button" onClick={() => dispatch(removeFromCompare(product.id))} className="absolute right-0 top-0 rounded-full border border-slate-200 bg-white p-1.5 text-slate-500 hover:text-rose-600" title={isBg ? "Премахни" : "Remove"}><XMarkIcon className="h-4 w-4" /></button>
                         <Link to={`/products/${product.id}`}><img src={product.mainImageUrl || "/higiqlogo.png"} alt={product.title} className="mx-auto h-36 w-36 object-contain" /><div className="mt-3 pr-7 font-semibold text-slate-950 hover:text-[#18b99f]">{product.title}</div></Link>
                         <div className="mt-3"><ProductActions productId={product.id} showLabels compact /></div>
+                        {purchaseButtons(product)}
                       </div>
                     </td>
                   ))}
