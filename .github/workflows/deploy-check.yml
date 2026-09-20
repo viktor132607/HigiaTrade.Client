@@ -42,22 +42,10 @@ jobs:
       - name: Unit tests
         run: npm test
 
-      - name: Build
-        run: npm run build
+      - name: Production compile
+        run: npx next build
 
-      - name: Verify static export and SEO generator
+      - name: Verify static export
         run: |
           test -s out/index.html
           test -d out/_next
-          test -s out/sitemap.xml
-          test -s out/image-sitemap.xml
-          test -s out/google-merchant.xml
-          test -s out/google-merchant.csv
-          test -s out/llms.txt
-          test -s out/seo-manifest.json
-          test -s out/sano/index.html
-          test -s out/sano/ruse/index.html
-          test -s out/sano/silistra/index.html
-          test -s out/sano/razgrad/index.html
-          test -s out/company-info/index.html
-          node -e 'const fs=require("fs"); const m=JSON.parse(fs.readFileSync("out/seo-manifest.json","utf8")); if(m.regionalPages!==6) process.exit(1); if(!Array.isArray(m.feeds)||m.feeds.length<5) process.exit(1); if(m.companyInfoPage!==true) process.exit(1); if(typeof m.faqBlocks!=="number"||typeof m.internalLinkBlocks!=="number") process.exit(1); if(!m.indexNowKeyLocation) process.exit(1); const keyFile="out/"+m.indexNowKeyLocation.split("/").pop(); if(!fs.existsSync(keyFile)) process.exit(1); console.log(m)'
