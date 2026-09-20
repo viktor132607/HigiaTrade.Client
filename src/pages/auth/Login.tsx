@@ -56,7 +56,12 @@ const Login = () => {
       navigate("/");
     } catch (requestError) {
       console.error(requestError);
-      setError(isBg ? "Въведи валиден имейл и парола." : "Enter a valid email and password.");
+      const message = requestError instanceof Error ? requestError.message : "";
+      setError(
+        message
+          ? (isBg ? `Грешка при вход: ${message}` : `Login failed: ${message}`)
+          : (isBg ? "Входът е неуспешен." : "Login failed.")
+      );
     } finally {
       setIsSubmitting(false);
     }
