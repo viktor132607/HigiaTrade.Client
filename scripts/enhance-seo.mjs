@@ -84,13 +84,14 @@ const brandPath = (brandName) => `/brands/${slugify(brandName, 100)}/`;
 const regionalCategoryPath = (category, region) => `/${slugify(category.name, 90)}/${region.slug}/`;
 const canonical = (path) => `${SITE_URL}${path === "/" ? "/" : `/${String(path).replace(/^\/+|\/+$/g, "")}/`}`;
 
-async function fetchJson(url, attempts = 3) {
+async function fetchJson(url, attempts = 3, emptyOn404 = false) {
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
     try {
       const response = await fetch(url, { headers: { Accept: "application/json" }, signal: controller.signal });
+      if (emptyOn404 && response.status === 404) return [];
       if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
       return await response.json();
     } catch (error) {
@@ -629,8 +630,8 @@ async function main() {
   const template = await readRoute("/");
   const [products, categoriesPayload, brandsPayload] = await Promise.all([
     fetchAllProducts(),
-    fetchJson(`${API_URL}/Categories`),
-    fetchJson(`${API_URL}/Brands`),
+    fetchJson(`${API_URL}/Categories`, 3, true),
+    fetchJson(`${API_URL}/Brands`, 3, true),
   ]);
   const categories = Array.isArray(categoriesPayload) ? categoriesPayload.filter((item) => item?.id && item?.name) : [];
   const brands = Array.isArray(brandsPayload) ? brandsPayload.filter((item) => item?.id && item?.name) : [];
