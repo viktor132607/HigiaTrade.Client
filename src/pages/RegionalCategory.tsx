@@ -149,7 +149,7 @@ const RegionalCategory = () => {
             <span className="text-sm text-slate-500">{products.length} {isBg ? "артикула" : "items"}</span>
           </div>
           {products.length ? (
-            <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:gap-6 lg:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2.5 min-[430px]:gap-3 sm:gap-6 sm:gap-6 lg:grid-cols-3 2xl:grid-cols-4">
               {products.map((product) => <ProductCard key={product.id} product={product} />)}
             </div>
           ) : (
