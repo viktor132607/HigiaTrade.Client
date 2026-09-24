@@ -132,13 +132,14 @@ function productImages(product) {
   return [...new Set(images.filter(Boolean))];
 }
 
-async function fetchJson(url, attempts = 3) {
+async function fetchJson(url, attempts = 3, emptyOn404 = false) {
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 30000);
     try {
       const response = await fetch(url, { headers: { Accept: "application/json" }, signal: controller.signal });
+      if (emptyOn404 && response.status === 404) return [];
       if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
       return await response.json();
     } catch (error) {
@@ -153,7 +154,7 @@ async function fetchJson(url, attempts = 3) {
 
 async function safeFetch(label, url, fallback) {
   try {
-    return await fetchJson(url);
+    return await fetchJson(url, 3, label === "categories" || label === "brands");
   } catch (error) {
     console.warn(`[seo] ${label} fetch failed: ${error instanceof Error ? error.message : error}`);
     if (STRICT) throw error;
