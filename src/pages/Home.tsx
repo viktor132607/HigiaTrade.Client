@@ -153,7 +153,7 @@ const Home = () => {
 
       {tabProducts.length > 0 && (
         <section className="mx-auto max-w-7xl px-3 py-7 sm:px-6 sm:py-8 lg:px-8">
-          <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2.5 min-[430px]:gap-3 sm:gap-6 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
             {tabProducts.slice(0, 8).map((product) => <ProductCard key={product.id} product={product} />)}
           </div>
         </section>
@@ -180,7 +180,7 @@ const Home = () => {
       {latestProducts.length > 0 && (
         <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6 sm:py-10 lg:px-8">
           <div className="text-center"><h2 className="font-display text-2xl font-bold text-slate-950 sm:text-3xl dark:text-white">{text.latest}</h2><p className="mx-auto mt-3 max-w-3xl text-sm text-slate-500 dark:text-slate-300">{text.latestText}</p></div>
-          <div className="mt-6 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:mt-8 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">{latestProducts.slice(0, 8).map((product) => <ProductCard key={product.id} product={product} />)}</div>
+          <div className="mt-6 grid grid-cols-2 gap-2.5 min-[430px]:gap-3 sm:gap-6 sm:mt-8 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">{latestProducts.slice(0, 8).map((product) => <ProductCard key={product.id} product={product} />)}</div>
         </section>
       )}
 
@@ -193,7 +193,7 @@ const Home = () => {
       {discountedProducts.length > 0 && (
         <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6 sm:py-10 lg:px-8">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="font-display text-2xl font-bold text-slate-950 dark:text-white">{text.promotions}</h2><p className="mt-2 text-sm text-slate-500 dark:text-slate-300">{text.promotionText}</p></div><Link to="/products" className="text-sm font-semibold text-primary-600">{text.viewAll}</Link></div>
-          <div className="mt-6 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:gap-6 lg:grid-cols-4">{discountedProducts.map((product) => <ProductCard key={product.id} product={product} />)}</div>
+          <div className="mt-6 grid grid-cols-2 gap-2.5 min-[430px]:gap-3 sm:gap-6 sm:gap-6 lg:grid-cols-4">{discountedProducts.map((product) => <ProductCard key={product.id} product={product} />)}</div>
         </section>
       )}
 
