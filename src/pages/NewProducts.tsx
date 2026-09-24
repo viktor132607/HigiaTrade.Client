@@ -73,7 +73,7 @@ const NewProducts = () => {
               : "There are currently no products marked as new."}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:gap-6 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2.5 min-[430px]:gap-3 sm:gap-6 sm:gap-6 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
