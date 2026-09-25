@@ -3,6 +3,10 @@ import { Link, Navigate, useLocation } from "react-router-dom";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
 
 interface ConfirmationState {
+  guest?: boolean;
+  invoiceRequested?: boolean;
+  orderId?: string;
+  paymentMethod?: string;
   names: string;
   city: string;
   address: string;
@@ -27,6 +31,8 @@ const CheckoutConfirmation = () => {
 
         <div className="mt-7 grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:mt-10 sm:grid-cols-2 sm:rounded-[2rem] sm:p-6">
           {[
+            [isBg ? "Номер на поръчката" : "Order reference", state.orderId || "—"],
+            [isBg ? "Фактура" : "Invoice", state.invoiceRequested ? (isBg ? "Заявена" : "Requested") : (isBg ? "Не е заявена" : "Not requested")],
             [isBg ? "Клиент" : "Customer", state.names],
             [isBg ? "Доставка" : "Delivery", state.deliveryMethodLabel],
             [isBg ? "Адрес за доставка" : "Shipping address", `${state.city}, ${state.address}`],
@@ -39,8 +45,9 @@ const CheckoutConfirmation = () => {
           ))}
         </div>
 
+        <p className="mt-5 text-sm text-slate-600">{state.paymentMethod === "bank-transfer" ? (isBg ? "Плащането предстои. Изчакайте потвърждение и банкови инструкции от нашия екип преди превод." : "Payment is pending. Wait for confirmation and bank transfer instructions from our team before paying.") : (isBg ? "Плащането е в брой при получаване. Ще уточним срока и цената за доставка при потвърждение." : "Pay cash on delivery. We will agree the delivery timing and cost during confirmation.")}</p>
         <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:justify-center">
-          <Link to="/orders" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary-600">{isBg ? "Виж поръчките" : "View orders"}<ArrowRightIcon className="h-4 w-4" /></Link>
+          {!state.guest && <Link to="/orders" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary-600">{isBg ? "Виж поръчките" : "View orders"}<ArrowRightIcon className="h-4 w-4" /></Link>}
           <Link to="/products" className="inline-flex min-h-12 items-center justify-center rounded-full border border-slate-200 px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-primary-300 hover:text-primary-700">{isBg ? "Продължи пазаруването" : "Continue shopping"}</Link>
         </div>
       </div>

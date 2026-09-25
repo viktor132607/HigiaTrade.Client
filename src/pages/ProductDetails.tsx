@@ -1,4 +1,5 @@
 "use client";
+import { ensureResponse, refreshCheckoutItems } from "../utils/checkout";
 
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -136,7 +137,7 @@ const ProductDetails = () => {
       if (!response.ok) return;
       const data = await response.json();
       setReviews(Array.isArray(data.items) ? data.items : []);
-    } catch {}
+    } catch { /* Optional history or cached content may be unavailable. */ }
   };
 
   useEffect(() => {
@@ -149,7 +150,7 @@ const ProductDetails = () => {
       const stored = JSON.parse(localStorage.getItem(VIEW_HISTORY_KEY) || "[]");
       const ids = Array.isArray(stored) ? stored.filter((item): item is string => typeof item === "string") : [];
       localStorage.setItem(VIEW_HISTORY_KEY, JSON.stringify([product.id, ...ids.filter((item) => item !== product.id)].slice(0, MAX_VIEW_HISTORY)));
-    } catch {}
+    } catch { /* Optional history or cached content may be unavailable. */ }
   }, [product?.id]);
 
   useEffect(() => {
@@ -223,46 +224,31 @@ const ProductDetails = () => {
     };
   };
 
-  const addToCart = async () => {
-    if (!product || product.quantity <= 0) return;
-    try {
-      const item = cartItem();
-      if (!item) return;
-      dispatch(addItem(item));
-      window.dispatchEvent(new CustomEvent("higiatrade:cart-preview-open"));
-      toast.success(tr("Продуктът е добавен в количката.", "Product added to cart."));
-      if (token) {
-        void fetch(`${process.env.NEXT_PUBLIC_API_URL}/Orders`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ productId: product.id, quantity }),
-        }).catch(() => undefined);
-      }
-    } catch {
-      toast.error(tr("Продуктът не беше добавен в количката.", "The product was not added to your cart."));
-    }
-  };
-
-  const buyNow = async () => {
-    if (!product || product.quantity <= 0) return;
+  const [addingToCart, setAddingToCart] = useState(false);
+  const cartItems = useSelector((state: RootState) => state.cart.items);
+  const handleCart = async (buy: boolean) => {
+    if (!product || product.quantity <= 0 || addingToCart) return;
+    setAddingToCart(true);
     try {
       if (token) {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Orders`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ productId: product.id, quantity }),
         });
-        if (!response.ok) throw new Error("Unable to add product to cart.");
+        await ensureResponse(response, language === "bg");
+      } else {
+        await refreshCheckoutItems([{ productId: product.id, title: product.title, totalPrice: 0, quantity: (cartItems.find(item => item.id === product.id)?.quantity || 0) + quantity }], language === "bg");
       }
-
-      const item = cartItem();
-      if (!item) return;
+      const item = cartItem(); if (!item) return;
       dispatch(addItem(item));
-      navigate("/cart");
-    } catch {
-      toast.error(tr("Покупката не можа да бъде започната.", "We could not start checkout."));
-    }
+      toast.success(tr("Продуктът е добавен в количката.", "Product added to cart."));
+      if (buy) navigate("/cart"); else window.dispatchEvent(new CustomEvent("higiatrade:cart-preview-open"));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : tr("Продуктът не беше добавен.", "Product could not be added."));
+    } finally { setAddingToCart(false); }
   };
+  const addToCart = () => handleCart(false);
+  const buyNow = () => handleCart(true);
 
   const submitReview = async () => {
     if (!product || !token || reviewRating < 1) return;
@@ -402,10 +388,10 @@ const ProductDetails = () => {
 
             <div className="mt-auto pt-4">
               <div className="grid grid-cols-2 gap-2.5">
-                <button onClick={() => void buyNow()} disabled={product.quantity <= 0} className="rounded-xl bg-[#18b99f] px-4 py-3 font-bold text-white transition hover:bg-[#149f8a] disabled:opacity-40">
+                <button onClick={() => void buyNow()} disabled={addingToCart || product.quantity <= 0} className="rounded-xl bg-[#18b99f] px-4 py-3 font-bold text-white transition hover:bg-[#149f8a] disabled:opacity-40">
                   {product.quantity > 0 ? tr("Купи", "Buy") : tr("Изчерпан", "Unavailable")}
                 </button>
-                <button onClick={() => void addToCart()} disabled={product.quantity <= 0} className="rounded-xl bg-slate-950 px-4 py-3 font-bold text-white disabled:opacity-40">
+                <button onClick={() => void addToCart()} disabled={addingToCart || product.quantity <= 0} className="rounded-xl bg-slate-950 px-4 py-3 font-bold text-white disabled:opacity-40">
                   {product.quantity > 0 ? tr("Добави в количка", "Add to cart") : tr("Изчерпан продукт", "Unavailable")}
                 </button>
               </div>

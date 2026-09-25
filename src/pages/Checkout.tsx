@@ -1,6 +1,7 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { DELIVERY_REGIONS, MINIMUM_ORDER, minimumOrderMessage, ensureResponse, refreshCheckoutItems, checkoutErrorMessage } from "../utils/checkout";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { RootState } from "../store";
 import { clearCart } from "../store/slices/cartSlice";
@@ -36,6 +37,9 @@ const Checkout = () => {
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
 
+  const submitting = useRef(false);
+  const [cartReady, setCartReady] = useState(false);
+  const [reload, setReload] = useState(0);
   const [cart, setCart] = useState<CartResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,12 +48,18 @@ const Checkout = () => {
     names: "",
     email: "",
     postalCode: "",
-    country: isBg ? "България" : "Bulgaria",
+    country: "България",
+    deliveryRegion: "",
+    invoiceRequested: false,
+    invoiceCompanyName: "",
+    invoiceCompanyId: "",
+    invoiceVatId: "",
+    invoiceAddress: "",
     city: "",
     address: "",
     phone: "",
-    paymentMethod: "online-card",
-    deliveryMethod: "standard-courier",
+    paymentMethod: "cash-on-delivery",
+    deliveryMethod: "regional-delivery",
     consentAccepted: false,
   });
 
@@ -81,11 +91,11 @@ const Checkout = () => {
   const paymentOptions = useMemo(
     () => [
       {
-        value: "online-card",
-        label: isBg ? "Плащане с карта" : "Card payment",
+        value: "cash-on-delivery",
+        label: isBg ? "В брой при доставка" : "Cash on delivery",
         description: isBg
-          ? "Плащане онлайн при завършване на поръчката."
-          : "Pay online when you place the order.",
+          ? "Заплащате при получаване на поръчката."
+          : "Pay when you receive your order.",
       },
       {
         value: "bank-transfer",
@@ -101,16 +111,9 @@ const Checkout = () => {
   const deliveryOptions = useMemo(
     () => [
       {
-        value: "standard-courier",
-        label: isBg ? "Стандартна доставка" : "Standard courier",
-        description: isBg ? "2 до 4 работни дни" : "2 to 4 business days",
-      },
-      {
-        value: "express-courier",
-        label: isBg ? "Експресна доставка" : "Express courier",
-        description: isBg
-          ? "Следващ работен ден за налични артикули"
-          : "Next business day for in-stock items",
+        value: "regional-delivery",
+        label: isBg ? "Доставка в обслужвания район" : "Regional delivery",
+        description: isBg ? "Срокът и цената за доставка се уточняват при потвърждение. Не са включени в сумата на продуктите." : "Delivery timing and cost are agreed during confirmation and are not included in the product total.",
       },
     ],
     [isBg]
@@ -164,8 +167,7 @@ const Checkout = () => {
 
       if (response.status === 404) return null;
       if (!response.ok) {
-        const message = await response.text().catch(() => "");
-        throw new Error(message || `Cart request failed (${response.status}).`);
+        await ensureResponse(response, isBg);
       }
 
       return (await response.json()) as CartResponse;
@@ -202,8 +204,7 @@ const Checkout = () => {
         });
 
         if (!response.ok) {
-          const message = await response.text().catch(() => "");
-          throw new Error(message || `Cart sync failed (${response.status}).`);
+          await ensureResponse(response, isBg);
         }
         changed = true;
       }
@@ -234,15 +235,8 @@ const Checkout = () => {
 
     const loadCheckout = async () => {
       setIsLoading(true);
+      setCartReady(false);
       setError(null);
-
-      if (!token) {
-        if (!cancelled) {
-          setCart(localCart);
-          setIsLoading(false);
-        }
-        return;
-      }
 
       void loadProfile();
 
@@ -252,19 +246,24 @@ const Checkout = () => {
 
         if (cancelled) return;
 
-        if (serverCart?.items?.length) {
+        if (!token) {
+          const items = await refreshCheckoutItems(localCart.items, isBg);
+          if (cancelled) return;
+          setCart({ ...localCart, items, orderTotalPrice: items.reduce((sum, item) => sum + item.totalPrice, 0) });
+        } else if (serverCart?.items?.length) {
           setCart(enrichServerCart(serverCart));
         } else if (localCart.items.length > 0) {
           setCart(localCart);
         } else {
           setCart({ items: [], orderTotalPrice: 0 });
         }
+        setCartReady(true);
       } catch (checkoutError) {
         if (cancelled) return;
 
         // Never hide products already present in the browser cart just because
         // the server cart could not be read. They remain visible while the
-        // server issue is reported only when there is no usable local cart.
+        // server issue blocks submission until the cart can be checked again.
         if (localCart.items.length > 0) {
           setCart(localCart);
         } else {
@@ -275,7 +274,7 @@ const Checkout = () => {
               : "We could not load your checkout details."
           );
         }
-        console.error("Checkout cart loading failed:", checkoutError);
+        setError(checkoutError instanceof Error && !(checkoutError instanceof TypeError) ? checkoutError.message : checkoutErrorMessage("", 500, isBg));
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -285,7 +284,7 @@ const Checkout = () => {
     return () => {
       cancelled = true;
     };
-  }, [token, localCart, localItems, isBg]);
+  }, [token, localCart, localItems, isBg, reload]);
 
   const selectedPayment =
     paymentOptions.find((option) => option.value === formData.paymentMethod) ??
@@ -296,11 +295,18 @@ const Checkout = () => {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submitting.current || !cartReady) return;
     setError(null);
 
     if (!cart || cart.items.length === 0) {
       setError(isBg ? "Количката е празна." : "Your cart is empty.");
       return;
+    }
+    if (cart.orderTotalPrice < MINIMUM_ORDER) {
+      setError(minimumOrderMessage(cart.orderTotalPrice, isBg)); return;
+    }
+    if (!DELIVERY_REGIONS.some(region => region.bg === formData.deliveryRegion)) {
+      setError(isBg ? "Изберете обслужван район." : "Select a delivery region."); return;
     }
     if (!formData.consentAccepted) {
       setError(
@@ -311,8 +317,17 @@ const Checkout = () => {
       return;
     }
 
+    submitting.current = true;
     setIsSubmitting(true);
     try {
+      const items = await refreshCheckoutItems(cart.items, isBg);
+      const total = Math.round(items.reduce((sum, item) => sum + item.totalPrice, 0) * 100) / 100;
+      if (items.some((item, index) => Math.abs(item.totalPrice - cart.items[index].totalPrice) > 0.009)) {
+        setCart({ ...cart, items, orderTotalPrice: total });
+        setError(isBg ? "Цените са обновени. Прегледайте новата сума и потвърдете отново." : "Prices have changed. Review the updated total and confirm again.");
+        return;
+      }
+      if (total < MINIMUM_ORDER) { setError(minimumOrderMessage(total, isBg)); return; }
       const guest = !token;
       const url = guest
         ? `${process.env.NEXT_PUBLIC_API_URL}/Orders/guest`
@@ -338,10 +353,8 @@ const Checkout = () => {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        throw new Error((await response.text()) || "Order failed");
-      }
-
+      await ensureResponse(response, isBg);
+      const receipt = await response.json().catch(() => null);
       dispatch(clearCart());
       navigate("/checkout/confirmation", {
         state: {
@@ -351,17 +364,22 @@ const Checkout = () => {
           paymentMethodLabel: selectedPayment.label,
           deliveryMethodLabel: selectedDelivery.label,
           guest,
+          invoiceRequested: formData.invoiceRequested,
+          orderId: receipt?.orderId || (cart.id !== "local" ? cart.id : undefined),
+          paymentMethod: formData.paymentMethod,
+          total: cart.orderTotalPrice,
         },
       });
     } catch (submitError) {
       setError(
-        submitError instanceof Error
+        submitError instanceof Error && !(submitError instanceof TypeError)
           ? submitError.message
           : isBg
             ? "Поръчката не можа да бъде създадена."
             : "We could not place the order."
       );
     } finally {
+      submitting.current = false;
       setIsSubmitting(false);
     }
   };
@@ -379,7 +397,7 @@ const Checkout = () => {
     { key: "email", bg: "Имейл", en: "Email", type: "email" },
     { key: "phone", bg: "Телефон", en: "Phone", type: "tel" },
     { key: "postalCode", bg: "Пощенски код", en: "Postal code", type: "text" },
-    { key: "city", bg: "Град", en: "City", type: "text" },
+    { key: "city", bg: "Населено място", en: "Town / village", type: "text" },
     { key: "country", bg: "Държава", en: "Country", type: "text" },
     { key: "address", bg: "Адрес", en: "Address", type: "text", full: true },
   ];
@@ -422,16 +440,30 @@ const Checkout = () => {
               )}
             </div>
 
+            <div className="rounded-2xl border border-teal-200 bg-teal-50 p-4 text-sm text-teal-950">
+              {isBg ? "Доставяме в районите на Русе, Силистра, Разград, Свищов, Бяла и Търговище. За адрес извън тях се свържете с нас преди поръчка." : "We deliver in the areas of Ruse, Silistra, Razgrad, Svishtov, Byala and Targovishte. Contact us before ordering outside these areas."}
+              <Link to="/contact" className="ml-2 underline">{isBg ? "Контакти" : "Contact"}</Link>
+            </div>
+            <label className="block text-sm font-medium" htmlFor="deliveryRegion">{isBg ? "Район за доставка" : "Delivery area"}</label>
+            <select id="deliveryRegion" required value={formData.deliveryRegion} onChange={event => setFormData(previous => ({ ...previous, deliveryRegion: event.target.value }))} className="h-12 w-full rounded-2xl border bg-slate-50 px-4">
+              <option value="">{isBg ? "Изберете район" : "Select an area"}</option>
+              {DELIVERY_REGIONS.map(region => <option key={region.bg} value={region.bg}>{isBg ? region.bg : region.en}</option>)}
+            </select>
             <div className="grid gap-4 sm:grid-cols-2">
               {fields.map((field) => (
                 <div key={field.key} className={field.full ? "sm:col-span-2" : ""}>
-                  <label className="block text-sm font-medium">
+                  <label htmlFor={field.key} className="block text-sm font-medium">
                     {isBg ? field.bg : field.en}
                   </label>
                   <input
+                    id={field.key}
                     type={field.type}
+                    readOnly={field.key === "country"}
+                    autoComplete={({ names: "name", email: "email", phone: "tel", postalCode: "postal-code", city: "address-level2", address: "street-address", country: "country-name" } as Record<string, string>)[field.key]}
+                    maxLength={field.key === "address" ? 300 : field.key === "phone" ? 30 : field.key === "city" ? 100 : 120}
+                    pattern={field.key === "postalCode" ? "[0-9]{4}" : field.key === "phone" ? "[+]?[0-9\\s]{7,20}" : field.key === "email" || field.key === "country" ? undefined : ".*\\S.*"}
                     required
-                    value={formData[field.key as keyof typeof formData] as string}
+                    value={field.key === "country" ? (isBg ? "България" : "Bulgaria") : formData[field.key as keyof typeof formData] as string}
                     onChange={(event) =>
                       setFormData((previous) => ({
                         ...previous,
@@ -443,6 +475,19 @@ const Checkout = () => {
                 </div>
               ))}
             </div>
+
+            <fieldset className="space-y-4 rounded-2xl border p-4">
+              <legend className="px-2 font-semibold">{isBg ? "Фактура" : "Invoice"}</legend>
+              <label className="flex items-center gap-3"><input type="checkbox" checked={formData.invoiceRequested} onChange={event => setFormData(previous => ({ ...previous, invoiceRequested: event.target.checked }))} />{isBg ? "Желая фактура на фирма" : "I need a company invoice"}</label>
+              {formData.invoiceRequested && <div className="grid gap-4 sm:grid-cols-2">
+                {[
+                  { key: "invoiceCompanyName", bg: "Име на фирма", en: "Company name", max: 200 },
+                  { key: "invoiceCompanyId", bg: "ЕИК / БУЛСТАТ", en: "Company ID (EIK / BULSTAT)", pattern: "([0-9]{9}|[0-9]{13})", max: 13 },
+                  { key: "invoiceVatId", bg: "ДДС номер (незадължителен)", en: "VAT number (optional)", pattern: "BG[0-9]{9,10}", max: 12 },
+                  { key: "invoiceAddress", bg: "Адрес по регистрация", en: "Registered billing address", max: 300 },
+                ].map(field => <label key={field.key} className="block text-sm">{isBg ? field.bg : field.en}<input required={field.key !== "invoiceVatId"} pattern={field.pattern || ".*\\S.*"} maxLength={field.max} value={formData[field.key as keyof typeof formData] as string} onChange={event => setFormData(previous => ({ ...previous, [field.key]: field.key === "invoiceVatId" ? event.target.value.toUpperCase() : event.target.value }))} className="mt-2 h-12 w-full rounded-xl border bg-slate-50 px-3" /></label>)}
+              </div>}
+            </fieldset>
 
             <div className="grid gap-5 xl:grid-cols-2">
               <div className="space-y-3">
@@ -527,13 +572,15 @@ const Checkout = () => {
             </label>
 
             {error && (
-              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                 {error}
               </div>
             )}
 
+            {!cartReady && <button type="button" onClick={() => setReload(value => value + 1)} className="min-h-11 underline">{isBg ? "Провери количката отново" : "Check cart again"}</button>}
+            {cart && cart.orderTotalPrice < MINIMUM_ORDER && <p role="status" className="rounded-xl bg-amber-50 p-4 text-amber-900">{minimumOrderMessage(cart.orderTotalPrice, isBg)} <Link to="/products" className="underline">{isBg ? "Добави продукти" : "Add products"}</Link></p>}
             <button
-              disabled={isSubmitting || !cart?.items.length}
+              disabled={isSubmitting || !cartReady || !cart?.items.length || cart.orderTotalPrice < MINIMUM_ORDER}
               className="min-h-12 w-full rounded-2xl bg-slate-950 px-4 py-3 font-semibold text-white disabled:opacity-60"
             >
               {isSubmitting
@@ -596,7 +643,7 @@ const Checkout = () => {
             </div>
 
             <div className="mt-6 rounded-2xl bg-slate-950 p-4 text-white">
-              <p className="text-sm text-slate-300">{isBg ? "Общо" : "Total"}</p>
+              <p className="text-sm text-slate-300">{isBg ? "Продукти с ДДС, без доставка" : "Products including VAT, excluding delivery"}</p>
               <p className="mt-2 text-3xl font-bold">
                 {formatCurrency(cart?.orderTotalPrice ?? 0)}
               </p>

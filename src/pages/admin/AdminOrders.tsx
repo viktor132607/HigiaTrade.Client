@@ -1,3 +1,4 @@
+import OrderDeliveryDetails, { OrderDelivery } from "../../components/orders/OrderDeliveryDetails";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -11,7 +12,7 @@ import {
 import { formatCurrency } from "../../utils/currency";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 
-interface Order {
+interface Order extends OrderDelivery {
   id: string;
   userId: string;
   names: string;
@@ -268,6 +269,7 @@ const AdminOrders = () => {
                       </div>
                     </div>
 
+                    <OrderDeliveryDetails order={order} isBg={isBg} />
                     <div className="mt-5 border-t border-gray-200 pt-5 sm:mt-6 sm:pt-6">
                       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                         <span className="text-base font-semibold text-gray-900 sm:text-lg">
