@@ -6,10 +6,13 @@ export enum OrderStatus {
   Shipped,
   Delivered,
   Cancelled,
+  AwaitingPayment,
 }
 
 export const getOrderStatusText = (status: OrderStatus): string => {
   switch (status) {
+    case OrderStatus.AwaitingPayment:
+      return "Awaiting payment";
     case OrderStatus.Created:
       return "Draft";
     case OrderStatus.PendingVerification:
@@ -31,6 +34,8 @@ export const getOrderStatusText = (status: OrderStatus): string => {
 
 export const getOrderStatusColor = (status: OrderStatus): string => {
   switch (status) {
+    case OrderStatus.AwaitingPayment:
+      return "bg-amber-100 text-amber-800";
     case OrderStatus.Created:
       return "bg-yellow-100 text-yellow-800";
     case OrderStatus.PendingVerification:

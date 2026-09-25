@@ -52,6 +52,7 @@ const Orders = () => {
 
   const statusText = (status: OrderStatus) => {
     const labels: Partial<Record<OrderStatus, [string, string]>> = {
+      [OrderStatus.AwaitingPayment]: ["Очаква плащане", "Awaiting payment"],
       [OrderStatus.Created]: ["Създадена", "Created"],
       [OrderStatus.PendingVerification]: ["Чака потвърждение", "Pending verification"],
       [OrderStatus.Verified]: ["Потвърдена", "Verified"],
@@ -153,7 +154,7 @@ const Orders = () => {
                       </div>
                       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
                         <span className={`w-fit rounded-full px-3 py-1 text-sm font-medium ${getOrderStatusColor(order.status || OrderStatus.Created)}`}>{statusText(order.status || OrderStatus.Created)}</span>
-                        {order.status !== OrderStatus.Cancelled && (
+                        {order.status !== OrderStatus.Cancelled && order.paymentMethod !== "online-card" && (
                           <button type="button" onClick={() => void handleCancelOrder(order.id)} className="inline-flex min-h-10 items-center justify-center rounded-md bg-red-600 px-3 py-2 text-sm text-white hover:bg-red-700"><XMarkIcon className="mr-1 h-5 w-5" />{isBg ? "Откажи поръчката" : "Cancel order"}</button>
                         )}
                       </div>

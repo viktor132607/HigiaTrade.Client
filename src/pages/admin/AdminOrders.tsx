@@ -42,6 +42,7 @@ const getInitialPageSize = () => {
 };
 
 const statusOptions = (isBg: boolean) => [
+  { value: OrderStatus.AwaitingPayment, label: isBg ? "Очаква плащане" : "Awaiting payment" },
   { value: OrderStatus.Created, label: isBg ? "Чернова" : "Draft" },
   { value: OrderStatus.PendingVerification, label: isBg ? "Чака преглед" : "Pending review" },
   { value: OrderStatus.Verified, label: isBg ? "Потвърдена" : "Verified" },
@@ -258,10 +259,11 @@ const AdminOrders = () => {
                       <div className="relative w-full sm:w-auto">
                         <select
                           value={order.status ?? OrderStatus.Created}
+                          disabled={order.paymentMethod === "online-card" && order.paymentStatus !== "Paid"}
                           onChange={(event) => handleStatusChange(order.id, Number.parseInt(event.target.value, 10))}
                           className={`min-h-11 w-full appearance-none rounded-md py-2 pl-3 pr-9 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 sm:w-auto ${getOrderStatusColor(order.status ?? OrderStatus.Created)}`}
                         >
-                          {orderStatusOptions.map((option) => (
+                          {orderStatusOptions.filter(option => option.value !== OrderStatus.AwaitingPayment || order.status === OrderStatus.AwaitingPayment).filter(option => order.paymentMethod !== "online-card" || (option.value !== OrderStatus.Cancelled && option.value !== OrderStatus.Created)).map((option) => (
                             <option key={option.value} value={option.value}>{option.label}</option>
                           ))}
                         </select>

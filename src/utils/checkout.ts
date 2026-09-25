@@ -13,6 +13,9 @@ export const minimumOrderMessage = (total: number, bg: boolean) => bg
 export function checkoutErrorMessage(raw: string, status: number, bg: boolean): string {
   let message = raw;
   try { const data = JSON.parse(raw); message = String(data.message ?? data.Message ?? data.detail ?? data.title ?? raw); } catch { /* Plain-text API error. */ }
+  if (/prices changed/i.test(message)) return bg ? 'Цените са променени. Обновете количката и потвърдете новата сума.' : 'Prices changed. Refresh the cart and review the new total.';
+  if (/payment.*(unavailable|configuration|configured|expired)|checkout changed/i.test(message)) return bg ? 'Плащането не може да бъде започнато или потвърдено. Проверете текущото плащане или опитайте отново.' : 'Payment could not be started or verified. Check your current payment or try again.';
+  if (/verification failed/i.test(message)) return bg ? 'Плащането не премина проверката. Свържете се с нас с номера на поръчката.' : 'Payment verification failed. Contact us with your order reference.';
   if (status === 401 || status === 403) return bg ? 'Сесията изтече. Влезте отново, за да продължите.' : 'Your session expired. Sign in again to continue.';
   if (/stock|quantity|no longer available/i.test(message) || status === 409) return bg ? 'Някои продукти са изчерпани или количеството е недостатъчно. Коригирайте количката и опитайте отново.' : 'Some products are unavailable or have insufficient stock. Update your cart and try again.';
   if (/minimum order/i.test(message)) return bg ? 'Минималната стойност на поръчката е 50 €. Допълнете количката.' : 'The minimum order value is €50. Add more products.';

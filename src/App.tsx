@@ -21,6 +21,7 @@ import NewProducts from "./pages/NewProducts";
 import Promotions from "./pages/Promotions";
 import Compare from "./pages/Compare";
 import Cart from "./pages/Cart";
+import StripeReturn from "./pages/StripeReturn";
 import Checkout from "./pages/Checkout";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -79,6 +80,7 @@ function App() {
               <Route path="/brands/:brandSlug" element={<Brands />} />
               <Route path="/compare" element={<Compare />} />
               <Route path="/cart" element={<Cart />} />
+              <Route path="/checkout/stripe" element={<StripeReturn />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/checkout/confirmation" element={<CheckoutConfirmation />} />
               <Route path="/login" element={<Login />} />
