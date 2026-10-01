@@ -84,7 +84,7 @@ const Products = () => {
     };
 
     void fetchCategories();
-  }, [searchParamsKey]);
+  }, []);
 
   useEffect(() => {
     const pageSize = Number(searchParams.get("pageSize"));
@@ -109,7 +109,7 @@ const Products = () => {
             ? false
             : previous.sortDescending,
     }));
-  }, []);
+  }, [searchParamsKey]);
 
   useEffect(() => {
     if (routeCategoryId) {
