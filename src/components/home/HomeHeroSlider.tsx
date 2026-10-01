@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
@@ -38,6 +38,8 @@ const HomeHeroSlider = () => {
   const [direction, setDirection] = useState<"next" | "previous">("next");
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [slideDurationSeconds, setSlideDurationSeconds] = useState(5);
+  const [imagesReady, setImagesReady] = useState(false);
+  const imageCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
@@ -61,12 +63,45 @@ const HomeHeroSlider = () => {
           setSlides(nextSlides);
           setPreviousSlide(null);
           setIsTransitioning(false);
+          setImagesReady(nextSlides.every((slide) => !slide.image));
           setSlideDurationSeconds(
             Number.isFinite(payload?.slideDurationSeconds) && (payload.slideDurationSeconds ?? 0) > 0
               ? Math.min(60, Math.max(1, payload.slideDurationSeconds as number))
               : 5
           );
           setActiveIndex(0);
+
+          const imageUrls = [...new Set(nextSlides.map((slide) => slide.image).filter(Boolean))];
+          void Promise.all(
+            imageUrls.map((url) => new Promise<void>((resolve) => {
+              const cached = imageCacheRef.current.get(url);
+              if (cached?.complete && cached.naturalWidth > 0) {
+                void cached.decode?.().catch(() => undefined).finally(resolve);
+                return;
+              }
+
+              const image = cached ?? new Image();
+              image.decoding = "async";
+
+              const finish = () => {
+                image.onload = null;
+                image.onerror = null;
+                void image.decode?.().catch(() => undefined).finally(resolve);
+              };
+
+              image.onload = finish;
+              image.onerror = finish;
+
+              if (!cached) {
+                imageCacheRef.current.set(url, image);
+                image.src = url;
+              } else if (image.complete) {
+                finish();
+              }
+            }))
+          ).then(() => {
+            if (!cancelled) setImagesReady(true);
+          });
         }
       } catch {
         if (!cancelled) setSlides([]);
@@ -100,14 +135,14 @@ const HomeHeroSlider = () => {
   }, [activeIndex, activeSlide, slides.length]);
 
   useEffect(() => {
-    if (slides.length <= 1) return;
+    if (slides.length <= 1 || !imagesReady) return;
 
     const timer = window.setInterval(() => {
       showSlide((activeIndex + 1) % slides.length, "next");
     }, slideDurationSeconds * 1000);
 
     return () => window.clearInterval(timer);
-  }, [activeIndex, showSlide, slideDurationSeconds, slides.length]);
+  }, [activeIndex, imagesReady, showSlide, slideDurationSeconds, slides.length]);
 
   useEffect(() => {
     if (!isTransitioning) return;
@@ -198,6 +233,8 @@ const HomeHeroSlider = () => {
             key={`${activeSlide.id}-${activeIndex}`}
             src={activeSlide.image}
             alt={isBg ? activeSlide.titleBg : activeSlide.titleEn}
+            loading="eager"
+            fetchPriority="high"
             className={`absolute inset-0 hidden h-full w-full object-cover md:block ${isTransitioning ? direction === "next" ? "home-hero-slide-in-right" : "home-hero-slide-in-left" : ""}`}
             style={{ objectPosition: `center ${activeSlide.imagePositionY ?? 50}%` }}
           />
