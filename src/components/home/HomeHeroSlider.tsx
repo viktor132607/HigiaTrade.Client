@@ -24,6 +24,7 @@ export interface HomeSlide {
 }
 
 export interface HomeSlideshowPayload {
+  slideDurationSeconds?: number;
   slides: HomeSlide[];
 }
 
@@ -32,6 +33,7 @@ const HomeHeroSlider = () => {
   const isBg = language === "bg";
   const [slides, setSlides] = useState<HomeSlide[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [slideDurationSeconds, setSlideDurationSeconds] = useState(5);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,6 +55,11 @@ const HomeHeroSlider = () => {
 
         if (!cancelled) {
           setSlides(nextSlides);
+          setSlideDurationSeconds(
+            Number.isFinite(payload?.slideDurationSeconds) && (payload.slideDurationSeconds ?? 0) > 0
+              ? Math.min(60, Math.max(1, payload.slideDurationSeconds as number))
+              : 5
+          );
           setActiveIndex(0);
         }
       } catch {
@@ -70,10 +77,10 @@ const HomeHeroSlider = () => {
     if (slides.length <= 1) return;
     const timer = window.setInterval(
       () => setActiveIndex((current) => (current + 1) % slides.length),
-      5000
+      slideDurationSeconds * 1000
     );
     return () => window.clearInterval(timer);
-  }, [slides.length]);
+  }, [slides.length, slideDurationSeconds]);
 
   useEffect(() => {
     if (activeIndex >= slides.length) setActiveIndex(0);

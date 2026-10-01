@@ -84,6 +84,7 @@ const AdminSlideshow = () => {
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
   const [slides, setSlides] = useState<HomeSlide[]>([]);
+  const [slideDurationSeconds, setSlideDurationSeconds] = useState(5);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
@@ -100,6 +101,11 @@ const AdminSlideshow = () => {
       setError("");
       const response = await fetch(`${API_BASE_URL}/home-slideshow`, { cache: "no-store" });
       const payload = await readApiJson<HomeSlideshowPayload>(response);
+      setSlideDurationSeconds(
+        Number.isFinite(payload?.slideDurationSeconds) && (payload.slideDurationSeconds ?? 0) > 0
+          ? Math.min(60, Math.max(1, payload.slideDurationSeconds as number))
+          : 5
+      );
       setSlides(Array.isArray(payload?.slides) ? [...payload.slides].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)) : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : isBg ? "Слайдшоуто не можа да бъде заредено." : "The slideshow could not be loaded.");
@@ -225,13 +231,17 @@ const AdminSlideshow = () => {
       setSaving(true);
       setSaved(false);
       setError("");
-      const payload: HomeSlideshowPayload = { slides: slides.map((slide, order) => ({ ...slide, order })) };
+      const payload: HomeSlideshowPayload = {
+        slideDurationSeconds,
+        slides: slides.map((slide, order) => ({ ...slide, order })),
+      };
       const response = await fetch(`${API_BASE_URL}/home-slideshow`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify(payload),
       });
       const savedPayload = await readApiJson<HomeSlideshowPayload>(response);
+      setSlideDurationSeconds(savedPayload.slideDurationSeconds ?? slideDurationSeconds);
       setSlides(savedPayload.slides ?? payload.slides);
       setSaved(true);
     } catch (err) {
@@ -250,7 +260,26 @@ const AdminSlideshow = () => {
           <h1 className="text-2xl font-bold text-slate-950">{isBg ? "Слайдшоу на началната страница" : "Home page slideshow"}</h1>
           <p className="mt-1 text-sm text-slate-500">{isBg ? "Променяй снимките, текста, бутоните, реда и видимостта на слайдовете. BG полетата се превеждат автоматично на EN." : "Edit slide images, text, buttons, order and visibility. BG fields are translated automatically to EN."}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex min-h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700">
+            <span>{isBg ? "Време на слайд" : "Slide duration"}</span>
+            <input
+              type="number"
+              min="1"
+              max="60"
+              step="1"
+              value={slideDurationSeconds}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (!Number.isFinite(value)) return;
+                setSaved(false);
+                setSlideDurationSeconds(Math.min(60, Math.max(1, Math.round(value))));
+              }}
+              className="w-16 rounded-md border border-slate-300 px-2 py-1 text-center text-sm text-slate-900"
+              aria-label={isBg ? "Време на слайд в секунди" : "Slide duration in seconds"}
+            />
+            <span className="text-xs text-slate-500">{isBg ? "сек." : "sec"}</span>
+          </label>
           <div className="inline-flex rounded-lg border border-slate-300 bg-white p-1">
             <button type="button" onClick={() => setPreviewMode("desktop")} className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold ${previewMode === "desktop" ? "bg-slate-950 text-white" : "text-slate-600 hover:bg-slate-50"}`}><ComputerDesktopIcon className="h-5 w-5" />{isBg ? "Компютър" : "Desktop"}</button>
             <button type="button" onClick={() => setPreviewMode("mobile")} className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold ${previewMode === "mobile" ? "bg-slate-950 text-white" : "text-slate-600 hover:bg-slate-50"}`}><DevicePhoneMobileIcon className="h-5 w-5" />{isBg ? "Телефон" : "Mobile"}</button>
