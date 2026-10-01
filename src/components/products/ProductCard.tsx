@@ -32,7 +32,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
     if (!image.src.endsWith("/higiqlogo.png")) image.src = "/higiqlogo.png";
   };
 
-  const handleCartAction = async (openCart: boolean) => {
+  const handleCartAction = async () => {
     if (product.quantity <= 0 || adding.current) return;
     adding.current = true; setBusy(true);
     try {
@@ -47,12 +47,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
       }
       dispatch(addItem({ id:product.id, title:product.title, regularPrice:product.regularPrice, quantity:1, imageUrl:product.mainImageUrl, mainImageUrl:product.mainImageUrl, discountPercentage:product.discountPercentage, discountedPrice:product.discountedPrice }));
 
-      if (openCart) {
-        navigate("/cart");
-      } else {
-        window.dispatchEvent(new CustomEvent("higiatrade:cart-preview-open"));
-        toast.success(isBg ? "Продуктът е добавен в количката." : "Product added to cart.");
-      }
+      window.dispatchEvent(new CustomEvent("higiatrade:cart-preview-open"));
+      toast.success(isBg ? "Продуктът е добавен в количката." : "Product added to cart.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : (isBg ? "Продуктът не е добавен в количката." : "The product was not added to your cart."));
     } finally { adding.current = false; setBusy(false); }
@@ -90,9 +86,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
         </div>
 
         <div className="mt-2" onClick={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()}><ProductActions productId={product.id} showLabels/></div>
-        <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-3" onClick={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()}>
-          <button type="button" onClick={()=>void handleCartAction(true)} disabled={busy||product.quantity===0} className={`inline-flex min-h-10 items-center justify-center rounded-xl px-2 py-2 text-xs font-semibold sm:min-h-12 sm:rounded-2xl sm:px-3 sm:py-3 sm:text-sm ${product.quantity===0?"cursor-not-allowed bg-slate-100 text-slate-400":"bg-[#18b99f] text-white hover:bg-[#149f8a]"}`}>{product.quantity===0?(isBg?"Изчерпан":"Unavailable"):(isBg?"Купи":"Buy")}</button>
-          <button type="button" onClick={()=>void handleCartAction(false)} disabled={busy||product.quantity===0} className={`inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-xl px-2 py-2 text-[11px] font-semibold sm:min-h-12 sm:rounded-2xl sm:px-3 sm:py-3 sm:text-sm ${product.quantity===0?"cursor-not-allowed bg-slate-100 text-slate-400":"bg-slate-950 text-white hover:bg-primary-600"}`}>{product.quantity===0?(isBg?"Няма":"Out"):(isBg?"Добави в количка":"Add to cart")}</button>
+        <div className="mt-2 sm:mt-3" onClick={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()}>
+          <button type="button" onClick={()=>void handleCartAction()} disabled={busy||product.quantity===0} className={`inline-flex min-h-10 w-full items-center justify-center whitespace-nowrap rounded-xl px-3 py-2 text-xs font-semibold sm:min-h-12 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm ${product.quantity===0?"cursor-not-allowed bg-slate-100 text-slate-400":"bg-slate-950 text-white hover:bg-primary-600"}`}>{product.quantity===0?(isBg?"Изчерпан продукт":"Out of stock"):(isBg?"Добави в количка":"Add to cart")}</button>
         </div>
       </div>
     </div>
