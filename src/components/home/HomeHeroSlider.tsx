@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
@@ -34,6 +34,9 @@ const HomeHeroSlider = () => {
   const isBg = language === "bg";
   const [slides, setSlides] = useState<HomeSlide[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [previousSlide, setPreviousSlide] = useState<HomeSlide | null>(null);
+  const [direction, setDirection] = useState<"next" | "previous">("next");
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [slideDurationSeconds, setSlideDurationSeconds] = useState(5);
 
   useEffect(() => {
@@ -56,6 +59,8 @@ const HomeHeroSlider = () => {
 
         if (!cancelled) {
           setSlides(nextSlides);
+          setPreviousSlide(null);
+          setIsTransitioning(false);
           setSlideDurationSeconds(
             Number.isFinite(payload?.slideDurationSeconds) && (payload.slideDurationSeconds ?? 0) > 0
               ? Math.min(60, Math.max(1, payload.slideDurationSeconds as number))
@@ -75,20 +80,45 @@ const HomeHeroSlider = () => {
   }, []);
 
   useEffect(() => {
-    if (slides.length <= 1) return;
-    const timer = window.setInterval(
-      () => setActiveIndex((current) => (current + 1) % slides.length),
-      slideDurationSeconds * 1000
-    );
-    return () => window.clearInterval(timer);
-  }, [slides.length, slideDurationSeconds]);
-
-  useEffect(() => {
     if (activeIndex >= slides.length) setActiveIndex(0);
   }, [activeIndex, slides.length]);
 
   const activeSlide = useMemo(() => slides[activeIndex] ?? slides[0] ?? null, [activeIndex, slides]);
   const canNavigate = slides.length > 1;
+
+  const showSlide = useCallback((nextIndex: number, nextDirection: "next" | "previous") => {
+    if (!slides.length || nextIndex === activeIndex) return;
+
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    setDirection(nextDirection);
+    setPreviousSlide(reduceMotion ? null : activeSlide);
+    setIsTransitioning(!reduceMotion);
+    setActiveIndex(nextIndex);
+  }, [activeIndex, activeSlide, slides.length]);
+
+  useEffect(() => {
+    if (slides.length <= 1) return;
+
+    const timer = window.setInterval(() => {
+      showSlide((activeIndex + 1) % slides.length, "next");
+    }, slideDurationSeconds * 1000);
+
+    return () => window.clearInterval(timer);
+  }, [activeIndex, showSlide, slideDurationSeconds, slides.length]);
+
+  useEffect(() => {
+    if (!isTransitioning) return;
+
+    const timer = window.setTimeout(() => {
+      setPreviousSlide(null);
+      setIsTransitioning(false);
+    }, 700);
+
+    return () => window.clearTimeout(timer);
+  }, [isTransitioning]);
 
   const renderSlideContent = (slide: HomeSlide, index: number) => {
     const active = index === activeIndex;
@@ -98,7 +128,7 @@ const HomeHeroSlider = () => {
     const note = isBg ? slide.noteBg : slide.noteEn;
     const cta = isBg ? slide.ctaBg : slide.ctaEn;
     const slotState = active
-      ? "visible opacity-100"
+      ? "visible opacity-100 home-hero-copy-enter"
       : "invisible pointer-events-none opacity-0";
 
     return (
@@ -154,11 +184,21 @@ const HomeHeroSlider = () => {
     <section className="relative overflow-hidden bg-white text-slate-950 transition-colors dark:bg-black dark:text-white">
       <div className={`relative mx-auto w-full max-w-[2560px] aspect-[128/25] bg-gradient-to-r ${activeSlide.accent || "from-teal-100 via-cyan-50 to-white"} transition-colors dark:from-slate-950 dark:via-slate-900 dark:to-black`}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(255,255,255,0.85),transparent_25%),radial-gradient(circle_at_65%_30%,rgba(255,255,255,0.55),transparent_28%)] dark:bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.08),transparent_30%)]" />
+        {previousSlide?.image && isTransitioning && (
+          <img
+            src={previousSlide.image}
+            alt=""
+            aria-hidden="true"
+            className={`absolute inset-0 hidden h-full w-full object-cover md:block ${direction === "next" ? "home-hero-slide-out-left" : "home-hero-slide-out-right"}`}
+            style={{ objectPosition: `center ${previousSlide.imagePositionY ?? 50}%` }}
+          />
+        )}
         {activeSlide.image && (
           <img
+            key={`${activeSlide.id}-${activeIndex}`}
             src={activeSlide.image}
             alt={isBg ? activeSlide.titleBg : activeSlide.titleEn}
-            className="absolute inset-0 hidden h-full w-full object-cover md:block"
+            className={`absolute inset-0 hidden h-full w-full object-cover md:block ${isTransitioning ? direction === "next" ? "home-hero-slide-in-right" : "home-hero-slide-in-left" : ""}`}
             style={{ objectPosition: `center ${activeSlide.imagePositionY ?? 50}%` }}
           />
         )}
@@ -171,7 +211,7 @@ const HomeHeroSlider = () => {
           <>
             <button
               type="button"
-              onClick={() => setActiveIndex((current) => (current - 1 + slides.length) % slides.length)}
+              onClick={() => showSlide((activeIndex - 1 + slides.length) % slides.length, "previous")}
               className="absolute left-2 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-slate-700 shadow transition hover:bg-white sm:left-4"
               aria-label={isBg ? "Предишен слайд" : "Previous slide"}
             >
@@ -179,7 +219,7 @@ const HomeHeroSlider = () => {
             </button>
             <button
               type="button"
-              onClick={() => setActiveIndex((current) => (current + 1) % slides.length)}
+              onClick={() => showSlide((activeIndex + 1) % slides.length, "next")}
               className="absolute right-2 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-slate-700 shadow transition hover:bg-white sm:right-4"
               aria-label={isBg ? "Следващ слайд" : "Next slide"}
             >
@@ -200,7 +240,7 @@ const HomeHeroSlider = () => {
               <button
                 key={slide.id}
                 type="button"
-                onClick={() => setActiveIndex(index)}
+                onClick={() => showSlide(index, index > activeIndex ? "next" : "previous")}
                 className={`h-2.5 rounded-full transition-all ${activeIndex === index ? "w-10 bg-slate-950 dark:bg-white" : "w-2.5 bg-slate-500/40 dark:bg-white/40"}`}
                 aria-label={`${isBg ? "Слайд" : "Slide"} ${index + 1}`}
               />
