@@ -87,21 +87,22 @@ const Products = () => {
   }, []);
 
   useEffect(() => {
-    const pageSize = Number(searchParams.get("pageSize"));
-    const pageNumber = Number(searchParams.get("page"));
-    const sortDescending = searchParams.get("sortDescending");
+    const currentSearchParams = new URLSearchParams(searchParamsKey);
+    const pageSize = Number(currentSearchParams.get("pageSize"));
+    const pageNumber = Number(currentSearchParams.get("page"));
+    const sortDescending = currentSearchParams.get("sortDescending");
 
     setFilters((previous) => ({
       ...previous,
-      category: searchParams.get("category") || null,
-      search: searchParams.get("search") || "",
-      minPrice: searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : null,
-      maxPrice: searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : null,
-      rating: searchParams.get("rating") ? Number(searchParams.get("rating")) : null,
-      inStockOnly: searchParams.get("inStock") === "true",
+      category: currentSearchParams.get("category") || null,
+      search: currentSearchParams.get("search") || "",
+      minPrice: currentSearchParams.get("minPrice") ? Number(currentSearchParams.get("minPrice")) : null,
+      maxPrice: currentSearchParams.get("maxPrice") ? Number(currentSearchParams.get("maxPrice")) : null,
+      rating: currentSearchParams.get("rating") ? Number(currentSearchParams.get("rating")) : null,
+      inStockOnly: currentSearchParams.get("inStock") === "true",
       pageSize: [20, 50, 100].includes(pageSize) ? pageSize : previous.pageSize,
       pageNumber: pageNumber > 0 ? pageNumber : 1,
-      sortBy: searchParams.get("sortBy") || previous.sortBy,
+      sortBy: currentSearchParams.get("sortBy") || previous.sortBy,
       sortDescending:
         sortDescending === "true"
           ? true
