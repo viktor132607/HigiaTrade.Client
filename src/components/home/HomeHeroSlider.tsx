@@ -188,7 +188,7 @@ const HomeHeroSlider = () => {
 
   return (
     <section className="relative overflow-hidden bg-white text-slate-950 transition-colors dark:bg-black dark:text-white">
-      <div className={`relative mx-auto w-full max-w-[2560px] aspect-[128/25] bg-gradient-to-r ${activeSlide.accent || "from-teal-100 via-cyan-50 to-white"} transition-colors dark:from-slate-950 dark:via-slate-900 dark:to-black`}>
+      <div className={`home-hero-frame relative mx-auto w-full max-w-[2560px] aspect-[128/25] bg-gradient-to-r ${activeSlide.accent || "from-teal-100 via-cyan-50 to-white"} transition-colors dark:from-slate-950 dark:via-slate-900 dark:to-black`}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(255,255,255,0.85),transparent_25%),radial-gradient(circle_at_65%_30%,rgba(255,255,255,0.55),transparent_28%)] dark:bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.08),transparent_30%)]" />
         {previousSlide?.image && isTransitioning && (
           <img
@@ -236,8 +236,8 @@ const HomeHeroSlider = () => {
           </>
         )}
 
-        <div className="relative z-10 mx-auto flex max-w-7xl px-14 py-12 sm:px-16 sm:py-16 lg:px-8">
-          <div className="grid w-full max-w-xl grid-cols-1 grid-rows-[auto_auto_auto_auto_auto]">
+        <div className="home-hero-content relative z-10 mx-auto flex max-w-7xl px-14 py-12 sm:px-16 sm:py-16 lg:px-8">
+          <div className="home-hero-copy grid w-full max-w-xl grid-cols-1 grid-rows-[auto_auto_auto_auto_auto]">
             {slides.map(renderSlideContent)}
           </div>
         </div>

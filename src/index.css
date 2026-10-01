@@ -65,6 +65,28 @@
 }
 @media (min-width: 768px) { .fixed.inset-0.bg-black.bg-opacity-50 { z-index: 60; } }
 
+/* Laptop hero: use a shallower banner than large desktop screens. */
+@media (min-width: 1024px) and (max-width: 1919px) {
+  .home-hero-frame {
+    aspect-ratio: 256 / 25 !important;
+  }
+
+  .home-hero-content {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+    align-items: center !important;
+  }
+
+  .home-hero-copy {
+    transform: scale(0.68);
+    transform-origin: left center;
+  }
+}
+
 @keyframes home-hero-slide-in-right {
   from { transform: translate3d(100%, 0, 0) scale(1.01); }
   to { transform: translate3d(0, 0, 0) scale(1); }
