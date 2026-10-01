@@ -18,40 +18,40 @@ const Footer = () => {
       <div className="site-container grid gap-8 py-8 text-sm sm:py-10 md:grid-cols-2 lg:grid-cols-4">
         <div>
           <h4 className="text-lg font-bold">{isBg ? "Пазарувай с Хигия" : "Shop with Higia"}</h4>
-          <div className="mt-4 grid gap-2 text-[#4b5d6d] dark:text-white/75">
-            <Link to="/register" className="min-h-11 py-2 hover:text-[#18b99f]">{isBg ? "Регистрирай се" : "Register"}</Link>
-            <Link to="/products" className="min-h-11 py-2 hover:text-[#18b99f]">{isBg ? "Продукти" : "Products"}</Link>
-            <Link to="/orders" className="min-h-11 py-2 hover:text-[#18b99f]">{isBg ? "Проследяване на поръчки" : "Order tracking"}</Link>
-            <Link to="/about" className="min-h-11 py-2 hover:text-[#18b99f]">{isBg ? "За нас" : "About us"}</Link>
+          <div className="mt-3 grid gap-1 text-[#4b5d6d] dark:text-white/75">
+            <Link to="/register" className="min-h-8 py-1 hover:text-[#18b99f]">{isBg ? "Регистрирай се" : "Register"}</Link>
+            <Link to="/products" className="min-h-8 py-1 hover:text-[#18b99f]">{isBg ? "Продукти" : "Products"}</Link>
+            <Link to="/orders" className="min-h-8 py-1 hover:text-[#18b99f]">{isBg ? "Проследяване на поръчки" : "Order tracking"}</Link>
+            <Link to="/about" className="min-h-8 py-1 hover:text-[#18b99f]">{isBg ? "За нас" : "About us"}</Link>
           </div>
         </div>
 
         <div>
           <h4 className="text-lg font-bold">{isBg ? "Моят акаунт" : "My account"}</h4>
-          <div className="mt-4 grid gap-2 text-[#4b5d6d] dark:text-white/75">
-            <Link to="/login" className="min-h-11 py-2 hover:text-[#18b99f]">{isBg ? "Влизане" : "Sign in"}</Link>
-            <Link to="/profile" className="min-h-11 py-2 hover:text-[#18b99f]">{isBg ? "Профил" : "Profile"}</Link>
-            <Link to="/wishlist" className="min-h-11 py-2 hover:text-[#18b99f]">{isBg ? "Любими" : "Wishlist"}</Link>
-            <Link to="/cart" className="min-h-11 py-2 hover:text-[#18b99f]">{isBg ? "Количка" : "Cart"}</Link>
+          <div className="mt-3 grid gap-1 text-[#4b5d6d] dark:text-white/75">
+            <Link to="/login" className="min-h-8 py-1 hover:text-[#18b99f]">{isBg ? "Влизане" : "Sign in"}</Link>
+            <Link to="/profile" className="min-h-8 py-1 hover:text-[#18b99f]">{isBg ? "Профил" : "Profile"}</Link>
+            <Link to="/wishlist" className="min-h-8 py-1 hover:text-[#18b99f]">{isBg ? "Любими" : "Wishlist"}</Link>
+            <Link to="/cart" className="min-h-8 py-1 hover:text-[#18b99f]">{isBg ? "Количка" : "Cart"}</Link>
           </div>
         </div>
 
         <div>
           <h4 className="text-lg font-bold">{isBg ? "Информация" : "Information"}</h4>
-          <div className="mt-4 grid gap-2 text-[#4b5d6d] dark:text-white/75">
-            <Link to="/promotions" className="min-h-11 py-2 hover:text-[#18b99f]">{isBg ? "Промоции" : "Promotions"}</Link>
-            <Link to="/new-products" className="min-h-11 py-2 hover:text-[#18b99f]">{isBg ? "Нови стоки" : "New products"}</Link>
-            <Link to="/best-sellers" className="min-h-11 py-2 hover:text-[#18b99f]">{isBg ? "Най-продавани" : "Best sellers"}</Link>
-            <Link to="/brands" className="min-h-11 py-2 hover:text-[#18b99f]">{isBg ? "По марка" : "By brand"}</Link>
-            <Link to="/privacy" className="min-h-11 py-2 hover:text-[#18b99f]">{isBg ? "Поверителност" : "Privacy"}</Link>
-            <Link to="/security" className="min-h-11 py-2 hover:text-[#18b99f]">{isBg ? "Сигурност" : "Security"}</Link>
-            <Link to="/cookies" className="min-h-11 py-2 hover:text-[#18b99f]">{isBg ? "Бисквитки" : "Cookies"}</Link>
+          <div className="mt-3 grid gap-1 text-[#4b5d6d] dark:text-white/75">
+            <Link to="/promotions" className="min-h-8 py-1 hover:text-[#18b99f]">{isBg ? "Промоции" : "Promotions"}</Link>
+            <Link to="/new-products" className="min-h-8 py-1 hover:text-[#18b99f]">{isBg ? "Нови стоки" : "New products"}</Link>
+            <Link to="/best-sellers" className="min-h-8 py-1 hover:text-[#18b99f]">{isBg ? "Най-продавани" : "Best sellers"}</Link>
+            <Link to="/brands" className="min-h-8 py-1 hover:text-[#18b99f]">{isBg ? "По марка" : "By brand"}</Link>
+            <Link to="/privacy" className="min-h-8 py-1 hover:text-[#18b99f]">{isBg ? "Поверителност" : "Privacy"}</Link>
+            <Link to="/security" className="min-h-8 py-1 hover:text-[#18b99f]">{isBg ? "Сигурност" : "Security"}</Link>
+            <Link to="/cookies" className="min-h-8 py-1 hover:text-[#18b99f]">{isBg ? "Бисквитки" : "Cookies"}</Link>
           </div>
         </div>
 
         <div>
           <h4 className="text-lg font-bold">{isBg ? "За контакти" : "Contacts"}</h4>
-          <div className="mt-4 space-y-2 break-words text-[#4b5d6d] dark:text-white/75">
+          <div className="mt-3 space-y-1.5 break-words text-[#4b5d6d] dark:text-white/75">
             <p>{isBg ? "Телефон" : "Phone"}: {CONTACT_PHONE_COMPACT}</p>
             {CONTACT_EMAILS.map((email) => <p key={email}>Email: <a href={`mailto:${email}`} className="hover:text-[#18b99f]">{email}</a></p>)}
             <p>{isBg ? "Адрес" : "Address"}: {isBg ? CONTACT_ADDRESS_BG : CONTACT_ADDRESS_EN}</p>
