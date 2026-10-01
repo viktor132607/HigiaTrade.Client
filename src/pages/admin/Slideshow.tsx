@@ -21,6 +21,9 @@ const gradientOptions = [
   { value: "from-violet-100 via-purple-50 to-white", bg: "Лилав", en: "Purple" },
 ];
 
+const SLIDESHOW_IMAGE_WIDTH = 2560;
+const SLIDESHOW_IMAGE_HEIGHT = 500;
+
 type PreviewMode = "desktop" | "mobile";
 type BgTranslationKey = "eyebrowBg" | "titleBg" | "badgeBg" | "noteBg" | "ctaBg";
 type EnTranslationKey = "eyebrowEn" | "titleEn" | "badgeEn" | "noteEn" | "ctaEn";
@@ -56,12 +59,12 @@ const SlidePreview = ({ slide, mode, isBg }: { slide: HomeSlide; mode: PreviewMo
   const desktop = mode === "desktop";
   return (
     <div className={`mx-auto overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm ${desktop ? "w-full" : "w-[320px] max-w-full"}`}>
-      <div className={`relative overflow-hidden bg-gradient-to-r ${slide.accent || gradientOptions[0].value} ${desktop ? "aspect-[16/5] min-h-56" : "aspect-[9/14] min-h-[470px]"}`}>
+      <div className={`relative overflow-hidden bg-gradient-to-r ${slide.accent || gradientOptions[0].value} ${desktop ? "aspect-[128/25]" : "aspect-[9/14] min-h-[470px]"}`}>
         {slide.image && (
           <img
             src={slide.image}
             alt={isBg ? slide.titleBg : slide.titleEn}
-            className={`absolute object-cover ${desktop ? "inset-y-0 left-[30%] h-full w-[70%]" : "inset-x-0 bottom-0 h-[55%] w-full"}`}
+            className={`absolute object-cover ${desktop ? "inset-0 h-full w-full" : "inset-x-0 bottom-0 h-[55%] w-full"}`}
           />
         )}
         <div className={`absolute inset-0 ${desktop ? "bg-gradient-to-r from-white/95 via-white/80 to-transparent" : "bg-gradient-to-b from-white/95 via-white/85 to-transparent"}`} />
@@ -76,6 +79,28 @@ const SlidePreview = ({ slide, mode, isBg }: { slide: HomeSlide; mode: PreviewMo
     </div>
   );
 };
+
+const validateSlideshowImageSize = (file: File) => new Promise<void>((resolve, reject) => {
+  const objectUrl = URL.createObjectURL(file);
+  const image = new Image();
+
+  image.onload = () => {
+    URL.revokeObjectURL(objectUrl);
+    if (image.naturalWidth === SLIDESHOW_IMAGE_WIDTH && image.naturalHeight === SLIDESHOW_IMAGE_HEIGHT) {
+      resolve();
+      return;
+    }
+
+    reject(new Error(`INVALID_SIZE:${image.naturalWidth}x${image.naturalHeight}`));
+  };
+
+  image.onerror = () => {
+    URL.revokeObjectURL(objectUrl);
+    reject(new Error("INVALID_IMAGE"));
+  };
+
+  image.src = objectUrl;
+});
 
 const AdminSlideshow = () => {
   const { token } = useSelector((state: RootState) => state.auth);
@@ -202,6 +227,7 @@ const AdminSlideshow = () => {
     try {
       setUploadingId(slideId);
       setError("");
+      await validateSlideshowImageSize(file);
       const body = new FormData();
       body.append("file", file);
       const response = await fetch(`${API_BASE_URL}/Images/upload`, {
@@ -212,7 +238,16 @@ const AdminSlideshow = () => {
       const data = await readApiJson<{ url: string }>(response);
       updateSlide(slideId, "image", data.url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : isBg ? "Снимката не можа да бъде качена." : "The image could not be uploaded.");
+      if (err instanceof Error && err.message.startsWith("INVALID_SIZE:")) {
+        const actual = err.message.replace("INVALID_SIZE:", "");
+        setError(isBg
+          ? `Снимката трябва да е точно 2560 × 500 px. Избраната е ${actual.replace("x", " × ")} px.`
+          : `The image must be exactly 2560 × 500 px. Selected: ${actual.replace("x", " × ")} px.`);
+      } else {
+        setError(err instanceof Error && err.message !== "INVALID_IMAGE"
+          ? err.message
+          : isBg ? "Снимката не можа да бъде качена." : "The image could not be uploaded.");
+      }
     } finally {
       setUploadingId(null);
     }
@@ -285,6 +320,7 @@ const AdminSlideshow = () => {
               <div className="space-y-3">
                 <div>
                   <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">{isBg ? "Снимка" : "Image"}</label>
+                  <p className="mb-2 text-xs font-semibold text-slate-500">{isBg ? "Задължителен размер: 2560 × 500 px" : "Required size: 2560 × 500 px"}</p>
                   <input type="text" value={slide.image} onChange={(event) => updateSlide(slide.id, "image", event.target.value)} placeholder="https://..." className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
                 </div>
                 <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">

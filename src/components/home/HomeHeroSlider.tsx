@@ -143,7 +143,7 @@ const HomeHeroSlider = () => {
 
   return (
     <section className="relative overflow-hidden bg-white text-slate-950 transition-colors dark:bg-black dark:text-white">
-      <div className={`relative min-h-[380px] bg-gradient-to-r ${activeSlide.accent || "from-teal-100 via-cyan-50 to-white"} transition-colors sm:min-h-[430px] md:aspect-[16/5] dark:from-slate-950 dark:via-slate-900 dark:to-black`}>
+      <div className={`relative mx-auto w-full max-w-[2560px] aspect-[128/25] bg-gradient-to-r ${activeSlide.accent || "from-teal-100 via-cyan-50 to-white"} transition-colors dark:from-slate-950 dark:via-slate-900 dark:to-black`}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(255,255,255,0.85),transparent_25%),radial-gradient(circle_at_65%_30%,rgba(255,255,255,0.55),transparent_28%)] dark:bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.08),transparent_30%)]" />
         {activeSlide.image && (
           <img
@@ -182,7 +182,7 @@ const HomeHeroSlider = () => {
         </div>
 
         {canNavigate && (
-          <div className="absolute bottom-16 left-1/2 z-20 flex -translate-x-1/2 gap-2 sm:bottom-20">
+          <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2">
             {slides.map((slide, index) => (
               <button
                 key={slide.id}
