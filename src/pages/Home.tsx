@@ -161,7 +161,7 @@ const Home = () => {
       </section>
 
       {tabProducts.length > 0 && (
-        <section className="w-full px-3 py-7 sm:px-6 sm:py-8 lg:px-8">
+        <section className="site-container py-7 sm:py-8">
           <div className="product-card-grid">
             {tabProducts.slice(0, 10).map((product) => <ProductCard key={product.id} product={product} />)}
           </div>
@@ -187,7 +187,7 @@ const Home = () => {
       </section>
 
       {latestProducts.length > 0 && (
-        <section className="w-full px-3 py-8 sm:px-6 sm:py-10 lg:px-8">
+        <section className="site-container py-8 sm:py-10">
           <div className="text-center"><h2 className="font-display text-2xl font-bold text-slate-950 sm:text-3xl dark:text-white">{text.latest}</h2><p className="mx-auto mt-3 max-w-3xl text-sm text-slate-500 dark:text-slate-300">{text.latestText}</p></div>
           <div className="mt-6 product-card-grid sm:mt-8">{latestProducts.slice(0, 10).map((product) => <ProductCard key={product.id} product={product} />)}</div>
         </section>
@@ -200,14 +200,14 @@ const Home = () => {
       </section>
 
       {discountedProducts.length > 0 && (
-        <section className="w-full px-3 py-8 sm:px-6 sm:py-10 lg:px-8">
+        <section className="site-container py-8 sm:py-10">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="font-display text-2xl font-bold text-slate-950 dark:text-white">{text.promotions}</h2><p className="mt-2 text-sm text-slate-500 dark:text-slate-300">{text.promotionText}</p></div><Link to="/products" className="text-sm font-semibold text-primary-600">{text.viewAll}</Link></div>
           <div className="mt-6 product-card-grid">{discountedProducts.map((product) => <ProductCard key={product.id} product={product} />)}</div>
         </section>
       )}
 
       {mainCategories.length > 0 && (
-        <section className="w-full px-3 py-8 sm:px-6 sm:py-10 lg:px-8">
+        <section className="site-container py-8 sm:py-10">
           <div className="flex items-center justify-between gap-4"><h2 className="font-display text-2xl font-bold text-slate-950 dark:text-white">{text.categories}</h2><Link to="/products" className="text-sm font-semibold text-primary-600 hover:text-primary-700">{text.viewAll}</Link></div>
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
             {mainCategories.slice(0, 10).map((category) => {
