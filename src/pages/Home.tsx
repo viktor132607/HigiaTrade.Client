@@ -130,19 +130,21 @@ const Home = () => {
 
   return (
     <div className="bg-white text-slate-950 transition-colors dark:bg-black dark:text-white">
-      <HomeHeroSlider />
+      <div className="relative">
+        <HomeHeroSlider />
 
-      <section className="border-b border-slate-200 bg-slate-50 py-3 transition-colors dark:border-slate-800 dark:bg-black">
-        <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-3 pb-1 sm:flex-wrap sm:justify-center sm:px-6 sm:pb-0 lg:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {[
-            { key: "best" as const, label: text.best },
-            { key: "popular" as const, label: text.popular },
-            { key: "rating" as const, label: text.rating },
-          ].map((tab) => (
-            <button key={tab.key} type="button" onClick={() => setActiveProductTab(tab.key)} className={`min-h-10 shrink-0 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wide transition sm:px-6 ${activeProductTab === tab.key ? "bg-orange-500 text-white" : "bg-slate-800 text-white hover:bg-slate-700 dark:bg-white dark:text-black"}`}>{tab.label}</button>
-          ))}
+        <div className="absolute inset-x-0 bottom-3 z-30">
+          <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-3 sm:flex-wrap sm:justify-center sm:px-6 lg:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {[
+              { key: "best" as const, label: text.best },
+              { key: "popular" as const, label: text.popular },
+              { key: "rating" as const, label: text.rating },
+            ].map((tab) => (
+              <button key={tab.key} type="button" onClick={() => setActiveProductTab(tab.key)} className={`min-h-10 shrink-0 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wide shadow-sm transition sm:px-6 ${activeProductTab === tab.key ? "bg-orange-500 text-white" : "bg-slate-800 text-white hover:bg-slate-700 dark:bg-white dark:text-black"}`}>{tab.label}</button>
+            ))}
+          </div>
         </div>
-      </section>
+      </div>
 
       <section className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-black">
         <div className="mx-auto flex max-w-7xl flex-col gap-1.5 px-3 py-3 text-sm text-slate-700 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-6 sm:px-6 lg:px-8 dark:text-slate-200">
