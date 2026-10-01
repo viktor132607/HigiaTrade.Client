@@ -319,7 +319,7 @@ const Products = () => {
 
             <div className="min-w-0">
             {viewMode === "grid" ? (
-              <div className="product-card-grid">
+              <div className="product-card-grid-filtered">
                 {products.map((product) => <ProductCard key={product.id} product={product} />)}
               </div>
             ) : viewMode === "compact" ? (
