@@ -85,9 +85,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
           <span className={`mb-1 hidden shrink-0 text-right text-xs sm:block ${product.quantity===0?"font-semibold text-rose-600":"text-emerald-600"}`}>{stockLabel}</span>
         </div>
 
-        <div className="mt-2" onClick={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()}><ProductActions productId={product.id} showLabels/></div>
-        <div className="mt-2 sm:mt-3" onClick={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()}>
-          <button type="button" onClick={()=>void handleCartAction()} disabled={busy||product.quantity===0} className={`inline-flex min-h-10 w-full items-center justify-center whitespace-nowrap rounded-xl px-3 py-2 text-xs font-semibold sm:min-h-12 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm ${product.quantity===0?"cursor-not-allowed bg-slate-100 text-slate-400":"bg-slate-950 text-white hover:bg-primary-600"}`}>{product.quantity===0?(isBg?"Изчерпан продукт":"Out of stock"):(isBg?"Добави в количка":"Add to cart")}</button>
+        <div className="mt-2 flex items-center gap-2 sm:mt-3" onClick={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()}>
+          <ProductActions productId={product.id} compact />
+          <button type="button" onClick={()=>void handleCartAction()} disabled={busy||product.quantity===0} className={`inline-flex h-9 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-md px-3 text-xs font-semibold transition sm:h-10 sm:px-4 ${product.quantity===0?"cursor-not-allowed bg-slate-100 text-slate-400":"bg-slate-950 text-white hover:bg-primary-600"}`}>{product.quantity===0?(isBg?"Изчерпан":"Out of stock"):(isBg?"Добави в количка":"Add to cart")}</button>
         </div>
       </div>
     </div>
