@@ -76,7 +76,7 @@ const SlidePreview = ({
 
   return (
     <div className={`mx-auto overflow-hidden border border-slate-300 bg-white shadow-sm ${desktop ? "w-full" : "w-[320px] max-w-full"}`}>
-      <div className={`relative overflow-hidden bg-gradient-to-r ${slide.accent || gradientOptions[0].value} ${desktop ? "aspect-[128/25]" : "aspect-[128/25]"}`}>
+      <div className={`relative overflow-hidden bg-gradient-to-r ${slide.accent || gradientOptions[0].value} ${desktop ? "aspect-[256/45]" : "aspect-[256/45]"}`}>
         {desktop && (
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(255,255,255,0.85),transparent_25%),radial-gradient(circle_at_65%_30%,rgba(255,255,255,0.55),transparent_28%)]" />
         )}
@@ -425,7 +425,7 @@ const AdminSlideshow = () => {
               <div className="space-y-3">
                 <div>
                   <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">{isBg ? "Снимка" : "Image"}</label>
-                  <p className="mb-2 text-xs font-semibold text-slate-500">{isBg ? "Препоръчителен размер: 2560 × 500 px. Други размери се разтягат по цялата ширина и се изрязват по височина." : "Recommended size: 2560 × 500 px. Other sizes fill the full width and are cropped vertically."}</p>
+                  <p className="mb-2 text-xs font-semibold text-slate-500">{isBg ? "Препоръчителен размер: 2560 × 450 px. Други размери се разтягат по цялата ширина и се изрязват по височина." : "Recommended size: 2560 × 450 px. Other sizes fill the full width and are cropped vertically."}</p>
                   <input type="text" value={slide.image} onChange={(event) => updateSlide(slide.id, "image", event.target.value)} placeholder="https://..." className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
                 </div>
                 <div>
