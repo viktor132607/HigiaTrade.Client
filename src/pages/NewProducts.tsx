@@ -1,25 +1,12 @@
 import { useEffect, useState } from "react";
 import ProductCard from "../components/products/ProductCard";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
-
-interface NewProduct {
-  id: string;
-  title: string;
-  description: string;
-  mainImageUrl: string;
-  regularPrice: number;
-  quantity: number;
-  categoryId: string;
-  rating?: number;
-  discountPercentage?: number;
-  discountedPrice?: number;
-  isNewProduct?: boolean;
-}
+import { Product } from "../types";
 
 const NewProducts = () => {
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
-  const [products, setProducts] = useState<NewProduct[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,7 +19,7 @@ const NewProducts = () => {
         if (!response.ok) throw new Error("Unable to load new products.");
 
         const payload = await response.json();
-        const items: NewProduct[] = Array.isArray(payload.items) ? payload.items : [];
+        const items: Product[] = Array.isArray(payload?.items) ? payload.items : [];
         setProducts(items.map((product) => ({ ...product, isNewProduct: true })));
       } catch (error) {
         console.error("Грешка при зареждане на новите продукти:", error);
@@ -46,41 +33,34 @@ const NewProducts = () => {
   }, []);
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-6 sm:py-10">
+    <main className="min-h-[calc(100vh-4rem)] bg-slate-50 py-5 sm:py-8 lg:py-10">
       <div className="site-container">
-        <div className="mb-8 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_80px_-60px_rgba(15,23,42,0.55)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600">
-            {isBg ? "Ново" : "New"}
-          </p>
-          <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-slate-950">
-            {isBg ? "Нови стоки" : "New products"}
-          </h1>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            {isBg
-              ? "Продукти, маркирани като нови за активния им период."
-              : "Products currently marked as new for their configured display period."}
-          </p>
+        <div className="mb-5 flex min-h-14 items-center rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#18b99f]">
+              {isBg ? "Ново" : "New"}
+            </p>
+            <h1 className="mt-1 font-display text-xl font-bold text-slate-950 sm:text-2xl">
+              {isBg ? "Нови стоки" : "New products"}
+            </h1>
+          </div>
         </div>
 
         {loading ? (
-          <div className="flex min-h-72 items-center justify-center">
-            <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-primary-500" />
+          <div className="flex min-h-52 items-center justify-center">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-[#18b99f]" />
           </div>
         ) : products.length === 0 ? (
-          <div className="rounded-[2rem] border border-slate-200 bg-white px-5 py-14 text-center text-slate-600">
-            {isBg
-              ? "В момента няма продукти, маркирани като нови."
-              : "There are currently no products marked as new."}
+          <div className="rounded-xl border border-slate-200 bg-white p-10 text-center text-slate-600">
+            {isBg ? "В момента няма продукти, маркирани като нови." : "There are currently no products marked as new."}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2.5 min-[430px]:gap-3 sm:gap-6 sm:gap-6 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+          <div className="grid grid-cols-2 gap-2.5 min-[430px]:gap-3 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4">
+            {products.map((product) => <ProductCard key={product.id} product={product} />)}
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 };
 
