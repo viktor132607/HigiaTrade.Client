@@ -152,7 +152,7 @@ const HomeHeroSlider = () => {
             className="absolute inset-0 hidden h-full w-full object-cover object-center md:block"
           />
         )}
-        <div className="absolute inset-0 hidden bg-gradient-to-r from-white/95 via-white/80 to-transparent md:block dark:from-black/95 dark:via-black/75 dark:to-transparent" />
+        <div className="absolute inset-0 hidden bg-gradient-to-r from-white/55 via-white/10 to-transparent md:block dark:from-black/55 dark:via-black/10 dark:to-transparent" />
 
         {canNavigate && (
           <>
@@ -175,8 +175,8 @@ const HomeHeroSlider = () => {
           </>
         )}
 
-        <div className="relative z-10 flex px-14 py-12 sm:px-16 sm:py-16 lg:px-8">
-          <div className="grid w-full max-w-[30%] min-w-[420px] grid-cols-1 grid-rows-[auto_auto_auto_auto_auto]">
+        <div className="relative z-10 mx-auto flex max-w-7xl px-14 py-12 sm:px-16 sm:py-16 lg:px-8">
+          <div className="grid w-full max-w-xl grid-cols-1 grid-rows-[auto_auto_auto_auto_auto]">
             {slides.map(renderSlideContent)}
           </div>
         </div>
