@@ -149,7 +149,7 @@ const HomeHeroSlider = () => {
           <img
             src={activeSlide.image}
             alt={isBg ? activeSlide.titleBg : activeSlide.titleEn}
-            className="absolute inset-y-0 left-[30%] hidden h-full w-[70%] object-cover object-center md:block"
+            className="absolute inset-0 hidden h-full w-full object-cover object-center md:block"
           />
         )}
         <div className="absolute inset-0 hidden bg-gradient-to-r from-white/95 via-white/80 to-transparent md:block dark:from-black/95 dark:via-black/75 dark:to-transparent" />
