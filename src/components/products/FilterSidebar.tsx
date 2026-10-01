@@ -209,34 +209,6 @@ const FilterSidebar = ({
             </div>
           </div>
 
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{isBg ? "Категории" : "Categories"}</h3>
-            <div className="space-y-2">
-              <button type="button" onClick={() => handleCategoryChange(null)} className={optionClass(!selectedCategory)}>{isBg ? "Всички категории" : "All categories"}</button>
-              {groupedCategories.map(({ category, children }) => (
-                <div key={category.id} className="space-y-2">
-                  <button type="button" onClick={() => handleCategoryChange(category.id)} className={optionClass(selectedCategory === category.id)}>
-                    <span className="font-semibold">{category.name}</span>
-                  </button>
-                  {children.map((subcategory) => (
-                    <button
-                      type="button"
-                      key={subcategory.id}
-                      onClick={() => handleCategoryChange(subcategory.id)}
-                      className={optionClass(selectedCategory === subcategory.id)}
-                    >
-                      <span className="pl-4 text-[13px]">↳ {subcategory.name}</span>
-                    </button>
-                  ))}
-                </div>
-              ))}
-              {ungroupedCategories.map((category) => (
-                <button type="button" key={category.id} onClick={() => handleCategoryChange(category.id)} className={optionClass(selectedCategory === category.id)}>
-                  {category.name}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </aside>
