@@ -228,6 +228,11 @@ const Products = () => {
         .filter((category) => category.parentCategoryId === selectedCategory.id)
         .sort((a, b) => a.name.localeCompare(b.name, isBg ? "bg" : "en", { sensitivity: "base" }))
     : [];
+  const routeCategoryMatchesCurrent = routeCategoryId
+    ? filters.category === routeCategoryId
+    : routeCategorySlug
+      ? Boolean(selectedCategory && entitySeoSlug(selectedCategory.name, selectedCategory.id) === routeCategorySlug.toLowerCase())
+      : true;
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-5 sm:py-8 lg:py-10">
@@ -320,6 +325,7 @@ const Products = () => {
             selectedMaxPrice={filters.maxPrice}
             selectedRating={filters.rating}
             selectedInStockOnly={filters.inStockOnly}
+            suppressInitialAutoApply={Boolean((routeCategoryId || routeCategorySlug) && !routeCategoryMatchesCurrent)}
             onApplyFilters={handleApplyFilters}
           />
 
