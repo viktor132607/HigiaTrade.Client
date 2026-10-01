@@ -336,6 +336,7 @@ const LanguageThemeContext = createContext<LanguageThemeContextValue | null>(
 
 const LANGUAGE_KEY = "lang";
 const THEME_KEY = "theme";
+const DARK_THEME_ENABLED = false;
 
 const getInitialLanguage = (): Language => {
   if (typeof window === "undefined") return "bg";
@@ -344,7 +345,7 @@ const getInitialLanguage = (): Language => {
 };
 
 const getInitialTheme = (): ThemeMode => {
-  if (typeof window === "undefined") return "light";
+  if (!DARK_THEME_ENABLED || typeof window === "undefined") return "light";
   const stored = window.localStorage.getItem(THEME_KEY);
   return stored === "dark" || stored === "light" ? stored : "light";
 };
@@ -458,8 +459,13 @@ export const LanguageThemeProvider = ({ children }: { children: ReactNode }) => 
       setLanguage: setLanguageState,
       toggleLanguage: () =>
         setLanguageState((current) => (current === "bg" ? "en" : "bg")),
-      toggleTheme: () =>
-        setTheme((current) => (current === "dark" ? "light" : "dark")),
+      toggleTheme: () => {
+        if (!DARK_THEME_ENABLED) {
+          setTheme("light");
+          return;
+        }
+        setTheme((current) => (current === "dark" ? "light" : "dark"));
+      },
       t: (key) => translations[language][key] ?? key,
       tr: (bg, en) => (language === "bg" ? bg : en),
     }),
