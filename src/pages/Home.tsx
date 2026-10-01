@@ -103,10 +103,8 @@ const Home = () => {
     popular: isBg ? "Последно добавени" : "Latest added",
     rating: isBg ? "Най-висок рейтинг" : "Highest rating",
     products: isBg ? "Продукти" : "Products",
-    latest: isBg ? "Нови в каталога" : "New in the catalog",
-    latestText: isBg ? "Последно добавените реални продукти от каталога." : "The latest real products added to the catalog.",
-    promotions: isBg ? "Реални промоции" : "Current promotions",
-    promotionText: isBg ? "Показваме само продукти с реално зададена отстъпка." : "Only products with an actual configured discount are shown.",
+    latest: isBg ? "Нови продукти" : "New products",
+    promotions: isBg ? "Промоции" : "Promotions",
     categories: isBg ? "Категории" : "Categories",
     viewAll: isBg ? "Виж всички продукти" : "View all products",
     viewProducts: isBg ? "Виж продукти" : "View products",
@@ -188,7 +186,7 @@ const Home = () => {
 
       {latestProducts.length > 0 && (
         <section className="site-container py-8 sm:py-10">
-          <div className="text-center"><h2 className="font-display text-2xl font-bold text-slate-950 sm:text-3xl dark:text-white">{text.latest}</h2><p className="mx-auto mt-3 max-w-3xl text-sm text-slate-500 dark:text-slate-300">{text.latestText}</p></div>
+          <div className="text-center"><h2 className="font-display text-2xl font-bold text-slate-950 sm:text-3xl dark:text-white">{text.latest}</h2></div>
           <div className="mt-6 product-card-grid sm:mt-8">{latestProducts.slice(0, 10).map((product) => <ProductCard key={product.id} product={product} />)}</div>
         </section>
       )}
@@ -201,7 +199,7 @@ const Home = () => {
 
       {discountedProducts.length > 0 && (
         <section className="site-container py-8 sm:py-10">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="font-display text-2xl font-bold text-slate-950 dark:text-white">{text.promotions}</h2><p className="mt-2 text-sm text-slate-500 dark:text-slate-300">{text.promotionText}</p></div><Link to="/products" className="text-sm font-semibold text-primary-600">{text.viewAll}</Link></div>
+          <div className="text-center"><h2 className="font-display text-2xl font-bold text-slate-950 sm:text-3xl dark:text-white">{text.promotions}</h2></div>
           <div className="mt-6 product-card-grid">{discountedProducts.map((product) => <ProductCard key={product.id} product={product} />)}</div>
         </section>
       )}
