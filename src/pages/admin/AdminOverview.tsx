@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { BellAlertIcon, CubeTransparentIcon, ShoppingBagIcon, UserGroupIcon } from "@heroicons/react/24/outline";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
@@ -280,7 +281,12 @@ const AdminOverview = () => {
           </h3>
           <div className="mt-6 space-y-3">
             {lowStockProducts.slice(0, 6).map((product) => (
-              <div key={product.id} className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
+              <Link
+                key={product.id}
+                to={`/admin/products?edit=${encodeURIComponent(product.id)}`}
+                className="block rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 transition hover:border-amber-300 hover:bg-amber-100/70 focus:outline-none focus:ring-2 focus:ring-[#18b99f] focus:ring-offset-2"
+                title={isBg ? "Отвори продукта за редакция" : "Open product for editing"}
+              >
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-slate-900">{product.title}</p>
@@ -290,7 +296,7 @@ const AdminOverview = () => {
                     {isBg ? `Остават ${product.quantity}` : `${product.quantity} left`}
                   </span>
                 </div>
-              </div>
+              </Link>
             ))}
             {lowStockProducts.length === 0 && (
               <p className="text-sm text-slate-500">

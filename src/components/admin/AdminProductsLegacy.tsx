@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/20/solid";
 import { useSelector } from "react-redux";
@@ -126,6 +127,7 @@ const getApiErrorMessage = (payload: unknown, status: number) => {
 
 const AdminProducts = () => {
   const { token } = useSelector((state: RootState) => state.auth);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -426,6 +428,42 @@ const fetchBrands = async () => {
       toast.error(`Категорията „${product.categoryName}“ вече не съществува. Избери нова категория преди запис.`);
     }
   };
+
+  useEffect(() => {
+    const productId = searchParams.get("edit");
+    if (!productId || categories.length === 0 || isModalOpen) return;
+
+    let cancelled = false;
+
+    const openRequestedProduct = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products/${encodeURIComponent(productId)}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+
+        if (!response.ok) throw new Error("Продуктът не можа да бъде зареден за редакция.");
+
+        const product = (await response.json()) as Product;
+        if (cancelled) return;
+
+        handleEditProduct(product);
+
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.delete("edit");
+        setSearchParams(nextParams, { replace: true });
+      } catch (error) {
+        if (!cancelled) {
+          toast.error(error instanceof Error ? error.message : "Продуктът не можа да бъде зареден за редакция.");
+        }
+      }
+    };
+
+    void openRequestedProduct();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [categories.length, isModalOpen, searchParams, setSearchParams, token]);
 
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
