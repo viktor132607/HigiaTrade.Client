@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ChevronRightIcon, HomeIcon } from "@heroicons/react/24/outline";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
+import { categorySeoPath } from "../../utils/seo";
 
 type ProductSummary = {
   id: string;
@@ -74,7 +75,7 @@ const ProductBreadcrumb = () => {
         </Link>
         {product.categoryId ? <>
           <ChevronRightIcon className="h-4 w-4 shrink-0 text-slate-300" />
-          <Link to={`/category/${product.categoryId}`} className="shrink-0 font-semibold text-[#159b87] transition hover:text-[#117c6d]">
+          <Link to={product.categoryName ? categorySeoPath({ id: product.categoryId, name: product.categoryName }) : `/category/${product.categoryId}`} className="shrink-0 font-semibold text-[#159b87] transition hover:text-[#117c6d]">
             {product.categoryName || (isBg ? "Категория" : "Category")}
           </Link>
         </> : null}

@@ -12,12 +12,14 @@ import HomeHeroSlider from "../components/home/HomeHeroSlider";
 import ProductCard from "../components/products/ProductCard";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
 import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_LINK } from "../config/contact";
+import { categorySeoPath } from "../utils/seo";
 
 interface Category {
   id: string;
   name: string;
   imageURI?: string | null;
   imageUri?: string | null;
+  parentCategoryId?: string | null;
 }
 
 interface Product {
@@ -75,6 +77,11 @@ const Home = () => {
 
     void fetchHomeData();
   }, []);
+
+  const mainCategories = useMemo(
+    () => categories.filter((category) => !category.parentCategoryId),
+    [categories]
+  );
 
   const discountedProducts = useMemo(() =>
     catalogProducts
@@ -197,14 +204,14 @@ const Home = () => {
         </section>
       )}
 
-      {categories.length > 0 && (
+      {mainCategories.length > 0 && (
         <section className="mx-auto max-w-7xl px-3 py-8 sm:px-6 sm:py-10 lg:px-8">
           <div className="flex items-center justify-between gap-4"><h2 className="font-display text-2xl font-bold text-slate-950 dark:text-white">{text.categories}</h2><Link to="/products" className="text-sm font-semibold text-primary-600 hover:text-primary-700">{text.viewAll}</Link></div>
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
-            {categories.slice(0, 10).map((category) => {
+            {mainCategories.slice(0, 10).map((category) => {
               const image = category.imageUri ?? category.imageURI ?? "";
               return (
-                <Link key={category.id} to={`/products?category=${encodeURIComponent(category.id)}`} className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-black">
+                <Link key={category.id} to={categorySeoPath(category)} className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-black">
                   <div className="aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-900">{image ? <img src={image} alt={category.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center p-2 text-center text-xs text-slate-400">{text.noCategoryImage}</div>}</div>
                   <div className="p-3 sm:p-4"><p className="line-clamp-2 text-sm font-bold text-slate-950 dark:text-white sm:text-base">{category.name}</p><p className="mt-1 text-xs text-slate-500 dark:text-slate-300">{text.viewProducts}</p></div>
                 </Link>

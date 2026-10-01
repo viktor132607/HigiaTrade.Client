@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Bars3Icon, ListBulletIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
 import ProductCard from "../components/products/ProductCard";
 import ProductListRow from "../components/products/ProductListRow";
@@ -24,6 +24,8 @@ interface FilterState {
 interface Category {
   id: string;
   name: string;
+  parentCategoryId?: string | null;
+  parentCategoryName?: string | null;
 }
 
 type ViewMode = "grid" | "list" | "compact";
@@ -47,7 +49,9 @@ const Products = () => {
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
   const { categoryId: routeCategoryId, categorySlug: routeCategorySlug } = useParams<{ categoryId?: string; categorySlug?: string }>();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const searchParamsKey = searchParams.toString();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -80,7 +84,7 @@ const Products = () => {
     };
 
     void fetchCategories();
-  }, []);
+  }, [searchParamsKey]);
 
   useEffect(() => {
     const pageSize = Number(searchParams.get("pageSize"));
@@ -176,7 +180,8 @@ const Products = () => {
     params.set("page", next.pageNumber.toString());
     params.set("sortBy", next.sortBy);
     params.set("sortDescending", next.sortDescending.toString());
-    setSearchParams(params);
+    const query = params.toString();
+    navigate({ pathname: "/products", search: query ? `?${query}` : "" });
   };
 
   const handleApplyFilters = (newFilters: Partial<FilterState>) => {
@@ -213,10 +218,58 @@ const Products = () => {
 
   const totalPages = Math.ceil(totalCount / filters.pageSize);
   const currentSortValue = `${filters.sortBy}:${filters.sortDescending ? "desc" : "asc"}`;
+  const selectedCategory = categories.find((category) => category.id === filters.category) ?? null;
+  const selectedParentCategory = selectedCategory?.parentCategoryId
+    ? categories.find((category) => category.id === selectedCategory.parentCategoryId) ?? null
+    : null;
+  const selectedSubcategories = selectedCategory && !selectedCategory.parentCategoryId
+    ? categories
+        .filter((category) => category.parentCategoryId === selectedCategory.id)
+        .sort((a, b) => a.name.localeCompare(b.name, isBg ? "bg" : "en", { sensitivity: "base" }))
+    : [];
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-5 sm:py-8 lg:py-10">
       <div className="site-container">
+        {selectedCategory && (
+          <section className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:mb-6 sm:p-5">
+            <div className="flex flex-col gap-4">
+              <div>
+                {selectedParentCategory && (
+                  <button
+                    type="button"
+                    onClick={() => handleApplyFilters({ category: selectedParentCategory.id })}
+                    className="mb-2 text-sm font-semibold text-[#159b87] hover:text-[#117c6d]"
+                  >
+                    {selectedParentCategory.name}
+                  </button>
+                )}
+                <h1 className="text-2xl font-black text-slate-950 sm:text-3xl">{selectedCategory.name}</h1>
+                <p className="mt-1 text-sm text-slate-500">
+                  {selectedCategory.parentCategoryId
+                    ? (isBg ? "Подкатегория" : "Subcategory")
+                    : (isBg ? "Основна категория" : "Main category")}
+                </p>
+              </div>
+
+              {selectedSubcategories.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedSubcategories.map((subcategory) => (
+                    <button
+                      key={subcategory.id}
+                      type="button"
+                      onClick={() => handleApplyFilters({ category: subcategory.id })}
+                      className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-[#18b99f] hover:text-[#159b87]"
+                    >
+                      {subcategory.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         <div className="mb-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm sm:mb-7 sm:flex-row sm:items-center sm:justify-between sm:px-4 sm:py-4">
           <div className="grid w-full grid-cols-1 gap-2 min-[430px]:grid-cols-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3">
             <label className="flex min-w-0 flex-col gap-1 text-sm text-slate-800 sm:flex-row sm:items-center sm:gap-2">

@@ -6,6 +6,8 @@ import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 interface Category {
   id: string;
   name: string;
+  parentCategoryId?: string | null;
+  parentCategoryName?: string | null;
 }
 
 interface FilterSidebarProps {
@@ -150,6 +152,26 @@ const FilterSidebar = ({
     [isBg]
   );
 
+  const groupedCategories = useMemo(() => {
+    const main = categories
+      .filter((category) => !category.parentCategoryId)
+      .sort((a, b) => a.name.localeCompare(b.name, isBg ? "bg" : "en", { sensitivity: "base" }));
+
+    return main.map((category) => ({
+      category,
+      children: categories
+        .filter((item) => item.parentCategoryId === category.id)
+        .sort((a, b) => a.name.localeCompare(b.name, isBg ? "bg" : "en", { sensitivity: "base" })),
+    }));
+  }, [categories, isBg]);
+
+  const ungroupedCategories = useMemo(
+    () => categories
+      .filter((category) => category.parentCategoryId && !categories.some((parent) => parent.id === category.parentCategoryId))
+      .sort((a, b) => a.name.localeCompare(b.name, isBg ? "bg" : "en", { sensitivity: "base" })),
+    [categories, isBg]
+  );
+
   const optionClass = (active: boolean) =>
     `flex h-12 w-full items-center rounded-2xl border px-4 text-left text-sm font-medium transition ${active ? "border-primary-200 bg-primary-50 text-primary-700" : "border-transparent bg-slate-50 text-slate-700 hover:border-slate-200 hover:bg-slate-100"}`;
 
@@ -205,7 +227,28 @@ const FilterSidebar = ({
             <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{isBg ? "Категории" : "Categories"}</h3>
             <div className="space-y-2">
               <button type="button" onClick={() => handleCategoryChange(null)} className={optionClass(!selectedCategory)}>{isBg ? "Всички категории" : "All categories"}</button>
-              {categories.map(category => <button type="button" key={category.id} onClick={() => handleCategoryChange(category.id)} className={optionClass(selectedCategory === category.id)}>{category.name}</button>)}
+              {groupedCategories.map(({ category, children }) => (
+                <div key={category.id} className="space-y-2">
+                  <button type="button" onClick={() => handleCategoryChange(category.id)} className={optionClass(selectedCategory === category.id)}>
+                    <span className="font-semibold">{category.name}</span>
+                  </button>
+                  {children.map((subcategory) => (
+                    <button
+                      type="button"
+                      key={subcategory.id}
+                      onClick={() => handleCategoryChange(subcategory.id)}
+                      className={optionClass(selectedCategory === subcategory.id)}
+                    >
+                      <span className="pl-4 text-[13px]">↳ {subcategory.name}</span>
+                    </button>
+                  ))}
+                </div>
+              ))}
+              {ungroupedCategories.map((category) => (
+                <button type="button" key={category.id} onClick={() => handleCategoryChange(category.id)} className={optionClass(selectedCategory === category.id)}>
+                  {category.name}
+                </button>
+              ))}
             </div>
           </div>
         </div>
