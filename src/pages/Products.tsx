@@ -278,7 +278,7 @@ const Products = () => {
                 aria-label={isBg ? "Подреди продуктите" : "Sort products"}
                 value={currentSortValue}
                 onChange={handleSortChange}
-                className="min-h-10 min-w-[170px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#18b99f]"
+                className="min-h-10 min-w-[170px] cursor-pointer rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition hover:border-[#18b99f] focus:border-[#18b99f]"
               >
                 <option value="rating:desc">{isBg ? "Най-популярни" : "Most popular"}</option>
                 <option value="createdOn:desc">{isBg ? "Най-нови" : "Newest"}</option>
@@ -292,7 +292,7 @@ const Products = () => {
                 aria-label={isBg ? "Продукти на страница" : "Products per page"}
                 value={filters.pageSize}
                 onChange={handlePageSizeChange}
-                className="min-h-10 w-20 rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-700 outline-none focus:border-[#18b99f]"
+                className="min-h-10 w-20 cursor-pointer rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-700 outline-none transition hover:border-[#18b99f] focus:border-[#18b99f]"
               >
                 <option value="20">20</option>
                 <option value="50">50</option>
