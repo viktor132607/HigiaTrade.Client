@@ -1,6 +1,5 @@
 import { AdjustmentsHorizontalIcon, ChevronDownIcon, MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 
 interface Category {
@@ -48,7 +47,6 @@ const FilterSidebar = ({
   onApplyFilters,
 }: FilterSidebarProps) => {
   const { language } = useLanguageTheme();
-  const location = useLocation();
   const isBg = language === "bg";
   const [searchInput, setSearchInput] = useState(searchQuery);
   const [minPrice, setMinPrice] = useState(selectedMinPrice === null ? "" : String(selectedMinPrice));
@@ -58,18 +56,6 @@ const FilterSidebar = ({
   const [priceCeiling, setPriceCeiling] = useState(100);
   const didRunAutoApply = useRef(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const isCatalogPage =
-    location.pathname === "/products" ||
-    location.pathname === "/store" ||
-    /^\/categories\/[^/]+$/i.test(location.pathname) ||
-    /^\/category\/[^/]+$/i.test(location.pathname);
-
-  useEffect(() => {
-    if (!isCatalogPage) return;
-    document.body.classList.add("catalog-filter-layout");
-    return () => document.body.classList.remove("catalog-filter-layout");
-  }, [isCatalogPage]);
 
   useEffect(() => {
     let cancelled = false;

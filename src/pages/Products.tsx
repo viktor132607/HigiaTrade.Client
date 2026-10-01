@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Bars3Icon, ListBulletIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
+import { Bars3Icon, ChevronRightIcon, ListBulletIcon, Squares2X2Icon } from "@heroicons/react/24/outline";
 import ProductCard from "../components/products/ProductCard";
 import ProductListRow from "../components/products/ProductListRow";
 import FilterSidebar from "../components/products/FilterSidebar";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
-import { entitySeoSlug } from "../utils/seo";
+import { categorySeoPath, entitySeoSlug } from "../utils/seo";
 import { Product } from "../types";
 
 interface FilterState {
@@ -223,115 +223,102 @@ const Products = () => {
   const selectedParentCategory = selectedCategory?.parentCategoryId
     ? categories.find((category) => category.id === selectedCategory.parentCategoryId) ?? null
     : null;
-  const selectedSubcategories = selectedCategory && !selectedCategory.parentCategoryId
-    ? categories
-        .filter((category) => category.parentCategoryId === selectedCategory.id)
-        .sort((a, b) => a.name.localeCompare(b.name, isBg ? "bg" : "en", { sensitivity: "base" }))
-    : [];
   const routeCategoryMatchesCurrent = routeCategoryId
     ? filters.category === routeCategoryId
     : routeCategorySlug
       ? Boolean(selectedCategory && entitySeoSlug(selectedCategory.name, selectedCategory.id) === routeCategorySlug.toLowerCase())
       : true;
 
+  const catalogPath = selectedCategory
+    ? selectedParentCategory
+      ? [selectedParentCategory, selectedCategory]
+      : [selectedCategory]
+    : [];
+
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-5 sm:py-8 lg:py-10">
       <div className="site-container">
-        {selectedCategory && (
-          <section className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:mb-6 sm:p-5">
-            <div className="flex flex-col gap-4">
-              <div>
-                {selectedParentCategory && (
-                  <button
-                    type="button"
-                    onClick={() => handleApplyFilters({ category: selectedParentCategory.id })}
-                    className="mb-2 text-sm font-semibold text-[#159b87] hover:text-[#117c6d]"
-                  >
-                    {selectedParentCategory.name}
-                  </button>
-                )}
-                <h1 className="text-2xl font-black text-slate-950 sm:text-3xl">{selectedCategory.name}</h1>
-                <p className="mt-1 text-sm text-slate-500">
-                  {selectedCategory.parentCategoryId
-                    ? (isBg ? "Подкатегория" : "Subcategory")
-                    : (isBg ? "Основна категория" : "Main category")}
-                </p>
-              </div>
+        <div className="grid gap-4 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-x-5 xl:gap-y-5">
+          <div className="xl:col-start-1 xl:row-start-1 xl:row-span-2">
+            <FilterSidebar
+              categories={categories}
+              selectedCategory={filters.category}
+              searchQuery={filters.search}
+              selectedMinPrice={filters.minPrice}
+              selectedMaxPrice={filters.maxPrice}
+              selectedRating={filters.rating}
+              selectedInStockOnly={filters.inStockOnly}
+              suppressInitialAutoApply={Boolean((routeCategoryId || routeCategorySlug) && !routeCategoryMatchesCurrent)}
+              onApplyFilters={handleApplyFilters}
+            />
+          </div>
 
-              {selectedSubcategories.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {selectedSubcategories.map((subcategory) => (
+          <div className="flex min-h-14 min-w-0 flex-col gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm sm:px-4 xl:col-start-2 xl:row-start-1 xl:flex-row xl:items-center">
+            <nav aria-label={isBg ? "Път" : "Breadcrumb"} className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto whitespace-nowrap text-sm text-slate-500">
+              {catalogPath.length === 0 ? (
+                <span className="font-semibold text-slate-800">{isBg ? "Продукти" : "Products"}</span>
+              ) : (
+                catalogPath.map((category, index) => (
+                  <React.Fragment key={category.id}>
+                    {index > 0 && <ChevronRightIcon className="h-4 w-4 shrink-0 text-slate-300" />}
                     <button
-                      key={subcategory.id}
                       type="button"
-                      onClick={() => handleApplyFilters({ category: subcategory.id })}
-                      className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-[#18b99f] hover:text-[#159b87]"
+                      onClick={() => navigate(categorySeoPath(category))}
+                      className={`shrink-0 transition hover:text-[#18b99f] ${index === catalogPath.length - 1 ? "font-bold text-slate-900" : "font-semibold text-[#159b87]"}`}
                     >
-                      {subcategory.name}
+                      {category.name}
                     </button>
-                  ))}
-                </div>
+                  </React.Fragment>
+                ))
               )}
-            </div>
-          </section>
-        )}
+            </nav>
 
-        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm sm:mb-7 sm:flex-row sm:items-center sm:justify-between sm:px-4 sm:py-4">
-          <div className="grid w-full grid-cols-1 gap-2 min-[430px]:grid-cols-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3">
-            <label className="flex min-w-0 flex-col gap-1 text-sm text-slate-800 sm:flex-row sm:items-center sm:gap-2">
-              <span>{isBg ? "Подреди:" : "Sort:"}</span>
-              <select value={currentSortValue} onChange={handleSortChange} className="min-h-10 w-full min-w-0 rounded-md border border-slate-300 bg-white px-2.5 py-2 text-sm text-slate-700 outline-none focus:border-[#18b99f] sm:w-auto sm:px-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-2 xl:flex-nowrap">
+              <select
+                aria-label={isBg ? "Подреди продуктите" : "Sort products"}
+                value={currentSortValue}
+                onChange={handleSortChange}
+                className="min-h-10 min-w-[170px] rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-[#18b99f]"
+              >
                 <option value="rating:desc">{isBg ? "Най-популярни" : "Most popular"}</option>
                 <option value="createdOn:desc">{isBg ? "Най-нови" : "Newest"}</option>
-                <option value="regularPrice:asc">{isBg ? "Цена: ниска към висока" : "Price: low to high"}</option>
-                <option value="regularPrice:desc">{isBg ? "Цена: висока към ниска" : "Price: high to low"}</option>
+                <option value="regularPrice:asc">{isBg ? "Цена: ниска → висока" : "Price: low → high"}</option>
+                <option value="regularPrice:desc">{isBg ? "Цена: висока → ниска" : "Price: high → low"}</option>
                 <option value="title:asc">{isBg ? "Име: А-Я" : "Name: A-Z"}</option>
                 <option value="title:desc">{isBg ? "Име: Я-А" : "Name: Z-A"}</option>
               </select>
-            </label>
 
-            <label className="flex min-w-0 flex-col gap-1 text-sm text-slate-800 sm:flex-row sm:items-center sm:gap-2">
-              <span>{isBg ? "Продукти на страница:" : "Products per page:"}</span>
-              <select value={filters.pageSize} onChange={handlePageSizeChange} className="min-h-10 w-full min-w-0 rounded-md border border-slate-300 bg-white px-2.5 py-2 text-sm text-slate-700 outline-none focus:border-[#18b99f] sm:w-auto sm:px-3">
+              <select
+                aria-label={isBg ? "Продукти на страница" : "Products per page"}
+                value={filters.pageSize}
+                onChange={handlePageSizeChange}
+                className="min-h-10 w-20 rounded-md border border-slate-300 bg-white px-2 py-2 text-sm text-slate-700 outline-none focus:border-[#18b99f]"
+              >
                 <option value="20">20</option>
                 <option value="50">50</option>
                 <option value="100">100</option>
               </select>
-            </label>
-          </div>
 
-          <div className="flex w-full items-center justify-between gap-2 text-sm text-slate-800 sm:w-auto sm:justify-start">
-            <span>{isBg ? "Покажи:" : "View:"}</span>
-            <div className="inline-flex overflow-hidden rounded-md border border-slate-300 bg-white">
-              <button type="button" onClick={() => handleViewModeChange("compact")} className={`flex h-10 w-10 items-center justify-center border-r border-slate-300 ${viewMode === "compact" ? "bg-slate-100 text-orange-500" : "text-slate-500 hover:bg-slate-50"}`} title={isBg ? "Компактен списък" : "Compact list"}>
-                <ListBulletIcon className="h-5 w-5" />
-              </button>
-              <button type="button" onClick={() => handleViewModeChange("list")} className={`flex h-10 w-10 items-center justify-center border-r border-slate-300 ${viewMode === "list" ? "bg-slate-100 text-orange-500" : "text-slate-500 hover:bg-slate-50"}`} title={isBg ? "Подробен списък" : "Detailed list"}>
-                <Bars3Icon className="h-5 w-5" />
-              </button>
-              <button type="button" onClick={() => handleViewModeChange("grid")} className={`flex h-10 w-10 items-center justify-center ${viewMode === "grid" ? "bg-slate-100 text-orange-500" : "text-slate-500 hover:bg-slate-50"}`} title={isBg ? "Карти" : "Grid"}>
-                <Squares2X2Icon className="h-5 w-5" />
-              </button>
+              <div className="ml-auto flex shrink-0 items-center gap-2 text-sm text-slate-800">
+                <span className="hidden sm:inline">{isBg ? "Изглед:" : "View:"}</span>
+                <div className="inline-flex overflow-hidden rounded-md border border-slate-300 bg-white">
+                  <button type="button" onClick={() => handleViewModeChange("compact")} className={`flex h-10 w-10 items-center justify-center border-r border-slate-300 ${viewMode === "compact" ? "bg-slate-100 text-orange-500" : "text-slate-500 hover:bg-slate-50"}`} title={isBg ? "Компактен списък" : "Compact list"}>
+                    <ListBulletIcon className="h-5 w-5" />
+                  </button>
+                  <button type="button" onClick={() => handleViewModeChange("list")} className={`flex h-10 w-10 items-center justify-center border-r border-slate-300 ${viewMode === "list" ? "bg-slate-100 text-orange-500" : "text-slate-500 hover:bg-slate-50"}`} title={isBg ? "Подробен списък" : "Detailed list"}>
+                    <Bars3Icon className="h-5 w-5" />
+                  </button>
+                  <button type="button" onClick={() => handleViewModeChange("grid")} className={`flex h-10 w-10 items-center justify-center ${viewMode === "grid" ? "bg-slate-100 text-orange-500" : "text-slate-500 hover:bg-slate-50"}`} title={isBg ? "Карти" : "Grid"}>
+                    <Squares2X2Icon className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-col gap-4 sm:gap-8 xl:flex-row">
-          <FilterSidebar
-            categories={categories}
-            selectedCategory={filters.category}
-            searchQuery={filters.search}
-            selectedMinPrice={filters.minPrice}
-            selectedMaxPrice={filters.maxPrice}
-            selectedRating={filters.rating}
-            selectedInStockOnly={filters.inStockOnly}
-            suppressInitialAutoApply={Boolean((routeCategoryId || routeCategorySlug) && !routeCategoryMatchesCurrent)}
-            onApplyFilters={handleApplyFilters}
-          />
-
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 xl:col-start-2 xl:row-start-2">
             {viewMode === "grid" ? (
-              <div className="grid grid-cols-2 gap-2.5 min-[430px]:gap-3 sm:gap-6 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
+              <div className="grid grid-cols-2 gap-2.5 min-[430px]:gap-3 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
                 {products.map((product) => <ProductCard key={product.id} product={product} />)}
               </div>
             ) : viewMode === "compact" ? (

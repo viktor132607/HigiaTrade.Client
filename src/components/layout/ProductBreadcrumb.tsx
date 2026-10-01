@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronRightIcon, HomeIcon } from "@heroicons/react/24/outline";
+import { ChevronRightIcon } from "@heroicons/react/24/outline";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 import { categorySeoPath } from "../../utils/seo";
 
@@ -13,11 +13,18 @@ type ProductSummary = {
   categoryName?: string;
 };
 
+type CategorySummary = {
+  id: string;
+  name: string;
+  parentCategoryId?: string | null;
+};
+
 const ProductBreadcrumb = () => {
   const location = useLocation();
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
   const [product, setProduct] = useState<ProductSummary | null>(null);
+  const [categories, setCategories] = useState<CategorySummary[]>([]);
 
   const match = location.pathname.match(/^\/products\/([^/]+)$/i);
   const routeValue = match?.[1] ? decodeURIComponent(match[1]) : null;
@@ -25,6 +32,7 @@ const ProductBreadcrumb = () => {
   useEffect(() => {
     if (!routeValue) {
       setProduct(null);
+      setCategories([]);
       return;
     }
 
@@ -47,12 +55,30 @@ const ProductBreadcrumb = () => {
           }
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products/${productId}`);
-        if (!response.ok) throw new Error("Unable to load breadcrumb product");
-        const data = await response.json() as ProductSummary;
-        if (!cancelled) setProduct(data);
+        const [productResponse, categoriesResponse] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products/${productId}`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/Categories`),
+        ]);
+
+        if (!productResponse.ok) throw new Error("Unable to load breadcrumb product");
+
+        const productData = await productResponse.json() as ProductSummary;
+        const categoriesData = categoriesResponse.ok ? await categoriesResponse.json() : [];
+        const categoryList: CategorySummary[] = Array.isArray(categoriesData)
+          ? categoriesData
+          : Array.isArray(categoriesData?.items)
+            ? categoriesData.items
+            : [];
+
+        if (!cancelled) {
+          setProduct(productData);
+          setCategories(categoryList);
+        }
       } catch {
-        if (!cancelled) setProduct(null);
+        if (!cancelled) {
+          setProduct(null);
+          setCategories([]);
+        }
       }
     };
 
@@ -60,27 +86,36 @@ const ProductBreadcrumb = () => {
     return () => { cancelled = true; };
   }, [routeValue]);
 
+  const path = useMemo(() => {
+    if (!product) return [];
+
+    const current = categories.find((category) => category.id === product.categoryId)
+      ?? (product.categoryName ? { id: product.categoryId, name: product.categoryName, parentCategoryId: null } : null);
+
+    if (!current) return [];
+
+    const parent = current.parentCategoryId
+      ? categories.find((category) => category.id === current.parentCategoryId) ?? null
+      : null;
+
+    return parent ? [parent, current] : [current];
+  }, [categories, product]);
+
   if (!routeValue || !product) return null;
 
   return (
-    <nav aria-label={isBg ? "Навигация" : "Breadcrumb"} className="border-b border-slate-200 bg-white/95">
-      <div className="mx-auto flex max-w-7xl items-center gap-2 overflow-x-auto px-3 py-3 text-sm text-slate-500 sm:px-6 lg:px-8">
-        <Link to="/" className="inline-flex shrink-0 items-center gap-1.5 font-medium transition hover:text-[#18b99f]">
-          <HomeIcon className="h-4 w-4" />
-          {isBg ? "Начало" : "Home"}
-        </Link>
-        <ChevronRightIcon className="h-4 w-4 shrink-0 text-slate-300" />
-        <Link to="/products" className="shrink-0 font-medium transition hover:text-[#18b99f]">
-          {isBg ? "Продукти" : "Products"}
-        </Link>
-        {product.categoryId ? <>
-          <ChevronRightIcon className="h-4 w-4 shrink-0 text-slate-300" />
-          <Link to={product.categoryName ? categorySeoPath({ id: product.categoryId, name: product.categoryName }) : `/category/${product.categoryId}`} className="shrink-0 font-semibold text-[#159b87] transition hover:text-[#117c6d]">
-            {product.categoryName || (isBg ? "Категория" : "Category")}
-          </Link>
-        </> : null}
-        <ChevronRightIcon className="h-4 w-4 shrink-0 text-slate-300" />
-        <span className="max-w-[28rem] truncate font-medium text-slate-700" title={product.title}>{product.title}</span>
+    <nav aria-label={isBg ? "Път" : "Breadcrumb"} className="border-b border-slate-200 bg-white/95">
+      <div className="site-container flex min-h-12 items-center gap-1.5 overflow-x-auto whitespace-nowrap py-2 text-sm text-slate-500">
+        {path.map((category, index) => (
+          <span key={category.id} className="contents">
+            {index > 0 && <ChevronRightIcon className="h-4 w-4 shrink-0 text-slate-300" />}
+            <Link to={categorySeoPath(category)} className="shrink-0 font-semibold text-[#159b87] transition hover:text-[#117c6d]">
+              {category.name}
+            </Link>
+          </span>
+        ))}
+        {path.length > 0 && <ChevronRightIcon className="h-4 w-4 shrink-0 text-slate-300" />}
+        <span className="max-w-[34rem] truncate font-bold text-slate-800" title={product.title}>{product.title}</span>
       </div>
     </nav>
   );
