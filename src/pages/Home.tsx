@@ -162,8 +162,8 @@ const Home = () => {
 
       {tabProducts.length > 0 && (
         <section className="mx-auto max-w-7xl px-3 py-7 sm:px-6 sm:py-8 lg:px-8">
-          <div className="grid grid-cols-2 gap-2.5 min-[430px]:gap-3 sm:gap-6 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
-            {tabProducts.slice(0, 8).map((product) => <ProductCard key={product.id} product={product} />)}
+          <div className="grid grid-cols-2 gap-2.5 min-[430px]:gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-5">
+            {tabProducts.slice(0, 10).map((product) => <ProductCard key={product.id} product={product} />)}
           </div>
         </section>
       )}
