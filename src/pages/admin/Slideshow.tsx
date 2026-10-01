@@ -98,8 +98,9 @@ const SlidePreview = ({
         )}
 
         <div className={desktop
-          ? "relative z-10 mx-auto flex max-w-7xl px-14 py-12 sm:px-16 sm:py-16 lg:px-8"
+          ? "relative z-10 mx-auto flex w-full px-14 py-12 sm:px-16 sm:py-16 lg:px-8"
           : "relative z-10 flex px-14 py-12"}
+          style={desktop ? { maxWidth: "80rem" } : undefined}
         >
           <div className={desktop
             ? "grid w-full max-w-xl grid-cols-1 grid-rows-[auto_auto_auto_auto_auto]"
@@ -166,7 +167,7 @@ const SlidePreview = ({
 
         {desktop && (
           <div className="absolute inset-x-0 bottom-3 z-30">
-            <div className="mx-auto flex max-w-7xl justify-center gap-2 px-3 sm:px-6 lg:px-8">
+            <div className="mx-auto flex w-full justify-center gap-2 px-3 sm:px-6 lg:px-8" style={{ maxWidth: "80rem" }}>
               {[
                 isBg ? "Най-продавани" : "Best sellers",
                 isBg ? "Последно добавени" : "Recently added",
