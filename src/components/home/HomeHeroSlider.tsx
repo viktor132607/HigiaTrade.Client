@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
+import { getPreloadedHomeSlideshow, preloadHomeSlideshow } from "../../utils/homeSlideshowPreload";
 
 export interface HomeSlide {
   id: string;
@@ -39,20 +40,22 @@ const HomeHeroSlider = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [slideDurationSeconds, setSlideDurationSeconds] = useState(5);
   const [imagesReady, setImagesReady] = useState(false);
-  const imageCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
 
     const loadSlides = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/home-slideshow`, { cache: "no-store" });
-        if (!response.ok) {
+        const payload = (
+          getPreloadedHomeSlideshow() ??
+          await preloadHomeSlideshow()
+        ) as HomeSlideshowPayload | null;
+
+        if (!payload) {
           if (!cancelled) setSlides([]);
           return;
         }
 
-        const payload = (await response.json()) as HomeSlideshowPayload;
         const nextSlides = Array.isArray(payload?.slides)
           ? payload.slides
               .filter((slide) => slide?.isActive !== false)
@@ -63,45 +66,13 @@ const HomeHeroSlider = () => {
           setSlides(nextSlides);
           setPreviousSlide(null);
           setIsTransitioning(false);
-          setImagesReady(nextSlides.every((slide) => !slide.image));
+          setImagesReady(true);
           setSlideDurationSeconds(
             Number.isFinite(payload?.slideDurationSeconds) && (payload.slideDurationSeconds ?? 0) > 0
               ? Math.min(60, Math.max(1, payload.slideDurationSeconds as number))
               : 5
           );
           setActiveIndex(0);
-
-          const imageUrls = [...new Set(nextSlides.map((slide) => slide.image).filter(Boolean))];
-          void Promise.all(
-            imageUrls.map((url) => new Promise<void>((resolve) => {
-              const cached = imageCacheRef.current.get(url);
-              if (cached?.complete && cached.naturalWidth > 0) {
-                void cached.decode?.().catch(() => undefined).finally(resolve);
-                return;
-              }
-
-              const image = cached ?? new Image();
-              image.decoding = "async";
-
-              const finish = () => {
-                image.onload = null;
-                image.onerror = null;
-                void image.decode?.().catch(() => undefined).finally(resolve);
-              };
-
-              image.onload = finish;
-              image.onerror = finish;
-
-              if (!cached) {
-                imageCacheRef.current.set(url, image);
-                image.src = url;
-              } else if (image.complete) {
-                finish();
-              }
-            }))
-          ).then(() => {
-            if (!cancelled) setImagesReady(true);
-          });
         }
       } catch {
         if (!cancelled) setSlides([]);
