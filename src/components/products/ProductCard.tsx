@@ -61,7 +61,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
     : promoActive && product.regularPrice > 0
       ? Math.round((1 - displayPrice / product.regularPrice) * 100)
       : 0;
-  const stockLabel = product.quantity === 0 ? (isBg ? "Изчерпан продукт" : "Out of stock") : (isBg ? "В наличност" : "In stock");
+  const stockLabel = isBg ? "Изчерпан продукт" : "Out of stock";
 
   return <article
     role="link"
@@ -70,7 +70,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
     onKeyDown={(event)=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();openProduct();}}}
     className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white shadow-[0_20px_60px_-50px_rgba(15,23,42,0.45)] transition duration-300 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-[#18b99f] sm:rounded-[2rem] sm:shadow-[0_28px_90px_-60px_rgba(15,23,42,0.55)]"
   >
-    <Link to={productPath} onClick={event=>event.stopPropagation()} className="relative block overflow-hidden"><img src={productImage} alt={product.title} width={640} height={640} loading="lazy" decoding="async" onError={handleImageError} className="h-40 w-full object-cover transition duration-500 group-hover:scale-105 min-[430px]:h-44 sm:h-64"/><div className="absolute left-2 top-2 flex flex-col items-start gap-1.5 sm:left-4 sm:top-4 sm:gap-2">{product.isNewProduct&&<span className="rounded-full bg-[#18b99f] px-2 py-0.5 text-[10px] font-bold uppercase text-white sm:px-3 sm:py-1 sm:text-xs">{isBg?"Ново":"New"}</span>}{discountPercent>0?<span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white sm:px-3 sm:py-1 sm:text-xs">-{discountPercent}%</span>:null}</div><span className={`absolute right-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold sm:right-4 sm:top-4 sm:px-3 sm:py-1 sm:text-xs ${product.quantity===0?"bg-rose-100 text-rose-700":"bg-emerald-100 text-emerald-700"}`}><span className="sm:hidden">{product.quantity===0?(isBg?"Няма":"Out"):(isBg?"Налично":"Stock")}</span><span className="hidden sm:inline">{stockLabel}</span></span></Link>
+    <Link to={productPath} onClick={event=>event.stopPropagation()} className="relative block overflow-hidden"><img src={productImage} alt={product.title} width={640} height={640} loading="lazy" decoding="async" onError={handleImageError} className="h-40 w-full object-cover transition duration-500 group-hover:scale-105 min-[430px]:h-44 sm:h-64"/><div className="absolute left-2 top-2 flex flex-col items-start gap-1.5 sm:left-4 sm:top-4 sm:gap-2">{product.isNewProduct&&<span className="rounded-full bg-[#18b99f] px-2 py-0.5 text-[10px] font-bold uppercase text-white sm:px-3 sm:py-1 sm:text-xs">{isBg?"Ново":"New"}</span>}{discountPercent>0?<span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white sm:px-3 sm:py-1 sm:text-xs">-{discountPercent}%</span>:null}</div>{product.quantity===0?<span className="absolute right-2 top-2 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700 sm:right-4 sm:top-4 sm:px-3 sm:py-1 sm:text-xs"><span className="sm:hidden">{isBg?"Изчерпан":"Out"}</span><span className="hidden sm:inline">{stockLabel}</span></span>:null}</Link>
     <div className="flex flex-1 flex-col p-3 sm:p-5">
       <div className="flex items-center justify-between gap-2"><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 sm:text-xs sm:tracking-[0.24em]">{isBg?"Продукт":"Product"}</p><div className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 sm:px-2.5 sm:py-1 sm:text-xs"><StarIcon className="h-3.5 w-3.5"/>{(product.rating??0).toFixed(1)}</div></div>
       <Link to={productPath} onClick={event=>event.stopPropagation()} className="mt-2 min-h-[2.5rem] line-clamp-2 font-display text-sm font-semibold leading-5 text-slate-950 hover:text-[#18b99f] sm:mt-4 sm:min-h-[3.25rem] sm:text-xl sm:leading-tight">{product.title}</Link>
@@ -82,7 +82,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
             <p className={`font-display text-lg font-bold sm:text-2xl ${promoActive?"text-rose-600":"text-slate-950"}`}>{formatCurrency(displayPrice)}</p>
             <div className="mt-1 min-h-4 text-xs font-semibold uppercase tracking-wide text-rose-600">{promoActive?(isBg?"Промо цена":"Promo price"):"\u00a0"}</div>
           </div>
-          <span className={`mb-1 hidden shrink-0 text-right text-xs sm:block ${product.quantity===0?"font-semibold text-rose-600":"text-emerald-600"}`}>{stockLabel}</span>
+          {product.quantity===0?<span className="mb-1 hidden shrink-0 text-right text-xs font-semibold text-rose-600 sm:block">{stockLabel}</span>:null}
         </div>
 
         <div className="mt-2 flex items-center gap-2 sm:mt-3" onClick={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()}>
