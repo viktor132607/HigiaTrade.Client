@@ -87,7 +87,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
         <div className="mt-2 flex items-center gap-2 sm:mt-3" onClick={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()}>
           <ProductActions productId={product.id} compact />
-          <button type="button" onClick={()=>void handleCartAction()} disabled={busy||product.quantity===0} className={`inline-flex h-9 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-md px-3 text-xs font-semibold transition sm:h-10 sm:px-4 ${product.quantity===0?"cursor-not-allowed bg-slate-100 text-slate-400":"bg-slate-950 text-white hover:bg-primary-600"}`}>{product.quantity===0?(isBg?"Изчерпан":"Out of stock"):(isBg?"Добави в количка":"Add to cart")}</button>
+          <button type="button" onClick={()=>void handleCartAction()} disabled={busy||product.quantity===0} className={`inline-flex h-9 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-md px-3 text-xs font-semibold transition sm:h-10 sm:px-4 ${product.quantity===0?"cursor-not-allowed bg-slate-100 text-slate-400":"bg-[#18b99f] text-white hover:bg-[#149f8a]"}`}>{product.quantity===0?(isBg?"Изчерпан":"Out of stock"):(isBg?"Добави в количка":"Add to cart")}</button>
         </div>
       </div>
     </div>
