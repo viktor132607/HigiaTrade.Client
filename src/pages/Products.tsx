@@ -319,7 +319,7 @@ const Products = () => {
 
             <div className="min-w-0">
             {viewMode === "grid" ? (
-              <div className="grid grid-cols-2 gap-2.5 min-[430px]:gap-3 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
+              <div className="grid grid-cols-2 gap-2.5 min-[430px]:gap-3 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4">
                 {products.map((product) => <ProductCard key={product.id} product={product} />)}
               </div>
             ) : viewMode === "compact" ? (
