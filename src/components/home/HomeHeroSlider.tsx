@@ -19,6 +19,7 @@ export interface HomeSlide {
   ctaEn: string;
   ctaUrl: string;
   image: string;
+  imagePositionY?: number;
   accent: string;
 }
 
@@ -149,7 +150,8 @@ const HomeHeroSlider = () => {
           <img
             src={activeSlide.image}
             alt={isBg ? activeSlide.titleBg : activeSlide.titleEn}
-            className="absolute inset-0 hidden h-full w-full object-cover object-center md:block"
+            className="absolute inset-0 hidden h-full w-full object-cover md:block"
+            style={{ objectPosition: `center ${activeSlide.imagePositionY ?? 50}%` }}
           />
         )}
         <div className="absolute inset-0 hidden bg-gradient-to-r from-white/55 via-white/10 to-transparent md:block dark:from-black/55 dark:via-black/10 dark:to-transparent" />
