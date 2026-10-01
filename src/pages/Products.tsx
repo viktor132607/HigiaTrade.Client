@@ -238,8 +238,8 @@ const Products = () => {
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-50 py-5 sm:py-8 lg:py-10">
       <div className="site-container">
-        <div className="grid gap-4 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-x-5 xl:gap-y-5">
-          <div className="xl:col-start-1 xl:row-start-1 xl:row-span-2">
+        <div className="grid gap-4 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-x-5">
+          <div className="xl:col-start-1">
             <FilterSidebar
               categories={categories}
               selectedCategory={filters.category}
@@ -253,7 +253,8 @@ const Products = () => {
             />
           </div>
 
-          <div className="flex min-h-14 min-w-0 flex-col gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm sm:px-4 xl:col-start-2 xl:row-start-1 xl:flex-row xl:items-center">
+          <div className="min-w-0 space-y-5 xl:col-start-2">
+            <div className="flex min-h-14 min-w-0 flex-col gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3 shadow-sm sm:px-4 xl:flex-row xl:items-center">
             <nav aria-label={isBg ? "Път" : "Breadcrumb"} className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto whitespace-nowrap text-sm text-slate-500">
               {catalogPath.length === 0 ? (
                 <span className="font-semibold text-slate-800">{isBg ? "Продукти" : "Products"}</span>
@@ -316,7 +317,7 @@ const Products = () => {
             </div>
           </div>
 
-          <div className="min-w-0 xl:col-start-2 xl:row-start-2">
+            <div className="min-w-0">
             {viewMode === "grid" ? (
               <div className="grid grid-cols-2 gap-2.5 min-[430px]:gap-3 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4 min-[2200px]:grid-cols-5">
                 {products.map((product) => <ProductCard key={product.id} product={product} />)}
@@ -355,6 +356,7 @@ const Products = () => {
                 </nav>
               </div>
             )}
+            </div>
           </div>
         </div>
       </div>
