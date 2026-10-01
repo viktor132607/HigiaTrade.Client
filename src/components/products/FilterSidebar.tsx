@@ -205,7 +205,7 @@ const FilterSidebar = ({
           <div className="space-y-3">
             <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{isBg ? "Рейтинг" : "Rating"}</h3>
             <div className="space-y-2">
-              {ratingBuckets.map(rating => <button type="button" key={rating} onClick={() => handleRatingChange(rating)} className={optionClass(selectedRating === rating)}><span className="text-base tracking-[0.08em] text-amber-500">{"★".repeat(rating)}</span></button>)}
+              {ratingBuckets.map(rating => <button type="button" key={rating} onClick={() => handleRatingChange(rating)} className={optionClass(selectedRating === rating)}><span className="mr-2 min-w-4 font-bold text-slate-700">{rating}</span><span className="text-base tracking-[0.08em] text-amber-500">{"★".repeat(rating)}</span></button>)}
             </div>
           </div>
 
