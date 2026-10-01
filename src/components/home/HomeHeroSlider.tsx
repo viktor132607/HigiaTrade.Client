@@ -20,6 +20,7 @@ export interface HomeSlide {
   ctaUrl: string;
   image: string;
   imagePositionY?: number;
+  imageLightening?: number;
   accent: string;
 }
 
@@ -161,7 +162,10 @@ const HomeHeroSlider = () => {
             style={{ objectPosition: `center ${activeSlide.imagePositionY ?? 50}%` }}
           />
         )}
-        <div className="absolute inset-0 hidden bg-gradient-to-r from-white/55 via-white/10 to-transparent md:block dark:from-black/55 dark:via-black/10 dark:to-transparent" />
+        <div
+          className="absolute inset-0 hidden bg-gradient-to-r from-white/55 via-white/10 to-transparent md:block dark:from-black/55 dark:via-black/10 dark:to-transparent"
+          style={{ opacity: Math.min(100, Math.max(0, activeSlide.imageLightening ?? 100)) / 100 }}
+        />
 
         {canNavigate && (
           <>

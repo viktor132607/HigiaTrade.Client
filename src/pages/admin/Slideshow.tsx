@@ -50,6 +50,7 @@ const newSlide = (order: number): HomeSlide => ({
   ctaUrl: "/products",
   image: "",
   imagePositionY: 50,
+  imageLightening: 100,
   accent: gradientOptions[0].value,
 });
 
@@ -66,7 +67,10 @@ const SlidePreview = ({ slide, mode, isBg }: { slide: HomeSlide; mode: PreviewMo
             style={{ objectPosition: `center ${slide.imagePositionY ?? 50}%` }}
           />
         )}
-        <div className={`absolute inset-0 ${desktop ? "bg-gradient-to-r from-white/95 via-white/80 to-transparent" : "bg-gradient-to-b from-white/95 via-white/85 to-transparent"}`} />
+        <div
+          className={`absolute inset-0 ${desktop ? "bg-gradient-to-r from-white/55 via-white/10 to-transparent" : "bg-gradient-to-b from-white/55 via-white/10 to-transparent"}`}
+          style={{ opacity: Math.min(100, Math.max(0, slide.imageLightening ?? 100)) / 100 }}
+        />
         <div className={`relative z-10 ${desktop ? "max-w-[44%] p-7" : "p-5"}`}>
           <div className="text-sm font-semibold text-teal-700">{isBg ? slide.eyebrowBg : slide.eyebrowEn}</div>
           <div className={`${desktop ? "mt-2 text-4xl" : "mt-2 text-3xl"} font-extrabold uppercase leading-tight text-slate-950`}>{isBg ? slide.titleBg : slide.titleEn}</div>
@@ -336,6 +340,25 @@ const AdminSlideshow = () => {
                   <div className="mt-1 flex justify-between text-[11px] text-slate-400">
                     <span>{isBg ? "Нагоре" : "Top"}</span>
                     <span>{isBg ? "Надолу" : "Bottom"}</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-1 flex items-center justify-between gap-3">
+                    <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">{isBg ? "Изсветляване на изображението" : "Image lightening"}</label>
+                    <span className="text-xs font-semibold text-slate-600">{Math.round(slide.imageLightening ?? 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={slide.imageLightening ?? 100}
+                    onChange={(event) => updateSlide(slide.id, "imageLightening", Number(event.target.value))}
+                    className="w-full cursor-pointer accent-[#18b99f]"
+                  />
+                  <div className="mt-1 flex justify-between text-[11px] text-slate-400">
+                    <span>{isBg ? "Без изсветляване" : "Original"}</span>
+                    <span>{isBg ? "Максимално" : "Maximum"}</span>
                   </div>
                 </div>
                 <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
