@@ -252,11 +252,6 @@ const DistributionRoutes = () => {
           <h1 className="text-2xl font-bold text-slate-950">
             {isBg ? "Маршрути за дистрибутори" : "Distributor routes"}
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {isBg
-              ? "Новите клиентски поръчки се появяват автоматично тук. Всеки маршрут тръгва от Русе и завършва в Русе."
-              : "New customer orders appear here automatically. Every route starts and ends in Ruse."}
-          </p>
         </div>
         <button
           type="button"
