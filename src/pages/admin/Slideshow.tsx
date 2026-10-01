@@ -54,30 +54,134 @@ const newSlide = (order: number): HomeSlide => ({
   accent: gradientOptions[0].value,
 });
 
-const SlidePreview = ({ slide, mode, isBg }: { slide: HomeSlide; mode: PreviewMode; isBg: boolean }) => {
+const SlidePreview = ({
+  slide,
+  mode,
+  isBg,
+  index,
+  total,
+}: {
+  slide: HomeSlide;
+  mode: PreviewMode;
+  isBg: boolean;
+  index: number;
+  total: number;
+}) => {
   const desktop = mode === "desktop";
+  const eyebrow = isBg ? slide.eyebrowBg : slide.eyebrowEn;
+  const title = isBg ? slide.titleBg : slide.titleEn;
+  const badge = isBg ? slide.badgeBg : slide.badgeEn;
+  const note = isBg ? slide.noteBg : slide.noteEn;
+  const cta = isBg ? slide.ctaBg : slide.ctaEn;
+
   return (
-    <div className={`mx-auto overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm ${desktop ? "w-full" : "w-[320px] max-w-full"}`}>
-      <div className={`relative overflow-hidden bg-gradient-to-r ${slide.accent || gradientOptions[0].value} ${desktop ? "aspect-[128/25]" : "aspect-[9/14] min-h-[470px]"}`}>
-        {slide.image && (
+    <div className={`mx-auto overflow-hidden border border-slate-300 bg-white shadow-sm ${desktop ? "w-full" : "w-[320px] max-w-full"}`}>
+      <div className={`relative overflow-hidden bg-gradient-to-r ${slide.accent || gradientOptions[0].value} ${desktop ? "aspect-[128/25]" : "aspect-[128/25]"}`}>
+        {desktop && (
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(255,255,255,0.85),transparent_25%),radial-gradient(circle_at_65%_30%,rgba(255,255,255,0.55),transparent_28%)]" />
+        )}
+
+        {slide.image && desktop && (
           <img
             src={slide.image}
-            alt={isBg ? slide.titleBg : slide.titleEn}
-            className={`absolute object-cover ${desktop ? "inset-0 h-full w-full" : "inset-x-0 bottom-0 h-[55%] w-full"}`}
+            alt={title}
+            className="absolute inset-0 h-full w-full object-cover"
             style={{ objectPosition: `center ${slide.imagePositionY ?? 50}%` }}
           />
         )}
-        <div
-          className={`absolute inset-0 ${desktop ? "bg-gradient-to-r from-white/55 via-white/10 to-transparent" : "bg-gradient-to-b from-white/55 via-white/10 to-transparent"}`}
-          style={{ opacity: Math.min(100, Math.max(0, slide.imageLightening ?? 100)) / 100 }}
-        />
-        <div className={`relative z-10 ${desktop ? "max-w-[44%] p-7" : "p-5"}`}>
-          <div className="text-sm font-semibold text-teal-700">{isBg ? slide.eyebrowBg : slide.eyebrowEn}</div>
-          <div className={`${desktop ? "mt-2 text-4xl" : "mt-2 text-3xl"} font-extrabold uppercase leading-tight text-slate-950`}>{isBg ? slide.titleBg : slide.titleEn}</div>
-          {(isBg ? slide.badgeBg : slide.badgeEn) && <div className="mt-4 inline-flex rounded-full bg-slate-950 px-3 py-1.5 text-[10px] font-black text-white">{isBg ? slide.badgeBg : slide.badgeEn}</div>}
-          <div className={`${desktop ? "mt-5 text-sm" : "mt-4 text-sm"} font-medium leading-6 text-slate-700`}>{isBg ? slide.noteBg : slide.noteEn}</div>
-          {(isBg ? slide.ctaBg : slide.ctaEn) && <div className="mt-5 inline-flex rounded-lg bg-slate-950 px-4 py-2.5 text-xs font-bold uppercase text-white">{isBg ? slide.ctaBg : slide.ctaEn}</div>}
+
+        {desktop && (
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-white/55 via-white/10 to-transparent"
+            style={{ opacity: Math.min(100, Math.max(0, slide.imageLightening ?? 100)) / 100 }}
+          />
+        )}
+
+        <div className={desktop
+          ? "relative z-10 mx-auto flex max-w-7xl px-14 py-12 sm:px-16 sm:py-16 lg:px-8"
+          : "relative z-10 flex px-14 py-12"}
+        >
+          <div className={desktop
+            ? "grid w-full max-w-xl grid-cols-1 grid-rows-[auto_auto_auto_auto_auto]"
+            : "grid w-full grid-cols-1 grid-rows-[auto_auto_auto_auto_auto]"
+          }>
+            <div className="col-start-1 row-start-1">
+              {Boolean(eyebrow) && (
+                <p className={desktop ? "text-xl font-semibold text-teal-700" : "text-sm font-semibold text-teal-700"}>
+                  {eyebrow}
+                </p>
+              )}
+            </div>
+
+            <div className="col-start-1 row-start-2 pt-3">
+              <h1 className={`font-display font-extrabold uppercase leading-[1.05] tracking-tight text-slate-950 ${desktop ? "text-6xl" : "text-3xl"}`}>
+                {title}
+              </h1>
+            </div>
+
+            <div className="col-start-1 row-start-3 pt-5">
+              {Boolean(badge) && (
+                <span className="inline-flex rounded-full bg-slate-950 px-4 py-2 text-xs font-black tracking-wide text-white">
+                  {badge}
+                </span>
+              )}
+            </div>
+
+            <div className={`col-start-1 row-start-4 pt-6 ${desktop ? "pt-8" : ""}`}>
+              {Boolean(note) && (
+                <p className={`max-w-lg font-semibold text-slate-700 ${desktop ? "text-lg leading-6" : "text-sm leading-6"}`}>
+                  {note}
+                </p>
+              )}
+            </div>
+
+            <div className={`col-start-1 row-start-5 pt-6 ${desktop ? "pt-8" : ""}`}>
+              {Boolean(cta) && (
+                <div className={`inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-950 py-3 text-sm font-bold uppercase tracking-wide text-white ${desktop ? "px-8" : "px-6"}`}>
+                  {cta}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
+
+        {desktop && total > 1 && (
+          <>
+            <div className="absolute left-4 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-slate-700 shadow">
+              <span className="text-xl leading-none">‹</span>
+            </div>
+            <div className="absolute right-4 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-slate-700 shadow">
+              <span className="text-xl leading-none">›</span>
+            </div>
+            <div className="absolute bottom-16 left-1/2 z-20 flex -translate-x-1/2 gap-2">
+              {Array.from({ length: total }, (_, dotIndex) => (
+                <span
+                  key={dotIndex}
+                  className={`h-2.5 rounded-full ${dotIndex === index ? "w-10 bg-slate-950" : "w-2.5 bg-slate-500/40"}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+
+        {desktop && (
+          <div className="absolute inset-x-0 bottom-3 z-30">
+            <div className="mx-auto flex max-w-7xl justify-center gap-2 px-3 sm:px-6 lg:px-8">
+              {[
+                isBg ? "Най-продавани" : "Best sellers",
+                isBg ? "Последно добавени" : "Recently added",
+                isBg ? "Най-висок рейтинг" : "Highest rated",
+              ].map((label, tabIndex) => (
+                <span
+                  key={label}
+                  className={`inline-flex min-h-10 items-center rounded-full px-6 py-2 text-xs font-bold uppercase tracking-wide shadow-sm ${tabIndex === 0 ? "bg-orange-500 text-white" : "bg-slate-800 text-white"}`}
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -313,7 +417,7 @@ const AdminSlideshow = () => {
 
             <div className="border-b border-slate-200 bg-slate-100/70 p-4">
               <div className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">{isBg ? `Преглед — ${previewMode === "desktop" ? "компютър" : "телефон"}` : `Preview — ${previewMode}`}</div>
-              <SlidePreview slide={slide} mode={previewMode} isBg={isBg} />
+              <SlidePreview slide={slide} mode={previewMode} isBg={isBg} index={index} total={slides.length} />
             </div>
 
             <div className="grid gap-5 p-4 xl:grid-cols-[minmax(300px,0.75fr)_minmax(0,1.25fr)]">
