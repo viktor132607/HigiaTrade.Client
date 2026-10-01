@@ -222,7 +222,7 @@ const Brands = () => {
                 {isBg ? "Няма активни продукти от тази марка." : "There are no active products from this brand."}
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:gap-6 lg:grid-cols-3 2xl:grid-cols-4">
+              <div className="product-card-grid">
                 {products.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}

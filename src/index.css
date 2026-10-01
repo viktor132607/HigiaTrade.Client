@@ -87,6 +87,25 @@
   }
 }
 
+/* Shared storefront product-card width: visually between the previous 4- and 5-column layouts. */
+.product-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .product-card-grid { gap: 1rem; }
+}
+
+@media (min-width: 1024px) {
+  .product-card-grid {
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 17rem));
+    justify-content: center;
+    align-items: stretch;
+  }
+}
+
 @keyframes home-hero-slide-in-right {
   from { transform: translate3d(100%, 0, 0) scale(1.01); }
   to { transform: translate3d(0, 0, 0) scale(1); }

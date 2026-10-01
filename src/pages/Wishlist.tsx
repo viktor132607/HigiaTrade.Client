@@ -115,7 +115,7 @@ const Wishlist = () => {
           <span className="text-sm text-gray-600 sm:text-base">{wishlistProducts.length} {isBg ? (wishlistProducts.length === 1 ? "продукт" : "продукта") : (wishlistProducts.length === 1 ? "product" : "products")}</span>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="product-card-grid">
           {wishlistProducts.map((product) => {
             const displayPrice = product.discountedPrice && product.discountedPrice > 0 ? product.discountedPrice : product.regularPrice;
             return (

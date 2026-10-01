@@ -203,7 +203,7 @@ const SanoDistributor = () => {
           {loading ? (
             <div className="mt-8 text-sm text-slate-500">{isBg ? "Зареждане..." : "Loading..."}</div>
           ) : products.length > 0 ? (
-            <div className="mt-8 grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="mt-8 product-card-grid">
               {products.map((product) => <ProductCard key={product.id} product={product} />)}
             </div>
           ) : (

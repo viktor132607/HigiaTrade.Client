@@ -82,7 +82,7 @@ const Promotions = () => {
             {isBg ? "В момента няма активни промоции." : "There are no active promotions at the moment."}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2.5 min-[430px]:gap-3 sm:gap-4 lg:grid-cols-3 2xl:grid-cols-4">
+          <div className="product-card-grid">
             {products.map((product) => <ProductCard key={product.id} product={product} />)}
           </div>
         )}
