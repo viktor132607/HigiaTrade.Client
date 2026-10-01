@@ -102,7 +102,7 @@ const FilterSidebar = ({
   useEffect(() => { setSelectedRating(selectedRatingProp ?? 0); }, [selectedRatingProp]);
 
   useEffect(() => {
-    if (suppressInitialAutoApply && !didRunAutoApply.current) {
+    if (suppressInitialAutoApply) {
       didRunAutoApply.current = true;
       return;
     }
