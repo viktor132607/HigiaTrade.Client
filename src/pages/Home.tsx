@@ -186,7 +186,7 @@ const Home = () => {
       )}
 
       <section className="relative overflow-hidden bg-slate-900 py-10 text-white sm:py-14">
-        <div className="absolute inset-0 bg-cover opacity-50" style={{ backgroundImage: "url(/images/home-needs-bg.jpg)", backgroundPosition: "center" }} />
+        <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url(/images/home-needs-bg.jpg)" }} />
         <div className="absolute inset-0 bg-slate-950/60" />
         <div className="relative mx-auto max-w-7xl px-3 text-center sm:px-6 lg:px-8">
           <h2 className="font-display text-2xl font-bold sm:text-4xl">{isBg ? "Избери според нуждите си" : "Choose by your needs"}</h2>
@@ -233,8 +233,8 @@ const Home = () => {
 
       <section className="site-container py-6 sm:py-8">
         <div className="relative overflow-hidden rounded-3xl bg-slate-900 px-6 py-10 text-white shadow-xl sm:px-10 sm:py-12">
-          <div className="absolute inset-0 bg-cover bg-center opacity-35" style={{ backgroundImage: "url(/images/home-shopping-bg.jpg)" }} />
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/70 to-slate-950/35" />
+          <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url(/images/home-shopping-bg.jpg)" }} />
+          <div className="absolute inset-0 bg-slate-950/60" />
           <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="max-w-2xl text-left">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-orange-400">
