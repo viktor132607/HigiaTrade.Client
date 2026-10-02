@@ -185,11 +185,12 @@ const Home = () => {
         </section>
       )}
 
-      <section className="relative overflow-hidden bg-slate-950 py-10 text-white sm:py-14">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(24,185,159,0.18),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.16),transparent_35%)]" />
-        <div className="relative site-container text-center">
+      <section className="relative overflow-hidden bg-slate-900 py-10 text-white sm:py-14">
+        <div className="absolute inset-0 bg-cover opacity-30" style={{ backgroundImage: "url(https://images.unsplash.com/photo-1583947581924-860bda6a26df?auto=format&fit=crop&w=1600&q=80)", backgroundPosition: "center 68%" }} />
+        <div className="absolute inset-0 bg-slate-950/60" />
+        <div className="relative mx-auto max-w-7xl px-3 text-center sm:px-6 lg:px-8">
           <h2 className="font-display text-2xl font-bold sm:text-4xl">{isBg ? "Избери според нуждите си" : "Choose by your needs"}</h2>
-          <div className="mx-auto mt-7 grid max-w-5xl gap-4 md:grid-cols-3">
+          <div className="mx-auto mt-7 grid max-w-5xl gap-4 sm:mt-10 md:grid-cols-3 md:gap-6">
             {[
               {
                 title: isBg ? "За дома" : "For home",
@@ -209,15 +210,15 @@ const Home = () => {
                 icon: ChatBubbleLeftRightIcon,
                 to: "/contact",
               },
-            ].map((item) => (
-              <Link key={item.title} to={item.to} className="group rounded-2xl bg-white p-6 text-slate-950 shadow-xl transition hover:-translate-y-1 hover:shadow-2xl">
+            ].map((item, index) => (
+              <Link key={item.title} to={item.to} className={`rounded-2xl bg-white/95 p-5 text-slate-950 shadow-xl backdrop-blur transition hover:-translate-y-1 hover:shadow-2xl sm:p-7 ${index === 1 ? "md:-translate-y-2 md:hover:-translate-y-3" : ""}`}>
                 <item.icon className="mx-auto h-9 w-9 text-orange-500" />
                 <h3 className="mt-4 text-base font-bold">{item.title}</h3>
                 <p className="mt-2 text-xs leading-5 text-slate-500">{item.description}</p>
               </Link>
             ))}
           </div>
-          <Link to="/products" className="mt-7 inline-flex min-h-12 items-center justify-center rounded-full bg-orange-500 px-7 py-3 text-sm font-bold uppercase text-white hover:bg-orange-600">
+          <Link to="/products" className="mt-7 inline-flex min-h-12 items-center justify-center rounded-full bg-orange-500 px-7 py-3 text-sm font-bold uppercase text-white hover:bg-orange-600 sm:mt-9">
             {isBg ? "Към каталога" : "Open catalog"}
           </Link>
         </div>
