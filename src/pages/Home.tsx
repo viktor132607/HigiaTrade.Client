@@ -231,6 +231,29 @@ const Home = () => {
         </section>
       )}
 
+      <section className="site-container py-6 sm:py-8">
+        <div className="relative overflow-hidden rounded-3xl bg-slate-900 px-6 py-10 text-white shadow-xl sm:px-10 sm:py-12">
+          <div className="absolute inset-0 bg-cover bg-center opacity-35" style={{ backgroundImage: "url(/images/home-shopping-bg.jpg)" }} />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/70 to-slate-950/35" />
+          <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-2xl text-left">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-orange-400">
+                {isBg ? "SANO решения" : "SANO solutions"}
+              </p>
+              <h2 className="mt-2 font-display text-2xl font-bold sm:text-3xl">
+                {isBg ? "Професионална грижа за дома и бизнеса" : "Professional care for home and business"}
+              </h2>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-white/75">
+                {isBg ? "Разгледай подбрани почистващи и перилни продукти за ежедневна и професионална употреба." : "Explore selected cleaning and laundry products for everyday and professional use."}
+              </p>
+            </div>
+            <Link to="/products" className="inline-flex min-h-12 shrink-0 items-center justify-center self-start rounded-full bg-orange-500 px-7 py-3 text-sm font-bold uppercase text-white transition hover:bg-orange-600 md:self-auto">
+              {isBg ? "Разгледай продуктите" : "Browse products"}
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {mainCategories.length > 0 && (
         <section className="site-container py-8 sm:py-10">
           <div className="text-center"><h2 className="font-display text-2xl font-bold text-slate-950 sm:text-3xl dark:text-white">{text.categories}</h2></div>
