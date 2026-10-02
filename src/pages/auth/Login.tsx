@@ -40,6 +40,7 @@ const Login = () => {
         body: JSON.stringify({ email: email.trim(), password }),
       });
       const data = await readApiJson<LoginResponse>(response);
+      window.localStorage.setItem("refreshToken", data.refreshToken);
       dispatch(setToken(data.accessToken));
       dispatch(setUser({
         id: data.userId ?? "",

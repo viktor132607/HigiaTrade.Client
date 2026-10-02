@@ -45,6 +45,7 @@ const getInitialState = (): AuthState => {
   if (!token || !userStr || isJwtExpired(token)) {
     window.localStorage.removeItem("token");
     window.localStorage.removeItem("user");
+        window.localStorage.removeItem("refreshToken");
     return emptyState;
   }
 
@@ -60,6 +61,7 @@ const getInitialState = (): AuthState => {
     console.error("Error parsing user data from localStorage:", error);
     window.localStorage.removeItem("token");
     window.localStorage.removeItem("user");
+        window.localStorage.removeItem("refreshToken");
     return emptyState;
   }
 };
@@ -88,6 +90,7 @@ export const authSlice = createSlice({
         if (typeof window !== "undefined") {
           window.localStorage.removeItem("token");
           window.localStorage.removeItem("user");
+        window.localStorage.removeItem("refreshToken");
         }
 
         return;
@@ -112,6 +115,7 @@ export const authSlice = createSlice({
         if (typeof window !== "undefined") {
           window.localStorage.removeItem("token");
           window.localStorage.removeItem("user");
+        window.localStorage.removeItem("refreshToken");
         }
 
         return;
@@ -135,6 +139,7 @@ export const authSlice = createSlice({
       if (typeof window !== "undefined") {
         window.localStorage.removeItem("token");
         window.localStorage.removeItem("user");
+        window.localStorage.removeItem("refreshToken");
       }
     },
   },

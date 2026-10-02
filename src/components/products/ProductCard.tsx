@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { StarIcon } from "@heroicons/react/24/solid";
 import { toast } from "react-toastify";
 import { addItem } from "../../store/slices/cartSlice";
+import { setToken } from "../../store/slices/authSlice";
 import { RootState } from "../../store";
 import { formatCurrency } from "../../utils/currency";
 import { productSeoPath, seoImageUrl } from "../../utils/seo";
@@ -17,6 +18,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const token = useSelector((state: RootState) => state.auth.token);
+  const user = useSelector((state: RootState) => state.auth.user);
   const adding = useRef(false);
   const [busy, setBusy] = useState(false);
   const { language } = useLanguageTheme();
@@ -54,18 +56,40 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
     try {
       if (token) {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Orders`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ productId: product.id, quantity: 1 }),
-        });
+        const addToServerCart = (accessToken: string) =>
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/Orders`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+            body: JSON.stringify({ productId: product.id, quantity: 1 }),
+          });
+
+        let response = await addToServerCart(token);
+
+        if (response.status === 401 && user?.id && typeof window !== "undefined") {
+          const refreshToken = window.localStorage.getItem("refreshToken");
+
+          if (refreshToken) {
+            const refreshResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Auth/refresh-token`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ userId: user.id, refreshToken }),
+            });
+
+            if (refreshResponse.ok) {
+              const refreshed = await refreshResponse.json() as { accessToken: string; refreshToken: string };
+              window.localStorage.setItem("refreshToken", refreshed.refreshToken);
+              dispatch(setToken(refreshed.accessToken));
+              response = await addToServerCart(refreshed.accessToken);
+            }
+          }
+        }
 
         if (!response.ok) {
-          toast.warning(isBg ? "Количката е обновена локално, но синхронизацията с профила не успя." : "The cart was updated locally, but account sync failed.");
+          console.warn("Cart profile sync failed with status", response.status);
         }
       }
-    } catch {
-      toast.warning(isBg ? "Количката е обновена локално, но синхронизацията с профила не успя." : "The cart was updated locally, but account sync failed.");
+    } catch (error) {
+      console.warn("Cart profile sync failed", error);
     } finally {
       adding.current = false;
       setBusy(false);
