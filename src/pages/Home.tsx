@@ -161,8 +161,8 @@ const Home = () => {
       )}
 
       <section className="relative overflow-hidden bg-slate-900 py-10 text-white sm:py-14">
-        <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url(/images/home-shopping-bg.jpg)" }} />
-        <div className="absolute inset-0 bg-slate-950/60" />
+        <div className="absolute inset-0 bg-cover bg-center opacity-50" style={{ backgroundImage: "url(/images/home-shopping-bg.jpg)" }} />
+        <div className="absolute inset-0 bg-slate-950/50" />
         <div className="relative mx-auto max-w-7xl px-3 text-center sm:px-6 lg:px-8">
           <h2 className="font-display text-2xl font-bold sm:text-4xl">{text.startShopping}</h2>
           <div className="mt-7 grid gap-4 sm:mt-10 md:grid-cols-3 md:gap-6">
@@ -186,7 +186,7 @@ const Home = () => {
       )}
 
       <section className="relative overflow-hidden bg-slate-900 py-10 text-white sm:py-14">
-        <div className="absolute inset-0 bg-cover opacity-30" style={{ backgroundImage: "url(/images/home-needs-bg.jpg)", backgroundPosition: "center" }} />
+        <div className="absolute inset-0 bg-cover opacity-50" style={{ backgroundImage: "url(/images/home-needs-bg.jpg)", backgroundPosition: "center" }} />
         <div className="absolute inset-0 bg-slate-950/60" />
         <div className="relative mx-auto max-w-7xl px-3 text-center sm:px-6 lg:px-8">
           <h2 className="font-display text-2xl font-bold sm:text-4xl">{isBg ? "Избери според нуждите си" : "Choose by your needs"}</h2>
