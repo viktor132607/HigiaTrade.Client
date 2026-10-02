@@ -251,9 +251,9 @@ const Home = () => {
         <div className="mx-auto grid max-w-7xl gap-5 px-3 py-8 text-center sm:grid-cols-2 sm:px-6 sm:py-10 lg:grid-cols-4 lg:px-8">
           {[
             [isBg ? "Коректно обслужване" : "Reliable service", CheckBadgeIcon],
-            [isBg ? "Реални продукти" : "Real products", BuildingStorefrontIcon],
-            [isBg ? "Сигурно пазаруване" : "Secure shopping", ShieldCheckIcon],
-            [isBg ? "Актуални цени" : "Current prices", CreditCardIcon],
+            [isBg ? "Качествени продукти" : "Quality products", BuildingStorefrontIcon],
+            [isBg ? "SANO за дома и бизнеса" : "SANO for home and business", ShieldCheckIcon],
+            [isBg ? "Актуални цени и наличности" : "Current prices and stock", CreditCardIcon],
           ].map(([title, Icon]) => {
             const ItemIcon = Icon as typeof CheckBadgeIcon;
             return <div key={String(title)}><ItemIcon className="mx-auto h-11 w-11 text-slate-600 dark:text-white sm:h-12 sm:w-12" /><h3 className="mt-4 font-display text-lg font-bold text-slate-950 dark:text-white sm:text-xl">{String(title)}</h3></div>;
