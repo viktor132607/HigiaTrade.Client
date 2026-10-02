@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowRightIcon,
   BuildingStorefrontIcon,
   CheckBadgeIcon,
   CreditCardIcon,
   ShieldCheckIcon,
-  TruckIcon,
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import HomeHeroSlider from "../components/home/HomeHeroSlider";
@@ -119,13 +117,6 @@ const Home = () => {
     { title: isBg ? "Завърши поръчката" : "Place the order", description: isBg ? "Въведи данните за доставка и потвърди поръчката." : "Enter delivery details and confirm the order.", icon: CreditCardIcon },
   ];
 
-  const serviceItems = [
-    { title: isBg ? "Поръчка по телефон" : "Phone orders", description: isBg ? "Бърза връзка за наличности и заявки." : "Fast contact for stock and orders.", icon: TruckIcon, color: "bg-emerald-500" },
-    { title: isBg ? "Доставка" : "Delivery", description: isBg ? "Доставка според наличностите и адреса." : "Delivery based on stock and destination.", icon: ArrowRightIcon, color: "bg-sky-500" },
-    { title: isBg ? "Актуални наличности" : "Current stock", description: isBg ? "Каталогът използва данните от системата за наличности." : "The catalog uses current inventory data.", icon: CheckBadgeIcon, color: "bg-yellow-400" },
-    { title: isBg ? "Сигурен профил" : "Secure account", description: isBg ? "Управление на профил, поръчки и лични данни." : "Manage account, orders and personal data.", icon: ShieldCheckIcon, color: "bg-violet-500" },
-  ];
-
   return (
     <div className="bg-white text-slate-950 transition-colors dark:bg-black dark:text-white">
       <div className="relative">
@@ -190,12 +181,6 @@ const Home = () => {
           <div className="mt-6 product-card-grid sm:mt-8">{latestProducts.slice(0, 10).map((product) => <ProductCard key={product.id} product={product} />)}</div>
         </section>
       )}
-
-      <section className="border-y border-slate-200 bg-slate-50 transition-colors dark:border-slate-800 dark:bg-black">
-        <div className="mx-auto grid max-w-7xl gap-4 px-3 py-6 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
-          {serviceItems.map((item) => <div key={item.title} className="flex items-center gap-3 sm:gap-4"><div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full sm:h-14 sm:w-14 ${item.color} text-white`}><item.icon className="h-6 w-6 sm:h-7 sm:w-7" /></div><div><h3 className="text-sm font-bold uppercase text-slate-950 dark:text-white">{item.title}</h3><p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-300">{item.description}</p></div></div>)}
-        </div>
-      </section>
 
       {discountedProducts.length > 0 && (
         <section className="site-container py-8 sm:py-10">
