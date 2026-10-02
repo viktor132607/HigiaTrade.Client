@@ -209,13 +209,13 @@ const Home = () => {
       <section className="border-t border-slate-200 bg-white transition-colors dark:border-slate-800 dark:bg-black">
         <div className="mx-auto grid max-w-7xl gap-5 px-3 py-8 text-center sm:grid-cols-2 sm:px-6 sm:py-10 lg:grid-cols-4 lg:px-8">
           {[
-            [isBg ? "Коректно обслужване" : "Reliable service", isBg ? "Ясна информация за продукти и поръчки." : "Clear information about products and orders.", CheckBadgeIcon],
-            [isBg ? "Реални продукти" : "Real products", isBg ? "Каталогът идва от базата данни, без фиктивни артикули." : "Catalog data comes from the database without fake items.", BuildingStorefrontIcon],
-            [isBg ? "Сигурно пазаруване" : "Secure shopping", isBg ? "Профил и поръчки в една система." : "Account and orders in one system.", ShieldCheckIcon],
-            [isBg ? "Актуални цени" : "Current prices", isBg ? "Цени и наличности от текущите продуктови данни." : "Prices and stock from current product data.", CreditCardIcon],
-          ].map(([title, description, Icon]) => {
+            [isBg ? "Коректно обслужване" : "Reliable service", CheckBadgeIcon],
+            [isBg ? "Реални продукти" : "Real products", BuildingStorefrontIcon],
+            [isBg ? "Сигурно пазаруване" : "Secure shopping", ShieldCheckIcon],
+            [isBg ? "Актуални цени" : "Current prices", CreditCardIcon],
+          ].map(([title, Icon]) => {
             const ItemIcon = Icon as typeof CheckBadgeIcon;
-            return <div key={String(title)}><ItemIcon className="mx-auto h-11 w-11 text-slate-600 dark:text-white sm:h-12 sm:w-12" /><h3 className="mt-4 font-display text-lg font-bold text-slate-950 dark:text-white sm:text-xl">{String(title)}</h3><p className="mx-auto mt-2 max-w-xs text-xs leading-5 text-slate-500 dark:text-slate-300">{String(description)}</p></div>;
+            return <div key={String(title)}><ItemIcon className="mx-auto h-11 w-11 text-slate-600 dark:text-white sm:h-12 sm:w-12" /><h3 className="mt-4 font-display text-lg font-bold text-slate-950 dark:text-white sm:text-xl">{String(title)}</h3></div>;
           })}
         </div>
       </section>
