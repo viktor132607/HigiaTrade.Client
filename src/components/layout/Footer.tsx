@@ -15,7 +15,7 @@ const Footer = () => {
 
   return (
     <footer className="relative overflow-hidden border-t border-white/10 bg-slate-900 text-white">
-      <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: "url(https://images.unsplash.com/photo-1583947581924-860bda6a26df?auto=format&fit=crop&w=1600&q=80)" }} />
+      <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: "url(/images/footer-bg.jpg)" }} />
       <div className="absolute inset-0 bg-slate-950/80" />
       <div className="relative site-container grid gap-8 py-8 text-sm sm:py-10 md:grid-cols-2 lg:grid-cols-4">
         <div>

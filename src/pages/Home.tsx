@@ -161,7 +161,7 @@ const Home = () => {
       )}
 
       <section className="relative overflow-hidden bg-slate-900 py-10 text-white sm:py-14">
-        <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url(https://images.unsplash.com/photo-1583947581924-860bda6a26df?auto=format&fit=crop&w=1600&q=80)" }} />
+        <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url(/images/home-shopping-bg.jpg)" }} />
         <div className="absolute inset-0 bg-slate-950/60" />
         <div className="relative mx-auto max-w-7xl px-3 text-center sm:px-6 lg:px-8">
           <h2 className="font-display text-2xl font-bold sm:text-4xl">{text.startShopping}</h2>
@@ -186,7 +186,7 @@ const Home = () => {
       )}
 
       <section className="relative overflow-hidden bg-slate-900 py-10 text-white sm:py-14">
-        <div className="absolute inset-0 bg-cover opacity-30" style={{ backgroundImage: "url(https://images.unsplash.com/photo-1583947581924-860bda6a26df?auto=format&fit=crop&w=1600&q=80)", backgroundPosition: "center 68%" }} />
+        <div className="absolute inset-0 bg-cover opacity-30" style={{ backgroundImage: "url(/images/home-needs-bg.jpg)", backgroundPosition: "center" }} />
         <div className="absolute inset-0 bg-slate-950/60" />
         <div className="relative mx-auto max-w-7xl px-3 text-center sm:px-6 lg:px-8">
           <h2 className="font-display text-2xl font-bold sm:text-4xl">{isBg ? "Избери според нуждите си" : "Choose by your needs"}</h2>
