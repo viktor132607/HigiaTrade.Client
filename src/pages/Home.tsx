@@ -191,7 +191,7 @@ const Home = () => {
 
       {mainCategories.length > 0 && (
         <section className="site-container py-8 sm:py-10">
-          <div className="flex items-center justify-between gap-4"><h2 className="font-display text-2xl font-bold text-slate-950 dark:text-white">{text.categories}</h2><Link to="/products" className="text-sm font-semibold text-primary-600 hover:text-primary-700">{text.viewAll}</Link></div>
+          <div className="text-center"><h2 className="font-display text-2xl font-bold text-slate-950 sm:text-3xl dark:text-white">{text.categories}</h2></div>
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
             {mainCategories.slice(0, 10).map((category) => {
               const image = category.imageUri ?? category.imageURI ?? "";
