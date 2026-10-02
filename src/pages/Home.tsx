@@ -113,7 +113,7 @@ const Home = () => {
 
   const steps = [
     { title: isBg ? "Избери продукти" : "Choose products", description: isBg ? "Търси по име, категория, марка, цена и рейтинг." : "Search by name, category, brand, price and rating.", icon: BuildingStorefrontIcon },
-    { title: isBg ? "Провери наличността" : "Check stock", description: isBg ? "Виж актуалната наличност и цената на продукта." : "See current stock and product pricing.", icon: CheckBadgeIcon },
+    { title: isBg ? "Добави в количката" : "Add to cart", description: isBg ? "Виж актуалната наличност и цената на продукта." : "See current stock and product pricing.", icon: CheckBadgeIcon },
     { title: isBg ? "Завърши поръчката" : "Place the order", description: isBg ? "Въведи данните за доставка и потвърди поръчката." : "Enter delivery details and confirm the order.", icon: CreditCardIcon },
   ];
 
