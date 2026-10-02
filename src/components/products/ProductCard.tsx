@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import { ensureResponse, refreshCheckoutItems } from "../../utils/checkout";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { StarIcon } from "@heroicons/react/24/solid";
@@ -18,7 +17,6 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const token = useSelector((state: RootState) => state.auth.token);
-  const cartItems = useSelector((state: RootState) => state.cart.items);
   const adding = useRef(false);
   const [busy, setBusy] = useState(false);
   const { language } = useLanguageTheme();
@@ -32,26 +30,46 @@ const ProductCard = ({ product }: ProductCardProps) => {
     if (!image.src.endsWith("/higiqlogo.png")) image.src = "/higiqlogo.png";
   };
 
-  const handleCartAction = async () => {
+  const handleCartAction = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
     if (product.quantity <= 0 || adding.current) return;
-    adding.current = true; setBusy(true);
+
+    adding.current = true;
+    setBusy(true);
+
+    dispatch(addItem({
+      id: product.id,
+      title: product.title,
+      regularPrice: product.regularPrice,
+      quantity: 1,
+      imageUrl: product.mainImageUrl,
+      mainImageUrl: product.mainImageUrl,
+      discountPercentage: product.discountPercentage,
+      discountedPrice: product.discountedPrice,
+    }));
+
+    window.dispatchEvent(new CustomEvent("higiatrade:cart-preview-open"));
+    toast.success(isBg ? "Продуктът е добавен в количката." : "Product added to cart.");
+
     try {
       if (token) {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Orders`, {
-          method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ productId: product.id, quantity: 1 }),
         });
-        await ensureResponse(response, isBg);
-      } else {
-        await refreshCheckoutItems([{ productId: product.id, title: product.title, totalPrice: 0, quantity: (cartItems.find(item => item.id === product.id)?.quantity || 0) + 1 }], isBg);
-      }
-      dispatch(addItem({ id:product.id, title:product.title, regularPrice:product.regularPrice, quantity:1, imageUrl:product.mainImageUrl, mainImageUrl:product.mainImageUrl, discountPercentage:product.discountPercentage, discountedPrice:product.discountedPrice }));
 
-      window.dispatchEvent(new CustomEvent("higiatrade:cart-preview-open"));
-      toast.success(isBg ? "Продуктът е добавен в количката." : "Product added to cart.");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : (isBg ? "Продуктът не е добавен в количката." : "The product was not added to your cart."));
-    } finally { adding.current = false; setBusy(false); }
+        if (!response.ok) {
+          toast.warning(isBg ? "Количката е обновена локално, но синхронизацията с профила не успя." : "The cart was updated locally, but account sync failed.");
+        }
+      }
+    } catch {
+      toast.warning(isBg ? "Количката е обновена локално, но синхронизацията с профила не успя." : "The cart was updated locally, but account sync failed.");
+    } finally {
+      adding.current = false;
+      setBusy(false);
+    }
   };
 
   const promoActive = Number(product.discountedPrice ?? 0) > 0 && Number(product.discountedPrice) < Number(product.regularPrice);
@@ -87,7 +105,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
         <div className="mt-2 flex items-center gap-2 sm:mt-3" onClick={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()}>
           <ProductActions productId={product.id} compact />
-          <button type="button" onClick={()=>void handleCartAction()} disabled={busy||product.quantity===0} className={`inline-flex h-9 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-md px-3 text-xs font-semibold transition sm:h-10 sm:px-4 ${product.quantity===0?"cursor-not-allowed bg-slate-100 text-slate-400":"bg-[#18b99f] text-white hover:bg-[#149f8a]"}`}>{product.quantity===0?(isBg?"Изчерпан":"Out of stock"):(isBg?"Добави в количка":"Add to cart")}</button>
+          <button type="button" onClick={(event)=>void handleCartAction(event)} disabled={busy||product.quantity===0} className={`inline-flex h-9 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-md px-3 text-xs font-semibold transition sm:h-10 sm:px-4 ${product.quantity===0?"cursor-not-allowed bg-slate-100 text-slate-400":"bg-[#18b99f] text-white hover:bg-[#149f8a]"}`}>{product.quantity===0?(isBg?"Изчерпан":"Out of stock"):(isBg?"Добави в количка":"Add to cart")}</button>
         </div>
       </div>
     </div>
