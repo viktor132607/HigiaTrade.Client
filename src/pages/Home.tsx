@@ -122,7 +122,7 @@ const Home = () => {
 
   return (
     <div className="bg-white text-slate-950 transition-colors dark:bg-black dark:text-white">
-      <div className="relative">
+      <div className="relative pt-3 lg:pt-4">
         <HomeHeroSlider />
 
         <div className="absolute inset-x-0 bottom-3 z-30">
