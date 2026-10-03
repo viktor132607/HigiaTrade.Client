@@ -188,7 +188,7 @@ const HomeHeroSlider = () => {
 
   return (
     <section className="relative overflow-hidden bg-white text-slate-950 transition-colors dark:bg-black dark:text-white">
-      <div className={`home-hero-frame relative mx-auto w-full max-w-[2560px] aspect-[256/45] bg-gradient-to-r ${activeSlide.accent || "from-teal-100 via-cyan-50 to-white"} transition-colors dark:from-slate-950 dark:via-slate-900 dark:to-black`}>
+      <div className={`home-hero-frame relative mx-auto w-full max-w-[2560px] aspect-[256/55] bg-gradient-to-r ${activeSlide.accent || "from-teal-100 via-cyan-50 to-white"} transition-colors dark:from-slate-950 dark:via-slate-900 dark:to-black`}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(255,255,255,0.85),transparent_25%),radial-gradient(circle_at_65%_30%,rgba(255,255,255,0.55),transparent_28%)] dark:bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.08),transparent_30%)]" />
         {previousSlide?.image && isTransitioning && (
           <img
