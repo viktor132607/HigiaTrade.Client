@@ -68,7 +68,7 @@
 /* Laptop hero: keep the same banner scale as desktop so images and copy are not over-cropped. */
 @media (min-width: 1024px) and (max-width: 1919px) {
   .home-hero-frame {
-    aspect-ratio: 256 / 45 !important;
+    aspect-ratio: 256 / 55 !important;
   }
 
   .home-hero-content {
