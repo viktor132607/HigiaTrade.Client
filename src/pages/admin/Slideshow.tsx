@@ -202,6 +202,27 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
     : "";
 
   return <>
+        <div className="mb-2 flex flex-wrap items-center justify-between text-xs text-slate-500">
+      <span className="font-semibold">{isBg ? "Пълен екран на началната страница" : "Full homepage viewport"}</span>
+      <span className="font-mono">{width} × {height} px · {Math.round(scale * 100)}%</span>
+    </div>
+    <div ref={hostRef} className="w-full overflow-hidden border border-slate-300 bg-white">
+      <div className="flex justify-center">
+        <div className="relative shrink-0" style={{ width: width * scale, height: height * scale }}>
+          <iframe ref={iframeRef}
+            title={isBg ? "Преглед на целия екран на сайта" : "Full homepage viewport preview"}
+            src="/admin/slideshow-live-preview"
+            loading="lazy"
+            width={width} height={height}
+            onLoad={sendUpdate}
+            style={{
+              display: "block", width, height, border: 0, maxWidth: "none", maxHeight: "none",
+              transform: `scale(${scale})`, transformOrigin: "top left",
+            }}
+          />
+        </div>
+      </div>
+    </div>
     <details className="mb-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"><summary className="cursor-pointer font-semibold text-slate-600">{isBg ? "Подравняване и мащабиране" : "Alignment and scale"}</summary><div className="mt-2 flex flex-wrap items-center gap-2">
       <label className="inline-flex min-h-8 cursor-pointer items-center gap-2 font-semibold">
         <input type="checkbox" checked={snapEnabled} onChange={event => setSnapEnabled(event.target.checked)}
@@ -239,27 +260,7 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
         {isBg ? "Избери текст или бутон от банера за подравняване и мащабиране." : "Select text or a button on the banner to align and resize."}
       </span>}
     </div></details>
-    <div className="mb-2 flex flex-wrap items-center justify-between text-xs text-slate-500">
-      <span className="font-semibold">{isBg ? "Пълен екран на началната страница" : "Full homepage viewport"}</span>
-      <span className="font-mono">{width} × {height} px · {Math.round(scale * 100)}%</span>
-    </div>
-    <div ref={hostRef} className="w-full overflow-hidden border border-slate-300 bg-white">
-      <div className="flex justify-center">
-        <div className="relative shrink-0" style={{ width: width * scale, height: height * scale }}>
-          <iframe ref={iframeRef}
-            title={isBg ? "Преглед на целия екран на сайта" : "Full homepage viewport preview"}
-            src="/admin/slideshow-live-preview"
-            loading="lazy"
-            width={width} height={height}
-            onLoad={sendUpdate}
-            style={{
-              display: "block", width, height, border: 0, maxWidth: "none", maxHeight: "none",
-              transform: `scale(${scale})`, transformOrigin: "top left",
-            }}
-          />
-        </div>
-      </div>
-    </div>
+
   </>;
 };
 
@@ -627,11 +628,11 @@ const AdminSlideshow = () => {
                   <span className="w-9 shrink-0 text-right tabular-nums">{Math.round(slide.imagePositionY ?? 50)}%</span>
                 </label>
                 <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                  <button type="button" onClick={() => addOverlay(slide.id, "text")}
+                  <button type="button" onClick={() => addOverlay(slide.id, "text")} disabled={(slide.elements ?? []).length >= 30}
                     className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:border-[#18b99f] hover:text-[#149f8a]">
                     <PlusIcon className="h-4 w-4" />{isBg ? "Добави надпис" : "Add text"}
                   </button>
-                  <button type="button" onClick={() => addOverlay(slide.id, "button")}
+                  <button type="button" onClick={() => addOverlay(slide.id, "button")} disabled={(slide.elements ?? []).length >= 30}
                     className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:border-[#18b99f] hover:text-[#149f8a]">
                     <PlusIcon className="h-4 w-4" />{isBg ? "Добави бутон" : "Add button"}
                   </button>
