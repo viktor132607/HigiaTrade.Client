@@ -164,7 +164,7 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
   };
   const getField = (frame: HTMLElement, field: SlideField) =>
     [...frame.querySelectorAll<HTMLElement>("[data-hero-field]")]
-      .find(node => node.dataset.heroField === field && window.getComputedStyle(node).visibility !== "hidden");
+      .find(node => node.dataset.heroField === field && node.ownerDocument.defaultView?.getComputedStyle(node).visibility !== "hidden");
 
   const align = (axis: "x" | "y", where: "start" | "middle" | "end") => {
     if (!selected || !selectedPosition) return;
@@ -247,6 +247,7 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
           <iframe ref={iframeRef}
             title={isBg ? "Преглед на целия екран на сайта" : "Full homepage viewport preview"}
             src="/admin/slideshow-live-preview"
+            loading="lazy"
             width={width} height={height}
             onLoad={sendUpdate}
             style={{
