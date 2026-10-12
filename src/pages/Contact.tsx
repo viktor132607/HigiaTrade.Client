@@ -15,8 +15,8 @@ import {
   CONTACT_EMAILS,
   CONTACT_EMBED_MAP_URL,
   CONTACT_MAP_URL,
-  CONTACT_PHONE_DISPLAY,
-  CONTACT_PHONE_LINK,
+  CONTACT_PHONES,
+  CONTACT_WORKING_HOURS,
 } from "../config/contact";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
 
@@ -115,10 +115,10 @@ const Contact = () => {
 
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <article className={cardClass}><PhoneIcon className="h-10 w-10 text-[#18b99f]" /><h2 className="mt-5 text-lg font-bold">{isBg ? "Телефон" : "Phone"}</h2><a href={`tel:${CONTACT_PHONE_LINK}`} className="mt-2 inline-block text-sm text-[#4b5d6d] transition hover:text-[#18b99f] dark:text-white/75">{CONTACT_PHONE_DISPLAY}</a></article>
+          <article className={cardClass}><PhoneIcon className="h-10 w-10 text-[#18b99f]" /><h2 className="mt-5 text-lg font-bold">{isBg ? "Телефон" : "Phone"}</h2><div className="mt-2 flex flex-col gap-2">{CONTACT_PHONES.map(phone => <a key={phone.link} href={`tel:${phone.link}`} className="text-sm text-[#4b5d6d] transition hover:text-[#18b99f] dark:text-white/75">{phone.display}</a>)}</div></article>
           <article className={cardClass}><EnvelopeIcon className="h-10 w-10 text-[#18b99f]" /><h2 className="mt-5 text-lg font-bold">{isBg ? "Имейл" : "Email"}</h2><div className="mt-2 space-y-2">{CONTACT_EMAILS.map((email) => <a key={email} href={`mailto:${email}`} className="block break-all text-sm text-[#4b5d6d] transition hover:text-[#18b99f] dark:text-white/75">{email}</a>)}</div></article>
           <article className={cardClass}><MapPinIcon className="h-10 w-10 text-[#18b99f]" /><h2 className="mt-5 text-lg font-bold">{isBg ? "Адрес" : "Address"}</h2><a href={CONTACT_MAP_URL} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-sm leading-6 text-[#4b5d6d] transition hover:text-[#18b99f] dark:text-white/75">{isBg ? CONTACT_ADDRESS_BG : CONTACT_ADDRESS_EN}</a></article>
-          <article className={cardClass}><ClockIcon className="h-10 w-10 text-[#18b99f]" /><h2 className="mt-5 text-lg font-bold">{isBg ? "Работно време" : "Working hours"}</h2><p className="mt-2 text-sm leading-6 text-[#4b5d6d] dark:text-white/75">{isBg ? "Понеделник – Петък" : "Monday – Friday"}<br />09:00 – 18:00</p></article>
+          <article className={cardClass}><ClockIcon className="h-10 w-10 text-[#18b99f]" /><h2 className="mt-5 text-lg font-bold">{isBg ? "Работно време" : "Working hours"}</h2><p className="mt-2 text-sm leading-6 text-[#4b5d6d] dark:text-white/75">{isBg ? "Понеделник – Петък" : "Monday – Friday"}<br />{CONTACT_WORKING_HOURS}</p></article>
         </section>
 
         <section className="mt-8 grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
