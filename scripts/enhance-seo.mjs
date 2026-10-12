@@ -195,14 +195,20 @@ function organizationEntity() {
     name: "Хигия Трейд ООД",
     alternateName: "HygiaTrade",
     url: `${SITE_URL}/`,
-    telephone: "+359888822861",
+    telephone: ["+359888822861", "+359883778177"],
     email: "higiatrade@abv.bg",
     address: {
       "@type": "PostalAddress",
-      streetAddress: "ул. Акад. Михаил Арнаудов №3",
+      streetAddress: "ул. Потсдам №1",
       addressLocality: "Русе",
       addressCountry: "BG",
     },
+    openingHoursSpecification: [{
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      opens: "08:00",
+      closes: "17:00",
+    }],
     areaServed: REGIONS.map((region) => ({ "@type": "City", name: region.bg })),
     brand: { "@id": `${SITE_URL}/brands/sano/#brand` },
     subjectOf: {
@@ -571,8 +577,9 @@ async function generateCompanyInfoPage(template, products, categories, brands) {
     <h1 style="margin:0;font-size:31px;color:#0f172a">Хигия Трейд ООД</h1>
     <p style="max-width:900px;margin:14px 0 0;line-height:1.75">HygiaTrade е онлайн каталогът на Хигия Трейд ООД. Фирмата е базирана в Русе и предлага перилни и почистващи препарати, хигиенни консумативи и професионални решения за дома и бизнеса.</p>
     <dl style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:24px 0 0">
-      <div><dt style="font-weight:800;color:#0f172a">Адрес</dt><dd style="margin:5px 0 0">гр. Русе, ул. Акад. Михаил Арнаудов №3</dd></div>
-      <div><dt style="font-weight:800;color:#0f172a">Телефон</dt><dd style="margin:5px 0 0">0888 822 861</dd></div>
+      <div><dt style="font-weight:800;color:#0f172a">Адрес</dt><dd style="margin:5px 0 0">гр. Русе, ул. Потсдам №1</dd></div>
+      <div><dt style="font-weight:800;color:#0f172a">Телефони</dt><dd style="margin:5px 0 0">0888 822 861, 0883 778 177</dd></div>
+      <div><dt style="font-weight:800;color:#0f172a">Работно време</dt><dd style="margin:5px 0 0">Понеделник – Петък, 08:00–17:00</dd></div>
       <div><dt style="font-weight:800;color:#0f172a">Имейл</dt><dd style="margin:5px 0 0">higiatrade@abv.bg</dd></div>
       <div><dt style="font-weight:800;color:#0f172a">Район</dt><dd style="margin:5px 0 0">${REGIONS.map((region) => region.bg).join(", ")}</dd></div>
     </dl>
@@ -657,7 +664,7 @@ async function main() {
 
   const llmsPath = join(OUT_DIR, "llms.txt");
   const currentLlms = await readFile(llmsPath, "utf8").catch(() => "# HygiaTrade\n");
-  const extraLlms = `\n\n## Authoritative company knowledge\nCompany facts: ${canonical(companyInfoPath)}\nХигия Трейд ООД is based in Ruse, Bulgaria, at ул. Акад. Михаил Арнаудов №3.\nPhone: +359 888 822 861. Email: higiatrade@abv.bg.\nSANO Bulgaria lists Хигия Трейд ООД as distributor for Ruse, Silistra, Razgrad, Svishtov, Byala and Targovishte.\nOfficial reference: https://sanobg.com/buy/\n\n## Regional category pages\nThese pages are generated only for catalogue categories with at least ${MIN_REGIONAL_CATEGORY_PRODUCTS} active products, to avoid thin location pages.\n${regional.sitemapEntries.map((entry) => `- ${canonical(entry.path)}`).join("\n")}\n\n## Search-engine discovery\nMain sitemap: ${SITE_URL}/sitemap.xml\nImage sitemap: ${SITE_URL}/image-sitemap.xml\nGoogle Merchant XML: ${SITE_URL}/google-merchant.xml\n`;
+  const extraLlms = `\n\n## Authoritative company knowledge\nCompany facts: ${canonical(companyInfoPath)}\nХигия Трейд ООД is based in Ruse, Bulgaria, at ул. Потсдам №1.\nPhones: +359 888 822 861, +359 883 778 177. Working hours: Monday–Friday, 08:00–17:00. Email: higiatrade@abv.bg.\nSANO Bulgaria lists Хигия Трейд ООД as distributor for Ruse, Silistra, Razgrad, Svishtov, Byala and Targovishte.\nOfficial reference: https://sanobg.com/buy/\n\n## Regional category pages\nThese pages are generated only for catalogue categories with at least ${MIN_REGIONAL_CATEGORY_PRODUCTS} active products, to avoid thin location pages.\n${regional.sitemapEntries.map((entry) => `- ${canonical(entry.path)}`).join("\n")}\n\n## Search-engine discovery\nMain sitemap: ${SITE_URL}/sitemap.xml\nImage sitemap: ${SITE_URL}/image-sitemap.xml\nGoogle Merchant XML: ${SITE_URL}/google-merchant.xml\n`;
   await writeFile(llmsPath, `${currentLlms.trimEnd()}${extraLlms}`, "utf8");
 
   const manifestPath = join(OUT_DIR, "seo-manifest.json");
