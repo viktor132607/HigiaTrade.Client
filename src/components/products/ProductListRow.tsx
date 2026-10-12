@@ -87,7 +87,7 @@ const ProductListRow = ({ product, compact = false }: Props) => {
     </div>;
   }
 
-  return <div className="flex flex-col gap-4 rounded-none border border-slate-200 bg-white p-4 shadow-sm transition hover:border-[#18b99f]/50 hover:shadow-md sm:flex-row sm:items-center">
+  return <div className="flex origin-top scale-95 flex-col gap-4 rounded-none border border-slate-200 bg-white p-4 shadow-sm transition hover:border-[#18b99f]/50 hover:shadow-md sm:flex-row sm:items-center">
     <Link to={productPath} className="h-28 w-full flex-none overflow-hidden rounded-none bg-slate-50 sm:h-32 sm:w-32">{image("h-full w-full object-contain")}</Link>
     <div className="min-w-0 flex-1"><Link to={productPath} className="font-semibold text-slate-950 hover:text-[#18b99f] sm:text-lg">{product.title}</Link><p className="mt-1 line-clamp-2 text-sm text-slate-500">{product.description?.replace(/<[^>]+>/g, " ")}</p><div className="mt-3 flex flex-wrap items-center gap-3 text-sm"><span className="font-bold text-slate-950">{formatCurrency(displayPrice)}</span>{product.discountedPrice && product.discountedPrice > 0 ? <span className="text-slate-400 line-through">{formatCurrency(product.regularPrice)}</span> : null}<span className={product.quantity > 0 ? "text-emerald-600" : "text-rose-600"}>{stockLabel}</span></div><div className="mt-3 flex flex-wrap items-center gap-2"><ProductActions productId={product.id} showLabels compact />{purchaseButtons}</div></div>
   </div>;
