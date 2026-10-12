@@ -153,7 +153,7 @@ const Home = () => {
       </section>
 
       {tabProducts.length > 0 && (
-        <section className="site-container py-7 sm:py-8">
+        <section className="site-container pt-3.5 pb-7 sm:pt-4 sm:pb-8">
           <div className="product-card-grid">
             {tabProducts.slice(0, 10).map((product) => <ProductCard key={product.id} product={product} />)}
           </div>
