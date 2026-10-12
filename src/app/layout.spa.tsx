@@ -86,16 +86,22 @@ const organizationJsonLd = {
       alternateName: "HygiaTrade",
       url: SITE_URL,
       logo: `${SITE_URL}/higiqlogo.png`,
-      telephone: "+359888822861",
+      telephone: ["+359888822861", "+359883778177"],
       email: "higiatrade@abv.bg",
       description:
         "Дистрибутор на SANO и доставчик на перилни, почистващи и хигиенни продукти за Русе, Силистра, Разград, Свищов, Бяла и Търговище.",
       address: {
         "@type": "PostalAddress",
-        streetAddress: "ул. Акад. Михаил Арнаудов №3",
+        streetAddress: "ул. Потсдам №1",
         addressLocality: "Русе",
         addressCountry: "BG",
       },
+      openingHoursSpecification: [{
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        opens: "08:00",
+        closes: "17:00",
+      }],
       areaServed: ["Русе", "Силистра", "Разград", "Свищов", "Бяла", "Търговище"].map((name) => ({
         "@type": "City",
         name,
@@ -118,7 +124,7 @@ const organizationJsonLd = {
       },
       contactPoint: {
         "@type": "ContactPoint",
-        telephone: "+359888822861",
+        telephone: ["+359888822861", "+359883778177"],
         email: "higiatrade@abv.bg",
         contactType: "sales",
         areaServed: "BG",
