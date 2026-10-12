@@ -125,15 +125,15 @@ const SeoManager = () => {
         ? "Каталог с перилни и почистващи препарати, хартиени изделия, консумативи и професионални решения за дома, офиса и бизнеса."
         : "Catalogue of laundry and cleaning products, paper goods, supplies and professional hygiene solutions for home, office and business.";
     } else if (path === "/brands") {
-      title = isBg ? "Марки почистващи препарати и SANO | HygiaTrade" : "Cleaning brands and SANO | HygiaTrade";
+      title = isBg ? "Брандове за почистващи препарати и SANO | HygiaTrade" : "Cleaning brands and SANO | HygiaTrade";
       description = isBg
-        ? "Разгледайте марките в HygiaTrade, включително SANO, и наличните перилни, почистващи и професионални хигиенни продукти."
+        ? "Разгледайте брандовете в HygiaTrade, включително SANO, и наличните перилни, почистващи и професионални хигиенни продукти."
         : "Browse HygiaTrade brands including SANO and available laundry, cleaning and professional hygiene products.";
     } else if (path.startsWith("/brands/")) {
       const brandSlug = decodeURIComponent(path.split("/")[2] || "").replace(/-/g, " ");
       title = isBg ? `${brandSlug} - продукти | HygiaTrade` : `${brandSlug} products | HygiaTrade`;
       description = isBg
-        ? `Продукти от марка ${brandSlug} в каталога на HygiaTrade за дома, офиса и бизнеса.`
+        ? `Продукти от бранд ${brandSlug} в каталога на HygiaTrade за дома, офиса и бизнеса.`
         : `${brandSlug} products in the HygiaTrade catalogue for home, office and business use.`;
     } else if (path === "/contact") {
       title = isBg ? "Контакти и дистрибуция за Русе и региона | HygiaTrade" : "Contacts and distribution for Ruse region | HygiaTrade";
