@@ -40,16 +40,16 @@ const AdminBrands = () => {
   const [error, setError] = useState("");
 
   const text = {
-    title: isBg ? "Управление на марки" : "Manage brands",
-    subtitle: isBg ? "Създавай портфолио с марки, изображение и описание." : "Build a brand portfolio with an image and description.",
-    add: isBg ? "Добави марка" : "Add brand",
-    edit: isBg ? "Редактирай марка" : "Edit brand",
-    delete: isBg ? "Изтриване на марка" : "Delete brand",
+    title: isBg ? "Управление на брандове" : "Manage brands",
+    subtitle: isBg ? "Създавай портфолио с брандове, изображение и описание." : "Build a brand portfolio with an image and description.",
+    add: isBg ? "Добави бранд" : "Add brand",
+    edit: isBg ? "Редактирай бранд" : "Edit brand",
+    delete: isBg ? "Изтриване на бранд" : "Delete brand",
     name: isBg ? "Име" : "Name",
-    image: isBg ? "Изображение на марката" : "Brand image",
+    image: isBg ? "Изображение на бранда" : "Brand image",
     description: isBg ? "Описание" : "Description",
     noImage: isBg ? "Няма изображение" : "No image",
-    empty: isBg ? "Все още няма добавени марки." : "No brands have been added yet.",
+    empty: isBg ? "Все още няма добавени брандове." : "No brands have been added yet.",
     loading: isBg ? "Зареждане..." : "Loading...",
     uploading: isBg ? "Качване..." : "Uploading...",
     drop: isBg ? "Пусни изображението тук" : "Drop the image here",
@@ -72,7 +72,7 @@ const AdminBrands = () => {
       setBrands(Array.isArray(data) ? data : []);
     } catch (err) {
       setBrands([]);
-      setError(err instanceof Error ? err.message : isBg ? "Марките не можаха да бъдат заредени." : "Brands could not be loaded.");
+      setError(err instanceof Error ? err.message : isBg ? "Брандовете не можаха да бъдат заредени." : "Brands could not be loaded.");
     } finally {
       setLoading(false);
     }
@@ -154,7 +154,7 @@ const AdminBrands = () => {
     event.preventDefault();
     const name = form.name.trim();
     if (name.length < 2) {
-      setError(isBg ? "Името на марката трябва да е поне 2 символа." : "Brand name must be at least 2 characters.");
+      setError(isBg ? "Името на бранда трябва да е поне 2 символа." : "Brand name must be at least 2 characters.");
       return;
     }
 
@@ -175,7 +175,7 @@ const AdminBrands = () => {
       await loadBrands();
       closeModal();
     } catch (err) {
-      setError(err instanceof Error ? err.message : isBg ? "Марката не можа да бъде запазена." : "The brand could not be saved.");
+      setError(err instanceof Error ? err.message : isBg ? "Брандът не можа да бъде запазена." : "The brand could not be saved.");
     } finally {
       setSaving(false);
     }
@@ -194,7 +194,7 @@ const AdminBrands = () => {
       await loadBrands();
     } catch (err) {
       setBrandToDelete(null);
-      setError(err instanceof Error ? err.message : isBg ? "Марката не можа да бъде изтрита." : "The brand could not be deleted.");
+      setError(err instanceof Error ? err.message : isBg ? "Брандът не можа да бъде изтрита." : "The brand could not be deleted.");
     }
   };
 
@@ -311,7 +311,7 @@ const AdminBrands = () => {
 
               <div>
                 <label className="mb-1 block text-sm font-medium">{text.description}</label>
-                <textarea value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} rows={5} className="w-full resize-y rounded-md border border-slate-400 px-3 py-2 outline-none focus:border-[#18b99f]" placeholder={isBg ? "Кратко описание на марката..." : "Short brand description..."} />
+                <textarea value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} rows={5} className="w-full resize-y rounded-md border border-slate-400 px-3 py-2 outline-none focus:border-[#18b99f]" placeholder={isBg ? "Кратко описание на бранда..." : "Short brand description..."} />
               </div>
 
               {error && <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
@@ -330,7 +330,7 @@ const AdminBrands = () => {
           <div className="w-full max-w-md rounded-2xl bg-white p-4 sm:p-6">
             <h2 className="text-xl font-bold text-slate-950">{text.delete}</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              {isBg ? `Да се изтрие ли „${brandToDelete.name}“? Марка, която е зададена на продукти, не може да бъде изтрита.` : `Delete “${brandToDelete.name}”? A brand assigned to products cannot be deleted.`}
+              {isBg ? `Да се изтрие ли „${brandToDelete.name}“? Бранд, който е зададен на продукти, не може да бъде изтрита.` : `Delete “${brandToDelete.name}”? A brand assigned to products cannot be deleted.`}
             </p>
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button type="button" onClick={() => setBrandToDelete(null)} className="rounded-md border border-slate-300 px-4 py-2 text-slate-700">{text.cancel}</button>
