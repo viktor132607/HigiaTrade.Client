@@ -362,6 +362,91 @@ const AdminSlideshow = () => {
     }, 700);
   };
 
+  const updateOverlay = (slideId: string, elementId: string, patch: Partial<HeroOverlayElement>) => {
+    setSaved(false);
+    setSlides(current => current.map(slide => slide.id === slideId
+      ? { ...slide, elements: (slide.elements ?? []).map(element => element.id === elementId ? { ...element, ...patch } : element) }
+      : slide));
+  };
+
+  const addOverlay = (slideId: string, kind: HeroOverlayElement["kind"]) => {
+    const id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now());
+    const element: HeroOverlayElement = {
+      id, kind, textBg: kind === "button" ? "Нов бутон" : "Нов надпис",
+      textEn: kind === "button" ? "New button" : "New text",
+      url: "/products",
+      color: kind === "button" ? "#ffffff" : "#0f172a",
+      background: "#0f172a",
+      fontSize: kind === "button" ? 16 : 32,
+    };
+    setSaved(false);
+    setSlides(current => current.map(slide => {
+      if (slide.id !== slideId || (slide.elements ?? []).length >= 30) return slide;
+      const count = (slide.elements ?? []).length;
+      return {
+        ...slide, elements: [...(slide.elements ?? []), element],
+        positions: { ...slide.positions, [`extra:${id}`]: { x: 25, y: Math.min(75, 24 + count * 9), scale: 1 } },
+      };
+    }));
+    setEditing({ slideId, field: `extra:${id}` });
+  };
+
+  const deleteOverlay = (slideId: string, field: SlideField) => {
+    setSaved(false);
+    setSlides(current => current.map(slide => {
+      if (slide.id !== slideId) return slide;
+      const positions = { ...slide.positions };
+      delete positions[field];
+      if (field.startsWith("extra:")) {
+        return { ...slide, positions, elements: (slide.elements ?? []).filter(item => item.id !== field.slice(6)) };
+      }
+      const keys: Record<string, [keyof HomeSlide, keyof HomeSlide]> = {
+        eyebrow: ["eyebrowBg", "eyebrowEn"], title: ["titleBg", "titleEn"],
+        badge: ["badgeBg", "badgeEn"], note: ["noteBg", "noteEn"], cta: ["ctaBg", "ctaEn"],
+      };
+      const pair = keys[field];
+      return pair ? { ...slide, positions, [pair[0]]: "", [pair[1]]: "" } : slide;
+    }));
+    setEditing(null);
+  };
+
+  const changeOverlayText = (slideId: string, elementId: string, value: string) => {
+    updateOverlay(slideId, elementId, { textBg: value });
+    const fieldId = `${slideId}:extra:${elementId}`;
+    if (translationTimers.current[fieldId]) clearTimeout(translationTimers.current[fieldId]);
+    translationRequestIds.current[fieldId] = (translationRequestIds.current[fieldId] ?? 0) + 1;
+    const requestId = translationRequestIds.current[fieldId];
+    if (!value.trim()) {
+      updateOverlay(slideId, elementId, { textEn: "" });
+      return;
+    }
+    translationTimers.current[fieldId] = setTimeout(async () => {
+      try {
+        setTranslatingFields(current => ({ ...current, [fieldId]: true }));
+        const response = await fetch(`${API_BASE_URL}/translation/bg-to-en`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ text: value }),
+        });
+        const data = await readApiJson<{ translation: string }>(response);
+        if (translationRequestIds.current[fieldId] !== requestId) return;
+        setSlides(current => current.map(slide => slide.id !== slideId ? slide : ({
+          ...slide, elements: (slide.elements ?? []).map(item =>
+            item.id === elementId && item.textBg === value ? { ...item, textEn: data.translation } : item),
+        })));
+        setSaved(false);
+      } catch (err) {
+        if (translationRequestIds.current[fieldId] === requestId) {
+          setError(err instanceof Error ? err.message : isBg ? "Преводът не успя." : "Translation failed.");
+        }
+      } finally {
+        if (translationRequestIds.current[fieldId] === requestId) {
+          setTranslatingFields(current => ({ ...current, [fieldId]: false }));
+        }
+      }
+    }, 700);
+  };
+
   const moveSlide = (index: number, direction: -1 | 1) => {
     const target = index + direction;
     if (target < 0 || target >= slides.length) return;
