@@ -51,6 +51,8 @@ import SeoDashboard from "./pages/admin/SeoDashboard";
 import AdminSlideshow from "./pages/admin/Slideshow";
 import DatabaseBackup from "./pages/admin/DatabaseBackup";
 
+import CommandPrompt from "./pages/admin/CommandPrompt";
+
 function App() {
   return (
     <Provider store={store}>
@@ -104,6 +106,7 @@ function App() {
                 <Route path="invoice-import" element={<InvoiceImport />} />
                 <Route path="slideshow" element={<AdminSlideshow />} />
                 <Route path="seo" element={<SeoDashboard />} />
+                <Route path="commands" element={<CommandPrompt />} />
                 <Route path="database-backup" element={<DatabaseBackup />} />
                 <Route path="*" element={<Navigate to="/admin" replace />} />
               </Route>

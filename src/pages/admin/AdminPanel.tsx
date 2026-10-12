@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import {
+  CommandLineIcon,
   ChartBarSquareIcon,
   CircleStackIcon,
   CubeIcon,
@@ -22,6 +23,7 @@ import { loadPendingInvoiceFiles } from "./invoiceQueueStorage";
 const INCOMPLETE_MARKER = "[INVOICE_IMPORT_INCOMPLETE]";
 
 const navigation = [
+  { to: "/admin/commands", labelBg: "Команди", labelEn: "Commands", icon: CommandLineIcon },
   { to: "/admin", labelBg: "Табло", labelEn: "Overview", icon: Squares2X2Icon, end: true },
   { to: "/admin/orders", labelBg: "Поръчки", labelEn: "Orders", icon: QueueListIcon },
   { to: "/admin/routes", labelBg: "Маршрути", labelEn: "Routes", icon: MapIcon },
