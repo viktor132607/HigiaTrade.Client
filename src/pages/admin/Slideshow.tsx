@@ -15,6 +15,7 @@ import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 import type { HomeSlide, HomeSlideshowPayload, SlideField, SlidePosition, HeroOverlayElement } from "../../components/home/HomeHeroSlider";
 import { invalidateHomeSlideshowPreload } from "../../utils/homeSlideshowPreload";
 import SlideElementSettingsModal from "../../components/admin/SlideElementSettingsModal";
+import { heroScreenProfiles, type HeroScreenMode, type HeroScreenCategory } from "../../config/heroScreenProfiles";
 
 const gradientOptions = [
   { value: "from-teal-100 via-cyan-50 to-white", bg: "Тюркоаз", en: "Teal" },
@@ -24,32 +25,9 @@ const gradientOptions = [
   { value: "from-violet-100 via-purple-50 to-white", bg: "Лилав", en: "Purple" },
 ];
 
-// Widths are CSS viewport pixels (not physical panel resolution).
-const previewModes = [
-  { key: "mobile", category: "standard", width: 390, labelBg: "Телефон", labelEn: "Phone" },
-  { key: "laptop", category: "standard", width: 1366, labelBg: "Лаптоп", labelEn: "Laptop" },
-  { key: "monitor24", category: "standard", width: 1920, labelBg: 'Монитор 24″', labelEn: 'Monitor 24″' },
-  { key: "monitor27", category: "standard", width: 2560, labelBg: 'Монитор 27″', labelEn: 'Monitor 27″' },
-  { key: "iphoneSE", category: "apple", width: 375, labelBg: "iPhone SE", labelEn: "iPhone SE" },
-  { key: "iphone15", category: "apple", width: 393, labelBg: "iPhone 15 / 16", labelEn: "iPhone 15 / 16" },
-  { key: "iphonePro", category: "apple", width: 402, labelBg: "iPhone 16 / 17 Pro", labelEn: "iPhone 16 / 17 Pro" },
-  { key: "iphoneProMax", category: "apple", width: 440, labelBg: "iPhone 16 / 17 Pro Max", labelEn: "iPhone 16 / 17 Pro Max" },
-  { key: "ipadMini", category: "apple", width: 744, labelBg: "iPad mini", labelEn: "iPad mini" },
-  { key: "ipad11", category: "apple", width: 820, labelBg: "iPad 11″ / Air 11″", labelEn: "iPad 11″ / Air 11″" },
-  { key: "ipadPro11", category: "apple", width: 834, labelBg: "iPad Pro 11″", labelEn: "iPad Pro 11″" },
-  { key: "ipad13", category: "apple", width: 1032, labelBg: "iPad Air / Pro 13″", labelEn: "iPad Air / Pro 13″" },
-  { key: "macbookAir13", category: "apple", width: 1280, labelBg: "MacBook Air 13″", labelEn: "MacBook Air 13″" },
-  { key: "macbookAir15", category: "apple", width: 1440, labelBg: "MacBook Air 15″", labelEn: "MacBook Air 15″" },
-  { key: "macbookPro14", category: "apple", width: 1512, labelBg: "MacBook Pro 14″", labelEn: "MacBook Pro 14″" },
-  { key: "macbookPro16", category: "apple", width: 1728, labelBg: "MacBook Pro 16″", labelEn: "MacBook Pro 16″" },
-  { key: "imac24", category: "apple", width: 1920, labelBg: "iMac 24″", labelEn: "iMac 24″" },
-  { key: "tabletSmall", category: "tablet", width: 768, labelBg: "Таблет 8″", labelEn: "8″ tablet" },
-  { key: "tabletMedium", category: "tablet", width: 800, labelBg: "Таблет 10″", labelEn: "10″ tablet" },
-  { key: "tabletLarge", category: "tablet", width: 1024, labelBg: "Таблет 11″", labelEn: "11″ tablet" },
-  { key: "tabletXL", category: "tablet", width: 1200, labelBg: "Таблет 12–14″", labelEn: "12–14″ tablet" },
-] as const;
-type PreviewMode = (typeof previewModes)[number]["key"];
-type PreviewCategory = (typeof previewModes)[number]["category"];
+const previewModes = heroScreenProfiles;
+type PreviewMode = HeroScreenMode;
+type PreviewCategory = HeroScreenCategory;
 type BgTranslationKey = "eyebrowBg" | "titleBg" | "badgeBg" | "noteBg" | "ctaBg";
 type EnTranslationKey = "eyebrowEn" | "titleEn" | "badgeEn" | "noteEn" | "ctaEn";
 
@@ -108,7 +86,8 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
   const isBg = language === "bg";
   const width = previewModes.find(option => option.key === mode)?.width ?? 1366;
   const height = previewHeights[mode] ?? 768;
-  const selectedPosition = selected ? slide.positions?.[selected] : undefined;
+  const activePositions = { ...slide.positions, ...slide.layouts?.[mode]?.positions };
+  const selectedPosition = selected ? activePositions[selected] : undefined;
   const fieldLabels: Partial<Record<SlideField, string>> = {
     eyebrow: isBg ? "Горен текст" : "Eyebrow",
     title: isBg ? "Заглавие" : "Title",
@@ -119,8 +98,8 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
 
   const onMoveRef = useRef(onMove);
   onMoveRef.current = onMove;
-  const payloadRef = useRef({ slide, index, total, selected, snapEnabled });
-  payloadRef.current = { slide, index, total, selected, snapEnabled };
+  const payloadRef = useRef({ slide, mode, index, total, selected, snapEnabled });
+  payloadRef.current = { slide, mode, index, total, selected, snapEnabled };
 
   const sendUpdate = useCallback(() => {
     iframeRef.current?.contentWindow?.postMessage({
@@ -148,7 +127,7 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
     return () => window.removeEventListener("message", handler);
   }, [sendUpdate]);
 
-  useEffect(() => { sendUpdate(); }, [slide, index, total, selected, snapEnabled, sendUpdate]);
+  useEffect(() => { sendUpdate(); }, [slide, mode, index, total, selected, snapEnabled, sendUpdate]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -398,17 +377,89 @@ const AdminSlideshow = () => {
       if (slide.id !== slideId) return slide;
       const positions = { ...slide.positions };
       delete positions[field];
+      const layouts = Object.fromEntries(Object.entries(slide.layouts ?? {}).map(([mode, layout]) => {
+        const devicePositions = { ...layout?.positions };
+        delete devicePositions[field];
+        return [mode, { ...layout, positions: devicePositions, hidden: (layout?.hidden ?? []).filter(key => key !== field) }];
+      })) as HomeSlide["layouts"];
       if (field.startsWith("extra:")) {
-        return { ...slide, positions, elements: (slide.elements ?? []).filter(item => item.id !== field.slice(6)) };
+        return { ...slide, positions, layouts, elements: (slide.elements ?? []).filter(item => item.id !== field.slice(6)) };
       }
       const keys: Record<string, [keyof HomeSlide, keyof HomeSlide]> = {
         eyebrow: ["eyebrowBg", "eyebrowEn"], title: ["titleBg", "titleEn"],
         badge: ["badgeBg", "badgeEn"], note: ["noteBg", "noteEn"], cta: ["ctaBg", "ctaEn"],
       };
       const pair = keys[field];
-      return pair ? { ...slide, positions, [pair[0]]: "", [pair[1]]: "" } : slide;
+      return pair ? { ...slide, positions, layouts, [pair[0]]: "", [pair[1]]: "" } : slide;
     }));
     setEditing(null);
+  };
+
+  const updateDevicePosition = (slideId: string, field: SlideField, position: SlidePosition) => {
+    setSaved(false);
+    setSlides(current => current.map(slide => {
+      if (slide.id !== slideId) return slide;
+      const previous = slide.layouts?.[previewMode];
+      return {
+        ...slide,
+        layouts: {
+          ...slide.layouts,
+          [previewMode]: {
+            ...previous,
+            positions: { ...previous?.positions, [field]: position },
+            hidden: previous?.hidden ?? [],
+          },
+        },
+      };
+    }));
+  };
+
+  const setDeviceVisibility = (slideId: string, field: SlideField, visible: boolean) => {
+    setSaved(false);
+    setSlides(current => current.map(slide => {
+      if (slide.id !== slideId) return slide;
+      const previous = slide.layouts?.[previewMode];
+      const hidden = new Set(previous?.hidden ?? []);
+      if (visible) hidden.delete(field);
+      else hidden.add(field);
+      return {
+        ...slide,
+        layouts: {
+          ...slide.layouts,
+          [previewMode]: { ...previous, positions: previous?.positions ?? {}, hidden: Array.from(hidden) },
+        },
+      };
+    }));
+  };
+
+  const resetDeviceLayout = (slideId: string) => {
+    setSaved(false);
+    setSlides(current => current.map(slide => {
+      if (slide.id !== slideId) return slide;
+      const layouts = { ...slide.layouts };
+      delete layouts[previewMode];
+      return { ...slide, layouts };
+    }));
+  };
+
+  const copyDeviceLayout = (slideId: string, source: PreviewMode) => {
+    if (source === previewMode) return;
+    setSaved(false);
+    setSlides(current => current.map(slide => {
+      if (slide.id !== slideId) return slide;
+      const from = slide.layouts?.[source];
+      // Copy values, never references. Changes to one profile must remain isolated.
+      return {
+        ...slide,
+        layouts: {
+          ...slide.layouts,
+          [previewMode]: {
+            positions: { ...slide.positions, ...from?.positions },
+            hidden: [...(from?.hidden ?? [])],
+          },
+        },
+      };
+    }));
   };
 
   const changeOverlayText = (slideId: string, elementId: string, value: string) => {
@@ -636,9 +687,23 @@ const AdminSlideshow = () => {
                     className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:border-[#18b99f] hover:text-[#149f8a]">
                     <PlusIcon className="h-4 w-4" />{isBg ? "Добави бутон" : "Add button"}
                   </button>
-                  <button type="button" onClick={() => updateSlide(slide.id, "positions", {})}
+                  <span className={`inline-flex min-h-8 items-center rounded-md px-2 text-[11px] font-semibold ${slide.layouts?.[previewMode] ? "bg-teal-50 text-teal-700" : "bg-slate-100 text-slate-500"}`}>
+                    {slide.layouts?.[previewMode] ? (isBg ? "Отделен layout" : "Custom layout") : (isBg ? "Стандартен layout" : "Default layout")}
+                  </span>
+                  <select
+                    aria-label={isBg ? "Копирай layout от друг екран" : "Copy layout from screen"}
+                    defaultValue=""
+                    key={`${slide.id}:${previewMode}`}
+                    onChange={event => { if (event.target.value) copyDeviceLayout(slide.id, event.target.value as PreviewMode); event.target.value = ""; }}
+                    className="h-9 max-w-[160px] rounded-md border border-slate-300 bg-white px-2 text-[11px] font-semibold text-slate-700">
+                    <option value="" disabled>{isBg ? "Копирай от..." : "Copy from..."}</option>
+                    {previewModes.filter(mode => mode.key !== previewMode).map(mode => (
+                      <option key={mode.key} value={mode.key}>{isBg ? mode.labelBg : mode.labelEn}</option>
+                    ))}
+                  </select>
+                  <button type="button" onClick={() => resetDeviceLayout(slide.id)}
                     className="min-h-9 rounded-md px-3 text-xs font-semibold text-slate-500 hover:bg-slate-100">
-                    {isBg ? "Нулирай позиции" : "Reset positions"}
+                    {isBg ? "Нулирай този екран" : "Reset this screen"}
                   </button>
                 </div>
               </div>
@@ -683,11 +748,7 @@ const AdminSlideshow = () => {
 
             <div className="bg-slate-100/70 p-3 sm:p-4">
               <SlidePreview slide={slide} mode={previewMode} index={index} total={slides.length}
-                onMove={(field, position) => {
-                  setSaved(false);
-                  setSlides(current => current.map(item => item.id === slide.id
-                    ? { ...item, positions: { ...item.positions, [field]: position } } : item));
-                }} />
+                onMove={(field, position) => updateDevicePosition(slide.id, field, position)} />
             </div>
           </section>
         ))}
@@ -697,6 +758,10 @@ const AdminSlideshow = () => {
         if (!selectedSlide) return null;
         return <SlideElementSettingsModal
           slide={selectedSlide} field={editing.field} isBg={isBg}
+          mode={previewMode}
+          position={{ ...selectedSlide.positions, ...selectedSlide.layouts?.[previewMode]?.positions }[editing.field]}
+          visible={!(selectedSlide.layouts?.[previewMode]?.hidden ?? []).includes(editing.field)}
+          onVisibilityChange={visible => setDeviceVisibility(editing.slideId, editing.field, visible)}
           translating={Boolean(translatingFields[`${editing.slideId}:${editing.field.startsWith("extra:") ? editing.field : editing.field + "Bg"}`])}
           onClose={() => setEditing(null)}
           onDelete={() => deleteOverlay(editing.slideId, editing.field)}
@@ -712,11 +777,7 @@ const AdminSlideshow = () => {
             if (translateBg && typeof patch.textBg === "string") changeOverlayText(editing.slideId, id, patch.textBg);
             else updateOverlay(editing.slideId, id, patch);
           }}
-          onPositionChange={position => {
-            setSaved(false);
-            setSlides(current => current.map(item => item.id === editing.slideId
-              ? { ...item, positions: { ...item.positions, [editing.field]: position } } : item));
-          }}
+          onPositionChange={position => updateDevicePosition(editing.slideId, editing.field, position)}
         />;
       })()}
     </div>
