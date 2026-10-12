@@ -4,7 +4,18 @@ import { Link } from "react-router-dom";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 import { getPreloadedHomeSlideshow, preloadHomeSlideshow } from "../../utils/homeSlideshowPreload";
 
-export type SlideField = "eyebrow" | "title" | "badge" | "note" | "cta";
+export type LegacySlideField = "eyebrow" | "title" | "badge" | "note" | "cta";
+export type SlideField = LegacySlideField | `extra:${string}`;
+export type HeroOverlayElement = {
+  id: string;
+  kind: "text" | "button";
+  textBg: string;
+  textEn: string;
+  url: string;
+  color: string;
+  background: string;
+  fontSize: number;
+};
 export type SlidePosition = { x: number; y: number; scale?: number };
 export interface HomeSlide {
   id: string;
@@ -26,6 +37,7 @@ export interface HomeSlide {
   imageLightening?: number;
   accent: string;
   positions?: Partial<Record<SlideField, SlidePosition>>;
+  elements?: HeroOverlayElement[];
 }
 
 export interface HomeSlideshowPayload {
@@ -149,7 +161,7 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
     const node = (event.target as Element).closest<HTMLElement>("[data-hero-field]");
     if (!node || !frame.contains(node)) return;
     const field = node.dataset.heroField as SlideField;
-    if (!(["eyebrow", "title", "badge", "note", "cta"] as string[]).includes(field)) return;
+    if (!(["eyebrow", "title", "badge", "note", "cta"] as string[]).includes(field) && !field.startsWith("extra:")) return;
 
     event.preventDefault();
     preview.onSelect?.(field);
@@ -252,6 +264,19 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
   };
 
   const contentByField = (slide: HomeSlide, field: SlideField) => {
+    if (field.startsWith("extra:")) {
+      const element = slide.elements?.find(item => item.id === field.slice(6));
+      if (!element) return null;
+      const content = isBg ? element.textBg : element.textEn || element.textBg;
+      if (element.kind === "button") {
+        return <Link to={element.url || "/products"} onClick={preview ? event => event.preventDefault() : undefined}
+          className="inline-flex min-h-10 items-center justify-center rounded-lg px-5 py-2 font-bold shadow-sm"
+          style={{ color: element.color || "#ffffff", backgroundColor: element.background || "#0f172a", fontSize: element.fontSize || 16 }}>
+          {content}
+        </Link>;
+      }
+      return <span className="block whitespace-pre-line font-bold leading-tight" style={{ fontSize: element.fontSize || 24, color: element.color || "#0f172a" }}>{content}</span>;
+    }
     const value = (bg: string, en: string) => isBg ? bg : en;
     switch (field) {
       case "eyebrow": return <p className="text-sm font-semibold text-teal-700 sm:text-xl dark:text-teal-300">{value(slide.eyebrowBg, slide.eyebrowEn)}</p>;
@@ -265,7 +290,7 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
   const renderSlideContent = (slide: HomeSlide, index: number) => {
     if (preview ? false : index !== activeIndex) return null;
 
-    const labels: Record<SlideField, string> = {
+    const labels: Record<LegacySlideField, string> = {
       eyebrow: isBg ? slide.eyebrowBg : slide.eyebrowEn,
       title: isBg ? slide.titleBg : slide.titleEn,
       badge: isBg ? slide.badgeBg : slide.badgeEn,
@@ -348,9 +373,14 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
         </div>
 
 
-        {activeSlide && (["eyebrow", "title", "badge", "note", "cta"] as SlideField[]).map(field => {
+        {activeSlide && ([
+          "eyebrow", "title", "badge", "note", "cta",
+          ...(activeSlide.elements ?? []).map(element => `extra:${element.id}` as SlideField)
+        ] as SlideField[]).map(field => {
           const pos = activeSlide.positions?.[field];
-          const visible = field === "eyebrow" ? (isBg ? activeSlide.eyebrowBg : activeSlide.eyebrowEn)
+          const visible = field.startsWith("extra:")
+            ? (() => { const item = activeSlide.elements?.find(element => `extra:${element.id}` === field); return item && (isBg ? item.textBg : item.textEn || item.textBg); })()
+            : field === "eyebrow" ? (isBg ? activeSlide.eyebrowBg : activeSlide.eyebrowEn)
             : field === "title" ? (isBg ? activeSlide.titleBg : activeSlide.titleEn)
             : field === "badge" ? (isBg ? activeSlide.badgeBg : activeSlide.badgeEn)
             : field === "note" ? (isBg ? activeSlide.noteBg : activeSlide.noteEn)
