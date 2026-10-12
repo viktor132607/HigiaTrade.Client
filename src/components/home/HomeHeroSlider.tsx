@@ -21,6 +21,8 @@ export type SlidePosition = { x: number; y: number; scale?: number };
 export type HeroDeviceLayout = {
   positions?: Partial<Record<SlideField, SlidePosition>>;
   hidden?: SlideField[];
+  imagePositionY?: number | null;
+  imageLightening?: number | null;
 };
 export interface HomeSlide {
   id: string;
@@ -348,7 +350,7 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
             alt=""
             aria-hidden="true"
             className={`absolute inset-0 hidden h-full w-full object-cover md:block ${direction === "next" ? "home-hero-slide-out-left" : "home-hero-slide-out-right"}`}
-            style={{ objectPosition: `center ${previousSlide.imagePositionY ?? 50}%` }}
+            style={{ objectPosition: `center ${previousSlide.layouts?.[screenMode]?.imagePositionY ?? previousSlide.imagePositionY ?? 50}%` }}
           />
         )}
         {activeSlide.image && (
@@ -359,12 +361,12 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
             loading="eager"
             fetchPriority="high"
             className={`absolute inset-0 hidden h-full w-full object-cover md:block ${isTransitioning ? direction === "next" ? "home-hero-slide-in-right" : "home-hero-slide-in-left" : ""}`}
-            style={{ objectPosition: `center ${activeSlide.imagePositionY ?? 50}%` }}
+            style={{ objectPosition: `center ${deviceLayout?.imagePositionY ?? activeSlide.imagePositionY ?? 50}%` }}
           />
         )}
         <div
           className="absolute inset-0 hidden bg-gradient-to-r from-white/55 via-white/10 to-transparent md:block dark:from-black/55 dark:via-black/10 dark:to-transparent"
-          style={{ opacity: Math.min(100, Math.max(0, activeSlide.imageLightening ?? 100)) / 100 }}
+          style={{ opacity: Math.min(100, Math.max(0, deviceLayout?.imageLightening ?? activeSlide.imageLightening ?? 100)) / 100 }}
         />
 
         {canNavigate && (
