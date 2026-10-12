@@ -23,6 +23,7 @@ type Product = {
   description: string;
   regularPrice: number;
   mainImageUrl: string;
+  isRepresentativeImage?: boolean;
   secondaryImages?: ProductImage[];
   categoryId: string;
   categoryName?: string;
@@ -318,6 +319,7 @@ const ProductDetails = () => {
 
               <button type="button" onClick={() => setGalleryOpen(true)} className="relative block aspect-square min-w-0 flex-1 overflow-hidden rounded-none border border-slate-200 bg-slate-100 text-left" aria-label={tr("Отвори галерията", "Open gallery")}>
                 <img src={images[selectedImage] || "/higiqlogo.png"} alt={product.title} onError={imageErrorFallback} className="h-full w-full object-cover transition duration-200 hover:scale-[1.015]" />
+                {product.isRepresentativeImage && selectedImage === 0 && <span className="absolute bottom-3 left-3 rounded-sm bg-white/95 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">{tr("Примерна снимка", "Illustrative photo")}</span>}
               </button>
             </div>
           </section>

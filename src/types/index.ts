@@ -9,6 +9,7 @@ export interface Product {
   description: string;
   mainImageUrl: string;
   usesDefaultImage?: boolean;
+  isRepresentativeImage?: boolean;
   regularPrice: number;
   quantity: number;
   categoryId: string;

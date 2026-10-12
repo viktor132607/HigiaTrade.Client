@@ -77,7 +77,7 @@ const ProductListRow = ({ product, compact = false }: Props) => {
 
   if (compact) {
     return <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-3 border-b border-slate-200 bg-white px-3 py-3 last:border-b-0 sm:grid-cols-[80px_minmax(0,1fr)_auto] sm:items-center">
-      <Link to={productPath} className="h-16 w-16 overflow-hidden bg-slate-50 sm:h-20 sm:w-20">{image("h-full w-full object-contain")}</Link>
+      <Link to={productPath} title={product.isRepresentativeImage ? (isBg ? "Примерна снимка" : "Illustrative photo") : undefined} className="relative h-16 w-16 overflow-hidden bg-slate-50 sm:h-20 sm:w-20">{image("h-full w-full object-contain")}{product.isRepresentativeImage && <span className="absolute bottom-0 left-0 bg-white/95 px-1 text-[8px] font-semibold text-slate-700">{isBg ? "Примерна" : "Example"}</span>}</Link>
       <div className="min-w-0">
         <Link to={productPath} className="line-clamp-2 text-sm font-bold text-slate-950 hover:text-[#18b99f] sm:text-base">{product.title}</Link>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"><span className={product.quantity > 0 ? "text-emerald-600" : "text-rose-600"}>{stockLabel}</span><span className="flex items-center gap-1 text-slate-400"><StarIcon className="h-3.5 w-3.5" />{(product.rating ?? 0).toFixed(1)}</span>{product.brand ? <span className="text-slate-500">{product.brand}</span> : null}</div>
@@ -88,7 +88,7 @@ const ProductListRow = ({ product, compact = false }: Props) => {
   }
 
   return <div className="flex origin-top scale-95 flex-col gap-4 rounded-none border border-slate-200 bg-white p-4 shadow-sm transition hover:border-[#18b99f]/50 hover:shadow-md sm:flex-row sm:items-center">
-    <Link to={productPath} className="h-28 w-full flex-none overflow-hidden rounded-none bg-slate-50 sm:h-32 sm:w-32">{image("h-full w-full object-contain")}</Link>
+    <Link to={productPath} className="relative h-28 w-full flex-none overflow-hidden rounded-none bg-slate-50 sm:h-32 sm:w-32">{image("h-full w-full object-contain")}{product.isRepresentativeImage && <span className="absolute bottom-1 left-1 rounded-sm bg-white/95 px-1 text-[9px] font-semibold text-slate-700">{isBg ? "Примерна снимка" : "Illustrative photo"}</span>}</Link>
     <div className="min-w-0 flex-1"><Link to={productPath} className="font-semibold text-slate-950 hover:text-[#18b99f] sm:text-lg">{product.title}</Link><p className="mt-1 line-clamp-2 text-sm text-slate-500">{product.description?.replace(/<[^>]+>/g, " ")}</p><div className="mt-3 flex flex-wrap items-center gap-3 text-sm"><span className="font-bold text-slate-950">{formatCurrency(displayPrice)}</span>{product.discountedPrice && product.discountedPrice > 0 ? <span className="text-slate-400 line-through">{formatCurrency(product.regularPrice)}</span> : null}<span className={product.quantity > 0 ? "text-emerald-600" : "text-rose-600"}>{stockLabel}</span></div><div className="mt-3 flex flex-wrap items-center gap-2"><ProductActions productId={product.id} showLabels compact />{purchaseButtons}</div></div>
   </div>;
 };
