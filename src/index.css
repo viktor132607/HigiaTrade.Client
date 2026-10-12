@@ -132,7 +132,7 @@
   flex: 0 0 calc((100% - 0.75rem) / 2);
   min-width: 0;
   scroll-snap-align: start;
-  scroll-snap-stop: always;
+  scroll-snap-stop: normal;
 }
 /* A subtle, contained card shadow avoids the cut-off grey bands in the carousel. */
 .home-product-carousel__item > article {

@@ -63,8 +63,18 @@ export default function HomeProductCarousel({ products, label, className = "" }:
     } else {
       const first = track.firstElementChild as HTMLElement | null;
       const second = first?.nextElementSibling as HTMLElement | null;
-      const step = first && second ? second.offsetLeft - first.offsetLeft : track.clientWidth;
-      track.scrollBy({ left: direction * step, behavior: "smooth" });
+      const cardStep = first && second ? second.offsetLeft - first.offsetLeft : track.clientWidth;
+      const styles = window.getComputedStyle(track);
+      const contentWidth = track.clientWidth
+        - parseFloat(styles.paddingLeft || "0")
+        - parseFloat(styles.paddingRight || "0");
+      // Advance one complete visible page: 5 products on desktop,
+      // 3 on smaller laptops, or 2 on mobile/tablet layouts.
+      const visibleCards = Math.min(5, Math.max(1, Math.round(
+        (contentWidth + parseFloat(styles.columnGap || styles.gap || "0")) / cardStep
+      )));
+      const nextLeft = Math.max(0, Math.min(maxScroll, track.scrollLeft + direction * cardStep * visibleCards));
+      track.scrollTo({ left: nextLeft, behavior: "smooth" });
     }
   };
 
