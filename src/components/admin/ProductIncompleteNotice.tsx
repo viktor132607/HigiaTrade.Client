@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
@@ -34,6 +34,7 @@ const ProductIncompleteNotice = () => {
   const [items, setItems] = useState<IncompleteProduct[]>([]);
   const [dismissed, setDismissed] = useState(false);
   const [eligibleThisVisit, setEligibleThisVisit] = useState(false);
+  const recordedThisVisit = useRef(false);
   const adminId = user?.id ?? "admin";
 
   // This component is mounted once per visit to the admin panel. Do not
@@ -41,6 +42,7 @@ const ProductIncompleteNotice = () => {
   useEffect(() => {
     setItems([]);
     setDismissed(false);
+    recordedThisVisit.current = false;
     try {
       const lastSeen = window.localStorage.getItem(noticeKeyForAdmin(adminId));
       setEligibleThisVisit(shouldDisplayAdminNotice(lastSeen, Date.now()));
@@ -64,7 +66,8 @@ const ProductIncompleteNotice = () => {
         const payload = await response.json().catch(() => null);
         if (cancelled) return;
         const incomplete = collect(payload);
-        if (!incomplete.length) return;
+        if (!incomplete.length || recordedThisVisit.current) return;
+        recordedThisVisit.current = true;
 
         // Start the one-hour cooldown when the notice becomes visible, not
         // when the administrator closes it. It never auto-reopens this visit.
