@@ -320,11 +320,11 @@ const AdminProducts = () => {
 const fetchBrands = async () => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Brands`);
-      if (!response.ok) throw new Error("Марките не можаха да бъдат заредени.");
+      if (!response.ok) throw new Error("Брандовете не можаха да бъдат заредени.");
       const data = await response.json();
       setBrands(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Грешка при зареждане на марките:", error);
+      console.error("Грешка при зареждане на брандовете:", error);
       setBrands([]);
     }
   };
@@ -833,7 +833,7 @@ const fetchBrands = async () => {
               )}
             </div>
             <div className="relative">
-              <label htmlFor="brandFilter" className="mb-1 block text-xs font-medium text-gray-600">Марка</label>
+              <label htmlFor="brandFilter" className="mb-1 block text-xs font-medium text-gray-600">Бранд</label>
               <input
                 id="brandFilter"
                 type="text"
@@ -847,7 +847,7 @@ const fetchBrands = async () => {
                   setCurrentPage(1);
                   setIsBrandFilterOpen(true);
                 }}
-                placeholder="Пиши или избери марка"
+                placeholder="Пиши или избери бранд"
                 className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm outline-none focus:border-[#18b99f] focus:ring-2 focus:ring-[#18b99f]/20 sm:text-sm"
               />
               {isBrandFilterOpen && (
@@ -863,7 +863,7 @@ const fetchBrands = async () => {
                     }}
                     className="block w-full px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-emerald-50"
                   >
-                    Всички марки
+                    Всички брандове
                   </button>
                   {visibleBrandFilterOptions.length > 0 ? (
                     visibleBrandFilterOptions.map((brand) => (
@@ -884,7 +884,7 @@ const fetchBrands = async () => {
                       </button>
                     ))
                   ) : (
-                    <div className="px-3 py-2 text-sm text-gray-500">Няма намерена марка.</div>
+                    <div className="px-3 py-2 text-sm text-gray-500">Няма намерен бранд.</div>
                   )}
                 </div>
               )}
@@ -907,7 +907,7 @@ const fetchBrands = async () => {
               <label htmlFor="sortBy" className="text-sm text-gray-700">Сортиране по:</label>
               <select id="sortBy" value={sortBy} onChange={(event) => { setSortBy(event.target.value); setCurrentPage(1); }} className="block w-40 rounded-md border-gray-300 shadow-sm sm:text-sm">
                 <option value="title">Име</option>
-                <option value="Brand">Марка</option>
+                <option value="Brand">Бранд</option>
                 <option value="Category.Name">Категория</option>
                 <option value="regularPrice">Цена</option>
                 <option value="quantity">Наличност</option>
@@ -954,7 +954,7 @@ const fetchBrands = async () => {
                       <th className="w-28 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"><label className="inline-flex cursor-pointer items-center gap-2 whitespace-nowrap"><input type="checkbox" checked={products.length > 0 && products.every((product) => selectedProductIds.includes(product.id))} onChange={toggleAllProductsOnPage} className="h-5 w-5 rounded border-gray-300 accent-[#18b99f]" /><span>Избери</span></label></th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Име</th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Категория</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Марка</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Бранд</th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Цена (EUR)</th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Отстъпка</th>
                       <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Наличност</th>
@@ -976,7 +976,7 @@ const fetchBrands = async () => {
                             </div>
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-500">{categories.find((category) => category.id === product.categoryId)?.name || product.categoryName || "Без категория"}</td>
-                          <td className="px-6 py-4 text-sm text-gray-500">{product.brand?.trim() || "Без марка"}</td>
+                          <td className="px-6 py-4 text-sm text-gray-500">{product.brand?.trim() || "Без бранд"}</td>
                           <td className="px-6 py-4 text-sm text-gray-900">{formatCurrency(product.discountedPrice || product.regularPrice || 0)}</td>
                           <td className="px-6 py-4 text-sm text-gray-900">{product.discountPercentage ? `${product.discountPercentage}%` : "0%"}</td>
                           <td className="px-6 py-4 text-sm text-gray-500">{product.quantity || 0}</td>
