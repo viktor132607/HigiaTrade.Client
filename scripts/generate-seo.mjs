@@ -510,12 +510,12 @@ async function main() {
       jsonLd: [productSchema(product), breadcrumbSchema(breadcrumbs)],
     });
     const section = seoSection({
-      eyebrow: product.brand ? `Марка ${product.brand}` : "HygiaTrade продукт",
+      eyebrow: product.brand ? `Бранд ${product.brand}` : "HygiaTrade продукт",
       heading: product.title,
       body: truncate(product.description || "Продукт от каталога на HygiaTrade.", 650),
       details: [
         { label: "Категория", value: product.categoryName || "Продукти" },
-        { label: "Марка", value: product.brand || "HygiaTrade" },
+        { label: "Бранд", value: product.brand || "HygiaTrade" },
         { label: "Цена", value: price > 0 ? `${price.toFixed(2)} ${currency}` : "По запитване" },
         { label: "Наличност", value: Number(product.quantity) > 0 ? "В наличност" : "Проверете за доставка" },
       ],
@@ -576,13 +576,13 @@ async function main() {
         ...brandSchema(brand, brandProducts),
         breadcrumbSchema([
           { name: "HygiaTrade", path: "/" },
-          { name: "Марки", path: "/brands/" },
+          { name: "Брандове", path: "/brands/" },
           { name: brand.name, path },
         ]),
       ],
     });
     const section = seoSection({
-      eyebrow: "Марка в HygiaTrade",
+      eyebrow: "Бранд в HygiaTrade",
       heading: brand.name,
       body: brand.description ? truncate(brand.description, 650) : description,
       details: [{ label: "Активни продукти", value: String(brandProducts.length) }],
@@ -607,7 +607,7 @@ async function main() {
       heading: `SANO дистрибутор за ${region.bg}`,
       body: `${description} Хигия Трейд ООД е базирана в Русе и обслужва ${region.bg} като част от официално публикувания район на SANO България.`,
       details: [
-        { label: "Марка", value: "SANO" },
+        { label: "Бранд", value: "SANO" },
         { label: "Район", value: region.bg },
         { label: "SANO продукти в каталога", value: String(sanoProducts.length) },
       ],
