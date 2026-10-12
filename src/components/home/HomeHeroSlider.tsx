@@ -433,7 +433,7 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
         )}
         
         {canNavigate && (
-          <div className="absolute bottom-16 left-1/2 z-20 flex -translate-x-1/2 gap-2">
+          <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 gap-2 sm:bottom-4">
             {(preview ? Array.from({ length: preview.total }, (_, index) => ({ id: String(index) })) : slides).map((slide, index) => (
               <button
                 key={slide.id}
