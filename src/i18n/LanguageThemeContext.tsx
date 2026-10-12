@@ -28,7 +28,7 @@ const pairs: TextPair[] = [
   { bg: "Ново", en: "New" },
   { bg: "Най-продавани", en: "Best sellers" },
   { bg: "ТОП", en: "TOP" },
-  { bg: "По марка", en: "By brand" },
+  { bg: "Брандове", en: "By brand" },
   { bg: "Сравни", en: "Compare" },
   { bg: "Любими", en: "Wishlist" },
   { bg: "Количка", en: "Cart" },
