@@ -363,6 +363,45 @@ html.dark .ql-toolbar .ql-fill { fill: var(--dark-muted-strong) !important; }
 
 html.dark ::selection { background: rgba(20,184,166,.38); color: #fff; }
 
+/* Device presets in the slideshow editor emulate the real Home hero dimensions,
+   even if the admin browser is using a different viewport breakpoint. */
+.home-hero-laptop-preview .home-hero-frame {
+  aspect-ratio: 256 / 55 !important;
+  height: auto !important;
+}
+.home-hero-laptop-preview .home-hero-frame > img {
+  height: 100% !important;
+}
+.home-hero-laptop-preview .home-hero-content {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding-top: 2rem !important;
+  padding-bottom: 2rem !important;
+  align-items: center !important;
+}
+.home-hero-laptop-preview .home-hero-copy { transform: none !important; }
+
+.home-hero-monitor24-preview .home-hero-frame,
+.home-hero-monitor27-preview .home-hero-frame {
+  aspect-ratio: auto !important;
+}
+.home-hero-monitor24-preview .home-hero-frame { height: 312.5px !important; }
+.home-hero-monitor27-preview .home-hero-frame { height: 450px !important; }
+.home-hero-monitor24-preview .home-hero-frame > img { height: 412.5px !important; }
+.home-hero-monitor27-preview .home-hero-frame > img { height: 550px !important; }
+.home-hero-monitor24-preview .home-hero-content,
+.home-hero-monitor27-preview .home-hero-content {
+  position: relative !important;
+  inset: auto !important;
+  width: auto !important;
+  height: auto !important;
+  padding-top: 3rem !important;
+  padding-bottom: 3rem !important;
+  align-items: stretch !important;
+}
+
 /* Simulate a narrow mobile viewport inside the desktop slideshow editor. */
 .home-hero-mobile-preview .home-hero-frame { aspect-ratio: auto !important; height: auto !important; min-height: 390px; }
 .home-hero-mobile-preview .home-hero-frame > img,
