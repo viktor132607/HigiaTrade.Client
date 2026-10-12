@@ -6,7 +6,6 @@ import {
   DevicePhoneMobileIcon,
   PlusIcon,
   TrashIcon,
-  XMarkIcon,
   PencilSquareIcon,
 } from "@heroicons/react/24/outline";
 import { useSelector } from "react-redux";
@@ -15,6 +14,7 @@ import { RootState } from "../../store";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 import type { HomeSlide, HomeSlideshowPayload, SlideField, SlidePosition, HeroOverlayElement } from "../../components/home/HomeHeroSlider";
 import { invalidateHomeSlideshowPreload } from "../../utils/homeSlideshowPreload";
+import SlideElementSettingsModal from "../../components/admin/SlideElementSettingsModal";
 
 const gradientOptions = [
   { value: "from-teal-100 via-cyan-50 to-white", bg: "Тюркоаз", en: "Teal" },
@@ -611,108 +611,115 @@ const AdminSlideshow = () => {
               </div>
             </div>
 
-            <div className="border-b border-slate-200 bg-slate-100/70 p-4">
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">
-                <span>{isBg ? "Преглед — същият банер като Home" : "Preview — same banner as Home"}</span>
-                <span>{isBg ? "Плъзни текста или бутона" : "Drag text or button"}</span>
-                <button type="button" onClick={() => updateSlide(slide.id,"positions",{})} className="rounded border bg-white px-2 py-1 normal-case">{isBg ? "Нулирай позициите" : "Reset positions"}</button>
+            <div className="border-b border-slate-200 bg-white px-3 py-3 sm:px-4">
+              <div className="grid gap-2 lg:grid-cols-[190px_230px_minmax(0,1fr)] lg:items-center">
+                <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md bg-[#18b99f] px-3 text-sm font-bold text-white transition hover:bg-[#149f8a]">
+                  <PlusIcon className="h-4 w-4" />
+                  {uploadingId === slide.id ? (isBg ? "Качване..." : "Uploading...") : (isBg ? "Качи снимка" : "Upload image")}
+                  <input type="file" accept="image/*" className="sr-only" disabled={uploadingId === slide.id}
+                    onChange={event => { const file = event.target.files?.[0]; if (file) void uploadImage(slide.id, file); event.currentTarget.value = ""; }} />
+                </label>
+                <label className="flex min-w-0 items-center gap-2 text-[11px] font-semibold text-slate-600">
+                  <span className="shrink-0">{isBg ? "Позиция" : "Image Y"}</span>
+                  <input type="range" min="0" max="100" step="1" value={slide.imagePositionY ?? 50}
+                    onChange={event => updateSlide(slide.id, "imagePositionY", Number(event.target.value))}
+                    className="h-1.5 min-w-0 flex-1 cursor-pointer accent-[#18b99f]" />
+                  <span className="w-9 shrink-0 text-right tabular-nums">{Math.round(slide.imagePositionY ?? 50)}%</span>
+                </label>
+                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                  <button type="button" onClick={() => addOverlay(slide.id, "text")}
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:border-[#18b99f] hover:text-[#149f8a]">
+                    <PlusIcon className="h-4 w-4" />{isBg ? "Добави надпис" : "Add text"}
+                  </button>
+                  <button type="button" onClick={() => addOverlay(slide.id, "button")}
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 hover:border-[#18b99f] hover:text-[#149f8a]">
+                    <PlusIcon className="h-4 w-4" />{isBg ? "Добави бутон" : "Add button"}
+                  </button>
+                  <button type="button" onClick={() => updateSlide(slide.id, "positions", {})}
+                    className="min-h-9 rounded-md px-3 text-xs font-semibold text-slate-500 hover:bg-slate-100">
+                    {isBg ? "Нулирай позиции" : "Reset positions"}
+                  </button>
+                </div>
               </div>
+              <div className="mt-2 grid gap-2 border-t border-slate-100 pt-2 lg:grid-cols-[190px_230px_minmax(0,1fr)] lg:items-center">
+                <label className="flex min-w-0 items-center gap-2 text-[11px] font-semibold text-slate-600">
+                  <span className="shrink-0">{isBg ? "Фон" : "Background"}</span>
+                  <select value={slide.accent} onChange={event => updateSlide(slide.id, "accent", event.target.value)}
+                    className="h-9 min-w-0 flex-1 rounded-md border border-slate-300 bg-white px-2 text-xs text-slate-800">
+                    {gradientOptions.map(option => <option key={option.value} value={option.value}>{isBg ? option.bg : option.en}</option>)}
+                  </select>
+                </label>
+                <label className="flex min-w-0 items-center gap-2 text-[11px] font-semibold text-slate-600">
+                  <span className="shrink-0">{isBg ? "Изсветляване" : "Lightening"}</span>
+                  <input type="range" min="0" max="100" step="1" value={slide.imageLightening ?? 100}
+                    onChange={event => updateSlide(slide.id, "imageLightening", Number(event.target.value))}
+                    className="h-1.5 min-w-0 flex-1 cursor-pointer accent-[#18b99f]" />
+                  <span className="w-9 shrink-0 text-right tabular-nums">{Math.round(slide.imageLightening ?? 100)}%</span>
+                </label>
+                <div className="flex flex-wrap items-center gap-1.5 lg:justify-end" aria-label={isBg ? "Редактирай елементи" : "Edit elements"}>
+                  {([
+                    { field: "eyebrow" as const, text: slide.eyebrowBg, bg: "Горен текст", en: "Eyebrow" },
+                    { field: "title" as const, text: slide.titleBg, bg: "Заглавие", en: "Title" },
+                    { field: "badge" as const, text: slide.badgeBg, bg: "Етикет", en: "Badge" },
+                    { field: "note" as const, text: slide.noteBg, bg: "Описание", en: "Description" },
+                    { field: "cta" as const, text: slide.ctaBg, bg: "Бутон", en: "Button" },
+                  ]).filter(item => item.text.trim()).map(item => (
+                    <button key={item.field} type="button" onClick={() => setEditing({ slideId: slide.id, field: item.field })}
+                      className="inline-flex min-h-8 items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:border-[#18b99f]">
+                      <PencilSquareIcon className="h-3.5 w-3.5" />{isBg ? item.bg : item.en}
+                    </button>
+                  ))}
+                  {(slide.elements ?? []).map(element => (
+                    <button key={element.id} type="button" onClick={() => setEditing({ slideId: slide.id, field: `extra:${element.id}` })}
+                      className="inline-flex min-h-8 items-center gap-1 rounded-md border border-teal-200 bg-teal-50 px-2.5 py-1 text-[11px] font-semibold text-teal-800 hover:bg-teal-100"
+                      title={isBg ? element.textBg : element.textEn}>
+                      <PencilSquareIcon className="h-3.5 w-3.5" />{(isBg ? element.textBg : element.textEn).slice(0, 26)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-slate-100/70 p-3 sm:p-4">
               <SlidePreview slide={slide} mode={previewMode} index={index} total={slides.length}
                 onMove={(field, position) => {
                   setSaved(false);
                   setSlides(current => current.map(item => item.id === slide.id
-                    ? {...item, positions: {...item.positions, [field]: position}} : item));
+                    ? { ...item, positions: { ...item.positions, [field]: position } } : item));
                 }} />
-            </div>
-
-            <div className="grid gap-5 p-4 xl:grid-cols-[minmax(300px,0.75fr)_minmax(0,1.25fr)]">
-              <div className="space-y-3">
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">{isBg ? "Снимка" : "Image"}</label>
-                  <p className="mb-2 text-xs font-semibold text-slate-500">{isBg ? "Препоръчителен размер: 2560 × 450 px. Други размери се разтягат по цялата ширина и се изрязват по височина." : "Recommended size: 2560 × 450 px. Other sizes fill the full width and are cropped vertically."}</p>
-                  <input type="text" value={slide.image} onChange={(event) => updateSlide(slide.id, "image", event.target.value)} placeholder="https://..." className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
-                </div>
-                <div>
-                  <div className="mb-1 flex items-center justify-between gap-3">
-                    <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">{isBg ? "Вертикална позиция на снимката" : "Image vertical position"}</label>
-                    <span className="text-xs font-semibold text-slate-600">{Math.round(slide.imagePositionY ?? 50)}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="1"
-                    value={slide.imagePositionY ?? 50}
-                    onChange={(event) => updateSlide(slide.id, "imagePositionY", Number(event.target.value))}
-                    className="w-full cursor-pointer accent-[#18b99f]"
-                  />
-                  <div className="mt-1 flex justify-between text-[11px] text-slate-400">
-                    <span>{isBg ? "Нагоре" : "Top"}</span>
-                    <span>{isBg ? "Надолу" : "Bottom"}</span>
-                  </div>
-                </div>
-                <div>
-                  <div className="mb-1 flex items-center justify-between gap-3">
-                    <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">{isBg ? "Изсветляване на изображението" : "Image lightening"}</label>
-                    <span className="text-xs font-semibold text-slate-600">{Math.round(slide.imageLightening ?? 100)}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="1"
-                    value={slide.imageLightening ?? 100}
-                    onChange={(event) => updateSlide(slide.id, "imageLightening", Number(event.target.value))}
-                    className="w-full cursor-pointer accent-[#18b99f]"
-                  />
-                  <div className="mt-1 flex justify-between text-[11px] text-slate-400">
-                    <span>{isBg ? "Без изсветляване" : "Original"}</span>
-                    <span>{isBg ? "Максимално" : "Maximum"}</span>
-                  </div>
-                </div>
-                <label className="flex min-h-11 cursor-pointer items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                  {uploadingId === slide.id ? (isBg ? "Качване..." : "Uploading...") : (isBg ? "Качи нова снимка" : "Upload new image")}
-                  <input type="file" accept="image/*" className="hidden" disabled={uploadingId === slide.id} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadImage(slide.id, file); event.currentTarget.value = ""; }} />
-                </label>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">{isBg ? "Цветен фон" : "Background accent"}</label>
-                  <select value={slide.accent} onChange={(event) => updateSlide(slide.id, "accent", event.target.value)} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm">{gradientOptions.map((option) => <option key={option.value} value={option.value}>{isBg ? option.bg : option.en}</option>)}</select>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="grid gap-3 lg:grid-cols-2">
-                  <TextInput label="Горен текст (BG)" value={slide.eyebrowBg} onChange={(value) => updateBgAndTranslate(slide.id, "eyebrowBg", value)} />
-                  <TextInput label={`Eyebrow (EN)${translatingFields[`${slide.id}:eyebrowBg`] ? " — translating..." : ""}`} value={slide.eyebrowEn} onChange={(value) => updateSlide(slide.id, "eyebrowEn", value)} />
-                  <TextInput label="Заглавие (BG)" value={slide.titleBg} onChange={(value) => updateBgAndTranslate(slide.id, "titleBg", value)} />
-                  <TextInput label={`Title (EN)${translatingFields[`${slide.id}:titleBg`] ? " — translating..." : ""}`} value={slide.titleEn} onChange={(value) => updateSlide(slide.id, "titleEn", value)} />
-                  <TextInput label="Етикет (BG)" value={slide.badgeBg} onChange={(value) => updateBgAndTranslate(slide.id, "badgeBg", value)} />
-                  <TextInput label={`Badge (EN)${translatingFields[`${slide.id}:badgeBg`] ? " — translating..." : ""}`} value={slide.badgeEn} onChange={(value) => updateSlide(slide.id, "badgeEn", value)} />
-                </div>
-                <div className="grid gap-3 lg:grid-cols-2">
-                  <TextArea label="Описание (BG)" value={slide.noteBg} onChange={(value) => updateBgAndTranslate(slide.id, "noteBg", value)} />
-                  <TextArea label={`Description (EN)${translatingFields[`${slide.id}:noteBg`] ? " — translating..." : ""}`} value={slide.noteEn} onChange={(value) => updateSlide(slide.id, "noteEn", value)} />
-                </div>
-                <div className="grid gap-3 lg:grid-cols-3">
-                  <TextInput label="Бутон (BG)" value={slide.ctaBg} onChange={(value) => updateBgAndTranslate(slide.id, "ctaBg", value)} />
-                  <TextInput label={`Button (EN)${translatingFields[`${slide.id}:ctaBg`] ? " — translating..." : ""}`} value={slide.ctaEn} onChange={(value) => updateSlide(slide.id, "ctaEn", value)} />
-                  <TextInput label={isBg ? "Линк на бутона" : "Button URL"} value={slide.ctaUrl} onChange={(value) => updateSlide(slide.id, "ctaUrl", value)} />
-                </div>
-              </div>
             </div>
           </section>
         ))}
       </div>
+      {editing && (() => {
+        const selectedSlide = slides.find(item => item.id === editing.slideId);
+        if (!selectedSlide) return null;
+        return <SlideElementSettingsModal
+          slide={selectedSlide} field={editing.field} isBg={isBg}
+          translating={Boolean(translatingFields[`${editing.slideId}:${editing.field.startsWith("extra:") ? editing.field : editing.field + "Bg"}`])}
+          onClose={() => setEditing(null)}
+          onDelete={() => deleteOverlay(editing.slideId, editing.field)}
+          onLegacyChange={(key, value, translate) => {
+            if (translate) updateBgAndTranslate(editing.slideId, key as BgTranslationKey, value);
+            else {
+              setSaved(false);
+              setSlides(current => current.map(item => item.id === editing.slideId ? { ...item, [key]: value } : item));
+            }
+          }}
+          onExtraChange={(patch, translateBg) => {
+            const id = editing.field.slice(6);
+            if (translateBg && typeof patch.textBg === "string") changeOverlayText(editing.slideId, id, patch.textBg);
+            else updateOverlay(editing.slideId, id, patch);
+          }}
+          onPositionChange={position => {
+            setSaved(false);
+            setSlides(current => current.map(item => item.id === editing.slideId
+              ? { ...item, positions: { ...item.positions, [editing.field]: position } } : item));
+          }}
+        />;
+      })()}
     </div>
   );
 };
-
-const TextInput = ({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) => (
-  <label className="block"><span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</span><input type="text" value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-[#18b99f] focus:outline-none focus:ring-2 focus:ring-[#18b99f]/15" /></label>
-);
-
-const TextArea = ({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) => (
-  <label className="block"><span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</span><textarea rows={4} value={value} onChange={(event) => onChange(event.target.value)} className="w-full resize-y rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-[#18b99f] focus:outline-none focus:ring-2 focus:ring-[#18b99f]/15" /></label>
-);
 
 export default AdminSlideshow;
