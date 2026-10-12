@@ -93,7 +93,11 @@
     gap: 0.5rem;
   }
 
-  .home-hero-copy h1 {
+  /* The editor positions the heading in an absolute overlay, outside
+     .home-hero-copy. Apply the same type scale there too; otherwise the
+     old 60px heading can collide with the CTA in the shortened frame. */
+  .home-hero-copy h1,
+  .home-hero-frame [data-hero-field="title"] h1 {
     font-size: clamp(2.625rem, 2.35vw, 3.5rem);
     line-height: 1.05;
   }
