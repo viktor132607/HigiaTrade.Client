@@ -10,7 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import HomeHeroSlider from "../components/home/HomeHeroSlider";
-import ProductCard from "../components/products/ProductCard";
+import HomeProductCarousel from "../components/home/HomeProductCarousel";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
 import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_LINK } from "../config/contact";
 import { categorySeoPath } from "../utils/seo";
@@ -88,7 +88,7 @@ const Home = () => {
     catalogProducts
       .filter((product) => (product.discountPercentage ?? 0) > 0 && (product.discountedPrice ?? 0) > 0)
       .sort((a, b) => (b.discountPercentage ?? 0) - (a.discountPercentage ?? 0))
-      .slice(0, 5),
+      .slice(0, 20),
   [catalogProducts]);
 
   const tabProducts = useMemo(() => {
@@ -154,9 +154,7 @@ const Home = () => {
 
       {tabProducts.length > 0 && (
         <section className="site-container pt-3.5 pb-7 sm:pt-4 sm:pb-8">
-          <div className="product-card-grid">
-            {tabProducts.slice(0, 10).map((product) => <ProductCard key={product.id} product={product} />)}
-          </div>
+          <HomeProductCarousel key={activeProductTab} products={tabProducts.slice(0, 20)} label={activeProductTab === "best" ? text.best : activeProductTab === "popular" ? text.popular : text.rating} />
         </section>
       )}
 
@@ -181,7 +179,7 @@ const Home = () => {
       {latestProducts.length > 0 && (
         <section className="site-container py-8 sm:py-10">
           <div className="text-center"><h2 className="font-display text-2xl font-bold text-slate-950 sm:text-3xl dark:text-white">{text.latest}</h2></div>
-          <div className="mt-6 product-card-grid sm:mt-8">{latestProducts.slice(0, 10).map((product) => <ProductCard key={product.id} product={product} />)}</div>
+          <HomeProductCarousel products={latestProducts} label={text.latest} className="mt-6 sm:mt-8" />
         </section>
       )}
 
@@ -227,7 +225,7 @@ const Home = () => {
       {discountedProducts.length > 0 && (
         <section className="site-container py-8 sm:py-10">
           <div className="text-center"><h2 className="font-display text-2xl font-bold text-slate-950 sm:text-3xl dark:text-white">{text.promotions}</h2></div>
-          <div className="mt-6 product-card-grid">{discountedProducts.map((product) => <ProductCard key={product.id} product={product} />)}</div>
+          <HomeProductCarousel products={discountedProducts} label={text.promotions} className="mt-6" />
         </section>
       )}
 

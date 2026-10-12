@@ -104,6 +104,35 @@
   }
 }
 
+/* Homepage product sections: one swipeable row, five products on desktop. */
+.home-product-carousel__track {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  padding-top: 0.5rem;
+  padding-bottom: 1rem;
+}
+.home-product-carousel__track::-webkit-scrollbar { display: none; }
+.home-product-carousel__item {
+  flex: 0 0 calc((100% - 0.75rem) / 2);
+  min-width: 0;
+  scroll-snap-align: start;
+}
+@media (min-width: 640px) {
+  .home-product-carousel__track { gap: 1rem; }
+  .home-product-carousel__item { flex-basis: calc((100% - 1rem) / 2); }
+}
+@media (min-width: 1024px) {
+  .home-product-carousel__item { flex-basis: calc((100% - 2rem) / 3); }
+}
+@media (min-width: 1280px) {
+  .home-product-carousel__item { flex-basis: calc((100% - 4rem) / 5); }
+}
+
 /* Product grids keep the same card style, but preserve each page's intended columns. */
 .product-card-grid,
 .product-card-grid-filtered {
