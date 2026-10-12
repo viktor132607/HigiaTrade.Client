@@ -104,7 +104,8 @@
   }
 }
 
-/* Homepage product sections: one swipeable row, five products on desktop. */
+/* Keep the whole card, its focus ring and its shadow inside the scrolling viewport.
+   Negative block margins retain the existing spacing between homepage sections. */
 .home-product-carousel__track {
   display: flex;
   gap: 0.75rem;
@@ -113,14 +114,22 @@
   scroll-snap-type: x mandatory;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
-  padding-top: 0.5rem;
-  padding-bottom: 1rem;
+  padding: 1.5rem 0.75rem 4rem;
+  margin-top: -1rem;
+  margin-bottom: -3rem;
 }
 .home-product-carousel__track::-webkit-scrollbar { display: none; }
 .home-product-carousel__item {
   flex: 0 0 calc((100% - 0.75rem) / 2);
   min-width: 0;
   scroll-snap-align: start;
+}
+/* A subtle, contained card shadow avoids the cut-off grey bands in the carousel. */
+.home-product-carousel__item > article {
+  box-shadow: 0 6px 18px -10px rgba(15, 23, 42, 0.28);
+}
+html.dark .home-product-carousel__item > article {
+  box-shadow: 0 6px 18px -10px rgba(0, 0, 0, 0.5) !important;
 }
 @media (min-width: 640px) {
   .home-product-carousel__track { gap: 1rem; }
