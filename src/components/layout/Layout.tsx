@@ -4,7 +4,6 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import CartHoverPreview from "./CartHoverPreview";
 import ProductSearchEnhancer from "./ProductSearchEnhancer";
-import CompareNavbarEnhancer from "./CompareNavbarEnhancer";
 import ProductBreadcrumb from "./ProductBreadcrumb";
 import CookieBanner from "./CookieBanner";
 import CompareTray from "../products/CompareTray";
@@ -28,7 +27,6 @@ const Layout = ({ children }: LayoutProps) => {
       <SeoManager />
       <Navbar />
       <ProductSearchEnhancer />
-      <CompareNavbarEnhancer />
       <CartHoverPreview />
       <CompareTray />
       <ProductBreadcrumb />
