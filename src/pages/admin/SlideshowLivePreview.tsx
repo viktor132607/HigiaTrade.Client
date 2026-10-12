@@ -3,10 +3,12 @@ import type { MouseEvent } from "react";
 import Layout from "../../components/layout/Layout";
 import Home from "../Home";
 import type { PreviewConfig, HomeSlide, SlideField, SlidePosition } from "../../components/home/HomeHeroSlider";
+import type { HeroScreenMode } from "../../config/heroScreenProfiles";
 
 type Incoming = {
   type: "hero-preview:update";
   slide: HomeSlide;
+  mode: HeroScreenMode;
   index: number;
   total: number;
   selected?: SlideField | null;
@@ -32,6 +34,7 @@ const SlideshowLivePreview = () => {
 
   const heroPreview: PreviewConfig | undefined = preview ? {
     slide: preview.slide,
+    mode: preview.mode,
     index: preview.index,
     total: preview.total,
     selected: preview.selected,
