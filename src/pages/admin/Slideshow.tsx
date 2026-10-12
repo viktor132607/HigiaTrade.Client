@@ -6,12 +6,14 @@ import {
   DevicePhoneMobileIcon,
   PlusIcon,
   TrashIcon,
+  XMarkIcon,
+  PencilSquareIcon,
 } from "@heroicons/react/24/outline";
 import { useSelector } from "react-redux";
 import { API_BASE_URL, readApiJson } from "../../config/api";
 import { RootState } from "../../store";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
-import type { HomeSlide, HomeSlideshowPayload, SlideField, SlidePosition } from "../../components/home/HomeHeroSlider";
+import type { HomeSlide, HomeSlideshowPayload, SlideField, SlidePosition, HeroOverlayElement } from "../../components/home/HomeHeroSlider";
 import { invalidateHomeSlideshowPreload } from "../../utils/homeSlideshowPreload";
 
 const gradientOptions = [
@@ -107,7 +109,7 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
   const width = previewModes.find(option => option.key === mode)?.width ?? 1366;
   const height = previewHeights[mode] ?? 768;
   const selectedPosition = selected ? slide.positions?.[selected] : undefined;
-  const fieldLabels: Record<SlideField, string> = {
+  const fieldLabels: Partial<Record<SlideField, string>> = {
     eyebrow: isBg ? "Горен текст" : "Eyebrow",
     title: isBg ? "Заглавие" : "Title",
     badge: isBg ? "Етикет" : "Badge",
@@ -133,11 +135,11 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
       const data = event.data;
       if (data?.type === "hero-preview:ready") sendUpdate();
       if (data?.type === "hero-preview:select"
-        && ["eyebrow", "title", "badge", "note", "cta"].includes(data.key)) {
+        && (typeof data.key === "string" && (["eyebrow", "title", "badge", "note", "cta"].includes(data.key) || data.key.startsWith("extra:")))) {
         setSelected(data.key as SlideField);
       }
       if (data?.type === "hero-preview:move"
-        && ["eyebrow", "title", "badge", "note", "cta"].includes(data.key)
+        && (typeof data.key === "string" && (["eyebrow", "title", "badge", "note", "cta"].includes(data.key) || data.key.startsWith("extra:")))
         && data.pos && Number.isFinite(data.pos.x) && Number.isFinite(data.pos.y)) {
         onMoveRef.current(data.key as SlideField, data.pos as SlidePosition);
       }
@@ -200,14 +202,14 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
     : "";
 
   return <>
-    <div className="mb-2 flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700">
+    <details className="mb-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700"><summary className="cursor-pointer font-semibold text-slate-600">{isBg ? "Подравняване и мащабиране" : "Alignment and scale"}</summary><div className="mt-2 flex flex-wrap items-center gap-2">
       <label className="inline-flex min-h-8 cursor-pointer items-center gap-2 font-semibold">
         <input type="checkbox" checked={snapEnabled} onChange={event => setSnapEnabled(event.target.checked)}
           className="h-4 w-4 accent-[#18b99f]" />
         {isBg ? "Прилепване и водачи" : "Snap and guides"}
       </label>
       {selected && selectedPosition ? <>
-        <span className="mx-1 font-semibold text-teal-700">{fieldLabels[selected]}</span>
+        <span className="mx-1 font-semibold text-teal-700">{fieldLabels[selected] ?? (isBg ? "Елемент" : "Element")}</span>
         <span className="font-mono text-[11px] text-slate-500">{coordinateLabel}</span>
         <div className="flex flex-wrap items-center gap-1" role="group" aria-label={isBg ? "Подравняване" : "Alignment"}>
           {([
@@ -236,7 +238,7 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
       </> : <span className="text-slate-500">
         {isBg ? "Избери текст или бутон от банера за подравняване и мащабиране." : "Select text or a button on the banner to align and resize."}
       </span>}
-    </div>
+    </div></details>
     <div className="mb-2 flex flex-wrap items-center justify-between text-xs text-slate-500">
       <span className="font-semibold">{isBg ? "Пълен екран на началната страница" : "Full homepage viewport"}</span>
       <span className="font-mono">{width} × {height} px · {Math.round(scale * 100)}%</span>
@@ -274,6 +276,7 @@ const AdminSlideshow = () => {
   const [saved, setSaved] = useState(false);
   const [previewMode, setPreviewMode] = useState<PreviewMode>("laptop");
   const [translatingFields, setTranslatingFields] = useState<Record<string, boolean>>({});
+  const [editing, setEditing] = useState<{ slideId: string; field: SlideField } | null>(null);
   const translationTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const translationRequestIds = useRef<Record<string, number>>({});
 
