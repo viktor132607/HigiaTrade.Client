@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { ArrowUpTrayIcon, DocumentArrowUpIcon } from "@heroicons/react/24/outline";
+import { ArrowDownTrayIcon, ArrowUpTrayIcon, DocumentArrowUpIcon } from "@heroicons/react/24/outline";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
 
@@ -121,6 +121,14 @@ const ProductExcelImport = ({ onImported }: Props) => {
       </div>
 
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <a
+          href="/templates/product-import-template.xlsx"
+          download="HigiaTrade-Product-Template.xlsx"
+          className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#18b99f] bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+        >
+          <ArrowDownTrayIcon className="mr-2 h-5 w-5" aria-hidden="true" />
+          Изтегли шаблон
+        </a>
         <input
           ref={inputRef}
           type="file"
