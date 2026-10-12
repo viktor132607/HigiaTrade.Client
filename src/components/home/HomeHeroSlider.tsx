@@ -258,63 +258,33 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
       case "title": return <h1 className="max-w-xl font-display text-3xl font-extrabold uppercase leading-[1.05] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl dark:text-white">{value(slide.titleBg, slide.titleEn)}</h1>;
       case "badge": return <span className="inline-flex rounded-full bg-slate-950 px-4 py-2 text-xs font-black tracking-wide text-white dark:bg-white dark:text-black">{value(slide.badgeBg, slide.badgeEn)}</span>;
       case "note": return <p className="max-w-lg text-sm font-semibold leading-6 text-slate-700 sm:text-lg dark:text-slate-200">{value(slide.noteBg, slide.noteEn)}</p>;
-      case "cta": return <Link to={slide.ctaUrl || "/products"} onClick={preview ? e => e.preventDefault() : undefined} tabIndex={preview ? -1 : 0} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-950 px-6 py-3 text-sm font-bold uppercase tracking-wide text-white sm:px-8 dark:bg-white dark:text-black">{value(slide.ctaBg, slide.ctaEn)}</Link>;
+      case "cta": return <Link to={slide.ctaUrl || "/products"} onClick={preview ? e => e.preventDefault() : undefined} tabIndex={preview ? -1 : 0} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-950 px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-primary-600 sm:px-8 dark:bg-white dark:text-black dark:hover:bg-primary-200">{value(slide.ctaBg, slide.ctaEn)}</Link>;
     }
   };
 
   const renderSlideContent = (slide: HomeSlide, index: number) => {
-    const active = preview ? true : index === activeIndex;
-    const eyebrow = isBg ? slide.eyebrowBg : slide.eyebrowEn;
-    const title = isBg ? slide.titleBg : slide.titleEn;
-    const badge = isBg ? slide.badgeBg : slide.badgeEn;
-    const note = isBg ? slide.noteBg : slide.noteEn;
-    const cta = isBg ? slide.ctaBg : slide.ctaEn;
-    const slotState = active ? "visible opacity-100 home-hero-copy-enter" : "hidden invisible pointer-events-none opacity-0";
-    if (!active) return null;
+    if (preview ? false : index !== activeIndex) return null;
 
+    const labels: Record<SlideField, string> = {
+      eyebrow: isBg ? slide.eyebrowBg : slide.eyebrowEn,
+      title: isBg ? slide.titleBg : slide.titleEn,
+      badge: isBg ? slide.badgeBg : slide.badgeEn,
+      note: isBg ? slide.noteBg : slide.noteEn,
+      cta: isBg ? slide.ctaBg : slide.ctaEn,
+    };
+
+    // Do not reserve space for empty or freely positioned fields.
+    // Only actual visible text/button nodes form the default vertical stack.
     return (
-      <div key={slide.id} className="contents" aria-hidden={!active}>
-        <div data-hero-field="eyebrow" className={`w-fit max-w-full transition-opacity duration-300 ${slotState} ${slide.positions?.eyebrow ? "hidden invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
-          {Boolean(eyebrow) && (
-            <p className="text-sm font-semibold text-teal-700 sm:text-xl dark:text-teal-300">
-              {eyebrow}
-            </p>
-          )}
-        </div>
-
-        <div data-hero-field="title" className={`w-fit max-w-full transition-opacity duration-300 ${slotState} ${slide.positions?.title ? "hidden invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
-          <h1 className="font-display text-3xl font-extrabold uppercase leading-[1.05] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl dark:text-white">
-            {title}
-          </h1>
-        </div>
-
-        <div data-hero-field="badge" className={`w-fit max-w-full transition-opacity duration-300 ${slotState} ${slide.positions?.badge ? "hidden invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
-          {Boolean(badge) && (
-            <span className="inline-flex rounded-full bg-slate-950 px-4 py-2 text-xs font-black tracking-wide text-white dark:bg-white dark:text-black">
-              {badge}
-            </span>
-          )}
-        </div>
-
-        <div data-hero-field="note" className={`w-fit max-w-full transition-opacity duration-300 ${slotState} ${slide.positions?.note ? "hidden invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
-          {Boolean(note) && (
-            <p className="max-w-lg text-sm font-semibold leading-6 text-slate-700 sm:text-lg dark:text-slate-200">
-              {note}
-            </p>
-          )}
-        </div>
-
-        <div data-hero-field="cta" className={`w-fit max-w-full transition-opacity duration-300 ${slotState} ${slide.positions?.cta ? "hidden invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
-          {Boolean(cta) && (
-            <Link
-              to={slide.ctaUrl || "/products"}
-              tabIndex={active ? 0 : -1}
-              className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-950 px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-primary-600 sm:px-8 dark:bg-white dark:text-black dark:hover:bg-primary-200"
-            >
-              {cta}
-            </Link>
-          )}
-        </div>
+      <div key={slide.id} className="contents">
+        {(["eyebrow", "title", "badge", "note", "cta"] as SlideField[])
+          .filter(field => Boolean(labels[field]) && !slide.positions?.[field])
+          .map(field => (
+            <div key={field} data-hero-field={field}
+              className={`w-fit max-w-full ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
+              {contentByField(slide, field)}
+            </div>
+          ))}
       </div>
     );
   };
