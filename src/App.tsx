@@ -49,6 +49,7 @@ import AdminReports from "./pages/admin/Reports";
 import InvoiceImport from "./pages/admin/InvoiceImport";
 import SeoDashboard from "./pages/admin/SeoDashboard";
 import AdminSlideshow from "./pages/admin/Slideshow";
+import SlideshowLivePreview from "./pages/admin/SlideshowLivePreview";
 import DatabaseBackup from "./pages/admin/DatabaseBackup";
 
 import CommandPrompt from "./pages/admin/CommandPrompt";
@@ -60,6 +61,7 @@ function App() {
         <GlobalUiEnhancer />
         <Router>
           <Routes>
+            <Route path="/admin/slideshow-live-preview" element={<PrivateRoute><SlideshowLivePreview /></PrivateRoute>} />
             <Route element={<Layout />}>
               <Route path="/" element={<Home />} />
               <Route path="/store" element={<Products />} />

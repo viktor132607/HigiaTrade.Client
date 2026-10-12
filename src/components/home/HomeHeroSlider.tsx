@@ -39,6 +39,7 @@ export type PreviewConfig = {
   total: number;
   selected?: SlideField | null;
   snapEnabled?: boolean;
+  fullPage?: boolean;
   onSelect?: (key: SlideField) => void;
   onMove: (key: SlideField, pos: SlidePosition) => void;
 };
@@ -407,7 +408,7 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
             )}
           </div>
         )}
-        {preview && <div className="pointer-events-none absolute inset-x-0 bottom-3 z-30 flex justify-center gap-2 px-3">
+        {preview && !preview.fullPage && <div className="pointer-events-none absolute inset-x-0 bottom-3 z-30 flex justify-center gap-2 px-3">
           {[isBg ? "Най-продавани" : "Best sellers", isBg ? "Последно добавени" : "Recently added", isBg ? "Най-висок рейтинг" : "Highest rating"].map((label, i) =>
             <span key={label} className={`min-h-10 rounded-full px-4 py-2 text-xs font-bold uppercase sm:px-6 ${i === 0 ? "bg-orange-500 text-white" : "bg-slate-800 text-white"}`}>{label}</span>)}
         </div>}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -11,7 +11,7 @@ import { useSelector } from "react-redux";
 import { API_BASE_URL, readApiJson } from "../../config/api";
 import { RootState } from "../../store";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
-import HomeHeroSlider, {type HomeSlide, type HomeSlideshowPayload, type SlideField, type SlidePosition} from "../../components/home/HomeHeroSlider";
+import type { HomeSlide, HomeSlideshowPayload, SlideField, SlidePosition } from "../../components/home/HomeHeroSlider";
 import { invalidateHomeSlideshowPreload } from "../../utils/homeSlideshowPreload";
 
 const gradientOptions = [
@@ -81,18 +81,31 @@ const newSlide = (order: number): HomeSlide => ({
   accent: gradientOptions[0].value,
 });
 
+const previewHeights: Partial<Record<PreviewMode, number>> = {
+  mobile: 844, laptop: 768, monitor24: 1080, monitor27: 1440,
+  iphoneSE: 667, iphone15: 852, iphonePro: 874, iphoneProMax: 956,
+  ipadMini: 1133, ipad11: 1180, ipadPro11: 1194, ipad13: 1376,
+  macbookAir13: 832, macbookAir15: 900, macbookPro14: 982,
+  macbookPro16: 1117, imac24: 1080,
+  tabletSmall: 1024, tabletMedium: 1280, tabletLarge: 1365, tabletXL: 1600,
+};
+
 const SlidePreview = ({slide, mode, index, total, onMove}: {
-  slide: HomeSlide; mode: PreviewMode; index: number; total: number;
+  slide: HomeSlide;
+  mode: PreviewMode;
+  index: number;
+  total: number;
   onMove: (field: SlideField, position: SlidePosition) => void;
 }) => {
   const hostRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [scale, setScale] = useState(1);
-  const [height, setHeight] = useState(0);
   const [selected, setSelected] = useState<SlideField | null>(null);
   const [snapEnabled, setSnapEnabled] = useState(true);
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
+  const width = previewModes.find(option => option.key === mode)?.width ?? 1366;
+  const height = previewHeights[mode] ?? 768;
   const selectedPosition = selected ? slide.positions?.[selected] : undefined;
   const fieldLabels: Record<SlideField, string> = {
     eyebrow: isBg ? "Горен текст" : "Eyebrow",
@@ -101,62 +114,88 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
     note: isBg ? "Описание" : "Description",
     cta: isBg ? "Бутон" : "Button",
   };
-  const width = previewModes.find((option) => option.key === mode)?.width ?? 1366;
-  const responsiveClass = width < 768 ? "home-hero-mobile-preview"
-    : width < 1024 ? "home-hero-tablet-preview"
-    : width < 1920 ? "home-hero-laptop-preview"
-    : width < 2200 ? "home-hero-monitor24-preview" : "home-hero-monitor27-preview";
+
+  const onMoveRef = useRef(onMove);
+  onMoveRef.current = onMove;
+  const payloadRef = useRef({ slide, index, total, selected, snapEnabled });
+  payloadRef.current = { slide, index, total, selected, snapEnabled };
+
+  const sendUpdate = useCallback(() => {
+    iframeRef.current?.contentWindow?.postMessage({
+      type: "hero-preview:update",
+      ...payloadRef.current,
+    }, window.location.origin);
+  }, []);
 
   useEffect(() => {
-    const host = hostRef.current, scene = sceneRef.current;
-    if (!host || !scene) return;
-    const measure = () => {
-      const factor = Math.min(1, host.clientWidth / width);
-      setScale(factor);
-      setHeight(scene.scrollHeight * factor);
+    const handler = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || event.source !== iframeRef.current?.contentWindow) return;
+      const data = event.data;
+      if (data?.type === "hero-preview:ready") sendUpdate();
+      if (data?.type === "hero-preview:select"
+        && ["eyebrow", "title", "badge", "note", "cta"].includes(data.key)) {
+        setSelected(data.key as SlideField);
+      }
+      if (data?.type === "hero-preview:move"
+        && ["eyebrow", "title", "badge", "note", "cta"].includes(data.key)
+        && data.pos && Number.isFinite(data.pos.x) && Number.isFinite(data.pos.y)) {
+        onMoveRef.current(data.key as SlideField, data.pos as SlidePosition);
+      }
     };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [sendUpdate]);
+
+  useEffect(() => { sendUpdate(); }, [slide, index, total, selected, snapEnabled, sendUpdate]);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const measure = () => setScale(Math.min(1, host.clientWidth / width));
     measure();
     const observer = new ResizeObserver(measure);
-    observer.observe(host); observer.observe(scene);
-    window.addEventListener("resize", measure);
-    return () => { observer.disconnect(); window.removeEventListener("resize", measure); };
-  }, [width, mode]);
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, [width]);
+
+  const getFrame = () => {
+    try { return iframeRef.current?.contentDocument?.querySelector<HTMLElement>(".home-hero-frame") ?? null; }
+    catch { return null; }
+  };
+  const getField = (frame: HTMLElement, field: SlideField) =>
+    [...frame.querySelectorAll<HTMLElement>("[data-hero-field]")]
+      .find(node => node.dataset.heroField === field && window.getComputedStyle(node).visibility !== "hidden");
 
   const align = (axis: "x" | "y", where: "start" | "middle" | "end") => {
     if (!selected || !selectedPosition) return;
-    const frame = sceneRef.current?.querySelector<HTMLElement>(".home-hero-frame");
-    if (!frame) return;
-    const element = [...frame.querySelectorAll<HTMLElement>("[data-hero-field]")]
-      .find(item => item.dataset.heroField === selected && window.getComputedStyle(item).visibility !== "hidden");
-    if (!element) return;
-    const frameRect = frame.getBoundingClientRect();
-    const elementRect = element.getBoundingClientRect();
-    const size = axis === "x" ? elementRect.width / frameRect.width * 100 : elementRect.height / frameRect.height * 100;
-    const next = where === "start" ? 5 : where === "middle" ? (100 - size) / 2 : 95 - size;
-    onMove(selected, {
-      ...selectedPosition,
-      [axis]: Math.round(Math.max(0, Math.min(100 - size, next)) * 100) / 100,
-    });
+    const frame = getFrame();
+    const element = frame && getField(frame, selected);
+    if (!frame || !element) return;
+    const frameRect = frame.getBoundingClientRect(), itemRect = element.getBoundingClientRect();
+    const length = axis === "x" ? itemRect.width / frameRect.width * 100 : itemRect.height / frameRect.height * 100;
+    const value = where === "start" ? 5 : where === "middle" ? (100 - length) / 2 : 95 - length;
+    onMove(selected, { ...selectedPosition,
+      [axis]: Math.round(Math.max(0, Math.min(100 - length, value)) * 100) / 100 });
   };
 
   const resize = (value: number) => {
     if (!selected || !selectedPosition) return;
-    const frame = sceneRef.current?.querySelector<HTMLElement>(".home-hero-frame");
-    const item = [...(frame?.querySelectorAll<HTMLElement>("[data-hero-field]") ?? [])]
-      .find(node => node.dataset.heroField === selected && window.getComputedStyle(node).visibility !== "hidden");
+    const frame = getFrame();
+    const element = frame && getField(frame, selected);
     let maxScale = 2.5;
-    if (frame && item) {
-      const bounds = frame.getBoundingClientRect(), box = item.getBoundingClientRect();
-      const previous = selectedPosition.scale ?? 1;
-      const originalWidth = box.width / bounds.width * 100 / previous;
-      const originalHeight = box.height / bounds.height * 100 / previous;
-      maxScale = Math.min(2.5, (100 - selectedPosition.x) / Math.max(originalWidth, 0.01),
-        (100 - selectedPosition.y) / Math.max(originalHeight, 0.01));
+    if (frame && element) {
+      const frameRect = frame.getBoundingClientRect(), rect = element.getBoundingClientRect();
+      const original = selectedPosition.scale ?? 1;
+      const initialWidth = rect.width / frameRect.width * 100 / original;
+      const initialHeight = rect.height / frameRect.height * 100 / original;
+      maxScale = Math.min(2.5,
+        (100 - selectedPosition.x) / Math.max(initialWidth, 0.01),
+        (100 - selectedPosition.y) / Math.max(initialHeight, 0.01));
     }
-    onMove(selected, { ...selectedPosition, scale: Math.max(0.5, Math.min(value, maxScale)) });
+    onMove(selected, { ...selectedPosition, scale: Math.max(0.5, Math.min(maxScale, value)) });
   };
 
-  const positionReadout = selected && selectedPosition
+  const coordinateLabel = selected && selectedPosition
     ? `X ${selectedPosition.x.toFixed(1)}% · Y ${selectedPosition.y.toFixed(1)}% · ${Math.round((selectedPosition.scale ?? 1) * 100)}%`
     : "";
 
@@ -169,7 +208,7 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
       </label>
       {selected && selectedPosition ? <>
         <span className="mx-1 font-semibold text-teal-700">{fieldLabels[selected]}</span>
-        <span className="font-mono text-[11px] text-slate-500">{positionReadout}</span>
+        <span className="font-mono text-[11px] text-slate-500">{coordinateLabel}</span>
         <div className="flex flex-wrap items-center gap-1" role="group" aria-label={isBg ? "Подравняване" : "Alignment"}>
           {([
             ["x", "start", isBg ? "Ляво" : "Left"],
@@ -178,12 +217,11 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
             ["y", "start", isBg ? "Горе" : "Top"],
             ["y", "middle", isBg ? "Център Y" : "Center Y"],
             ["y", "end", isBg ? "Долу" : "Bottom"],
-          ] as const).map(([axis, where, label]) => (
+          ] as const).map(([axis, where, label]) =>
             <button key={axis + where} type="button" onClick={() => align(axis, where)}
               className="rounded border border-slate-200 bg-slate-50 px-2 py-1.5 font-medium hover:border-teal-500 hover:text-teal-700">
               {label}
-            </button>
-          ))}
+            </button>)}
         </div>
         <label className="inline-flex min-h-8 items-center gap-2 font-semibold">
           {isBg ? "Размер" : "Scale"}
@@ -191,15 +229,31 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
             value={Math.round((selectedPosition.scale ?? 1) * 100)}
             onChange={event => resize(Number(event.target.value) / 100)}
             className="w-28 cursor-pointer accent-[#18b99f]" />
-          <span className="w-10 text-right tabular-nums">{Math.round((selectedPosition.scale ?? 1) * 100)}%</span>
+          <span className="w-10 text-right tabular-nums">
+            {Math.round((selectedPosition.scale ?? 1) * 100)}%
+          </span>
         </label>
-      </> : <span className="text-slate-500">{isBg ? "Избери текст или бутон от банера за подравняване и мащабиране." : "Select text or a button on the banner to align and resize."}</span>}
+      </> : <span className="text-slate-500">
+        {isBg ? "Избери текст или бутон от банера за подравняване и мащабиране." : "Select text or a button on the banner to align and resize."}
+      </span>}
+    </div>
+    <div className="mb-2 flex flex-wrap items-center justify-between text-xs text-slate-500">
+      <span className="font-semibold">{isBg ? "Пълен екран на началната страница" : "Full homepage viewport"}</span>
+      <span className="font-mono">{width} × {height} px · {Math.round(scale * 100)}%</span>
     </div>
     <div ref={hostRef} className="w-full overflow-hidden border border-slate-300 bg-white">
-      <div style={{ height }}>
-        <div ref={sceneRef} className={responsiveClass}
-          style={{ width, transform: `scale(${scale})`, transformOrigin: "top left" }}>
-          <HomeHeroSlider preview={{ slide, index, total, selected, snapEnabled, onSelect: setSelected, onMove }} />
+      <div className="flex justify-center">
+        <div className="relative shrink-0" style={{ width: width * scale, height: height * scale }}>
+          <iframe ref={iframeRef}
+            title={isBg ? "Преглед на целия екран на сайта" : "Full homepage viewport preview"}
+            src="/admin/slideshow-live-preview"
+            width={width} height={height}
+            onLoad={sendUpdate}
+            style={{
+              display: "block", width, height, border: 0,
+              transform: `scale(${scale})`, transformOrigin: "top left",
+            }}
+          />
         </div>
       </div>
     </div>

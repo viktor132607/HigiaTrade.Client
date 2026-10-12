@@ -9,7 +9,7 @@ import {
   ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
-import HomeHeroSlider from "../components/home/HomeHeroSlider";
+import HomeHeroSlider, { type PreviewConfig } from "../components/home/HomeHeroSlider";
 import HomeProductCarousel from "../components/home/HomeProductCarousel";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
 import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_LINK } from "../config/contact";
@@ -36,7 +36,7 @@ interface Product {
   discountedPrice?: number;
 }
 
-const Home = () => {
+const Home = ({ heroPreview }: { heroPreview?: PreviewConfig } = {}) => {
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
   const [categories, setCategories] = useState<Category[]>([]);
@@ -147,7 +147,7 @@ const Home = () => {
   return (
     <div className="bg-white text-slate-950 transition-colors dark:bg-black dark:text-white">
       <div className="relative">
-        <HomeHeroSlider />
+        <HomeHeroSlider preview={heroPreview} />
 
         <div className="absolute inset-x-0 bottom-3 z-30">
           <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-3 sm:flex-wrap sm:justify-center sm:px-6 lg:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
