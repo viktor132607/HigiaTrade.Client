@@ -19,6 +19,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "../../store";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 import { loadPendingInvoiceFiles } from "./invoiceQueueStorage";
+import ProductIncompleteNotice from "../../components/admin/ProductIncompleteNotice";
 
 const INCOMPLETE_MARKER = "[INVOICE_IMPORT_INCOMPLETE]";
 
@@ -146,6 +147,7 @@ const AdminPanel = ({ children }: AdminPanelProps) => {
         </aside>
 
         <main className="min-w-0 px-3 py-4 pb-24 sm:px-5 sm:py-6 lg:px-8 lg:py-8 lg:pb-8">
+          <ProductIncompleteNotice />
           {children ?? <Outlet />}
         </main>
       </div>

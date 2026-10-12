@@ -6,7 +6,6 @@ import ProductCategoryHierarchyEnhancer from "../../components/admin/ProductCate
 import ProductDefaultImagePreviewEnhancer from "../../components/admin/ProductDefaultImagePreviewEnhancer";
 import ProductDescriptionEnhancer from "../../components/admin/ProductDescriptionEnhancer";
 import ProductExcelImport from "../../components/admin/ProductExcelImport";
-import ProductIncompleteNotice from "../../components/admin/ProductIncompleteNotice";
 import ProductNewStatusEnhancer from "../../components/admin/ProductNewStatusEnhancer";
 import ProductStockEnhancer from "../../components/admin/ProductStockEnhancer";
 
@@ -22,7 +21,6 @@ const AdminProducts = () => {
       <ProductDescriptionEnhancer />
       <ProductNewStatusEnhancer />
       <ProductStockEnhancer />
-      <ProductIncompleteNotice />
       <ProductExcelImport
         onImported={() => setRefreshKey((value) => value + 1)}
       />
