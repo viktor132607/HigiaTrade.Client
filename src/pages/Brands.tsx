@@ -119,7 +119,7 @@ const Brands = () => {
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-600 sm:text-base">
             {selectedBrand?.description || (isBg
-              ? "Разгледай портфолиото ни от брандове и продуктите, които предлагаме от всяка от тях."
+              ? "Разгледай портфолиото ни от брандове и продуктите, които предлагаме от всеки от тях."
               : "Browse our brand portfolio and the products we offer from each brand.")}
           </p>
         </div>
@@ -195,7 +195,7 @@ const Brands = () => {
 
         {routeBrandSlug && !loadingBrands && brands.length > 0 && !selectedBrand && (
           <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
-            {isBg ? "Този бранд вече не е активна или не съществува." : "This brand is no longer active or does not exist."}
+            {isBg ? "Този бранд вече не е активен или не съществува." : "This brand is no longer active or does not exist."}
           </div>
         )}
 
