@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { XMarkIcon, TrashIcon } from "@heroicons/react/24/outline";
 import type { HeroOverlayElement, HomeSlide, LegacySlideField, SlideField, SlidePosition } from "../home/HomeHeroSlider";
+import { heroScreenProfiles, type HeroScreenMode } from "../../config/heroScreenProfiles";
 
 type FieldName = "eyebrow" | "title" | "badge" | "note" | "cta";
 const keys: Record<FieldName, { bg: keyof HomeSlide; en: keyof HomeSlide; bgLabel: string; enLabel: string }> = {
@@ -16,6 +17,10 @@ type Props = {
   slide: HomeSlide;
   field: SlideField;
   isBg: boolean;
+  mode: HeroScreenMode;
+  position?: SlidePosition;
+  visible: boolean;
+  onVisibilityChange: (visible: boolean) => void;
   translating?: boolean;
   onClose: () => void;
   onDelete: () => void;
@@ -25,7 +30,7 @@ type Props = {
 };
 
 export default function SlideElementSettingsModal({
-  slide, field, isBg, translating, onClose, onDelete, onLegacyChange, onExtraChange, onPositionChange,
+  slide, field, isBg, mode, position, visible, onVisibilityChange, translating, onClose, onDelete, onLegacyChange, onExtraChange, onPositionChange,
 }: Props) {
   const isExtra = field.startsWith("extra:");
   const extra = isExtra ? slide.elements?.find(element => element.id === field.slice(6)) : null;
@@ -36,7 +41,8 @@ export default function SlideElementSettingsModal({
   const bg = extra ? extra.textBg : String(legacy ? slide[legacy.bg] ?? "" : "");
   const en = extra ? extra.textEn : String(legacy ? slide[legacy.en] ?? "" : "");
   const url = extra ? extra.url : slide.ctaUrl;
-  const pos = slide.positions?.[field];
+  const pos = position;
+  const deviceLabel = heroScreenProfiles.find(profile => profile.key === mode);
   const isBgTitle = legacy?.bgLabel ?? (isBg ? "Текст (BG)" : "Text (BG)");
   const enTitle = legacy?.enLabel ?? "Text (EN)";
 
@@ -108,6 +114,16 @@ export default function SlideElementSettingsModal({
             </div>
           )}
           <div className="space-y-3 rounded-lg border border-slate-200 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                {isBg ? "Layout за" : "Layout for"} {isBg ? deviceLabel?.labelBg : deviceLabel?.labelEn}
+              </div>
+              <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-700">
+                <input type="checkbox" checked={visible} onChange={event => onVisibilityChange(event.target.checked)}
+                  className="h-4 w-4 accent-[#18b99f]" />
+                {isBg ? "Видим на този екран" : "Visible on this screen"}
+              </label>
+            </div>
             <div className="text-xs font-bold uppercase tracking-wide text-slate-500">{isBg ? "Позиция и мащабиране" : "Position and scale"}</div>
             <div className="grid gap-3 sm:grid-cols-3">
               {(["x","y"] as const).map(axis =>
