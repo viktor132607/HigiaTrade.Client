@@ -28,8 +28,46 @@ export const heroScreenProfiles = [
 export type HeroScreenMode = (typeof heroScreenProfiles)[number]["key"];
 export type HeroScreenCategory = (typeof heroScreenProfiles)[number]["category"];
 
-export const resolveHeroScreenMode = (width: number): HeroScreenMode => {
-  const sorted = [...heroScreenProfiles].sort((a, b) =>
-    Math.abs(a.width - width) - Math.abs(b.width - width));
-  return sorted[0]?.key ?? "laptop";
+// Browser viewport width cannot distinguish Windows laptops, MacBooks, iMacs,
+ // or different device models with identical CSS pixel widths.
+ // Use the closest *saved* layout in the same viewport class. This prevents a
+ // 1440px desktop from picking an unconfigured "MacBook Air" preset and then
+ // falling back to unrelated global positions (especially for custom buttons).
+const profileClass = (width: number): "phone" | "tablet" | "desktop" =>
+  width < 640 ? "phone" : width < 1024 ? "tablet" : "desktop";
+
+export const resolveHeroScreenMode = (
+  width: number,
+  configuredLayouts?: Partial<Record<HeroScreenMode, unknown>>,
+): HeroScreenMode => {
+  const className = profileClass(width);
+  const hasSavedProfile = (key: HeroScreenMode) =>
+    Boolean(configuredLayouts && Object.prototype.hasOwnProperty.call(configuredLayouts, key));
+
+  const configured = heroScreenProfiles.filter(profile =>
+    hasSavedProfile(profile.key) && profileClass(profile.width) === className
+  );
+
+  if (configured.length) {
+    // Prefer generic presets on an exact-width tie because browser CSS width
+    // does not uniquely identify the hardware. Explicitly saved non-generic
+    // presets still win when closer to the current viewport width.
+    return [...configured].sort((a, b) =>
+      Math.abs(a.width - width) - Math.abs(b.width - width) ||
+      Number(b.category === "standard") - Number(a.category === "standard")
+    )[0].key;
+  }
+
+  // No user-defined layout for this viewport class: preserve the intended
+  // standard responsive layout rather than borrowing desktop coordinates on
+  // a phone or tablet. In-editor preview always passes its exact mode.
+  if (className === "phone") return "mobile";
+  if (className === "tablet") {
+    const tablets = heroScreenProfiles.filter(profile => profile.category === "tablet");
+    return [...tablets].sort((a, b) => Math.abs(a.width - width) - Math.abs(b.width - width))[0].key;
+  }
+  const desktops = heroScreenProfiles.filter(profile => profile.category === "standard" && profile.width >= 1024);
+  return [...desktops].sort((a, b) =>
+    Math.abs(a.width - width) - Math.abs(b.width - width)
+  )[0]?.key ?? "laptop";
 };
