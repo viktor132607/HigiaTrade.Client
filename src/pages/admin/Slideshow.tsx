@@ -251,7 +251,7 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
             width={width} height={height}
             onLoad={sendUpdate}
             style={{
-              display: "block", width, height, border: 0,
+              display: "block", width, height, border: 0, maxWidth: "none", maxHeight: "none",
               transform: `scale(${scale})`, transformOrigin: "top left",
             }}
           />
