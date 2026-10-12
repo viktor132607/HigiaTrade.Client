@@ -135,7 +135,7 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
   }, [activeIndex, slides.length]);
 
   const activeSlide = useMemo(() => preview?.slide ?? slides[activeIndex] ?? slides[0] ?? null, [activeIndex, slides, preview]);
-  const screenMode = preview?.mode ?? resolveHeroScreenMode(viewportWidth);
+  const screenMode = preview?.mode ?? resolveHeroScreenMode(viewportWidth, activeSlide?.layouts);
   const deviceLayout = activeSlide?.layouts?.[screenMode];
   const effectivePositions = useMemo(
     () => ({ ...(activeSlide?.positions ?? {}), ...(deviceLayout?.positions ?? {}) }),
