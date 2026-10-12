@@ -109,7 +109,7 @@ const ProductExcelImport = ({ onImported }: Props) => {
             Quantity, MainImageUrl, IsActive.
           </p>
           <p className="mt-1 text-xs leading-5 text-slate-500">
-            Новите марки се създават автоматично. За лога добави лист
+            Новите брандове се създават автоматично. За лога добави лист
             <strong> BrandLogos</strong> с колони <strong>Brand</strong> и <strong>BrandLogoURL</strong>.
             Съществуващите лога се запазват.
           </p>
@@ -122,7 +122,7 @@ const ProductExcelImport = ({ onImported }: Props) => {
             onChange={(event) => setUpdateExisting(event.target.checked)}
             className="h-5 w-5 accent-[#18b99f]"
           />
-          Обновявай съществуващ продукт със същите име и марка
+          Обновявай съществуващ продукт със същите име и бранд
         </label>
       </div>
 
@@ -197,7 +197,7 @@ const ProductExcelImport = ({ onImported }: Props) => {
             <Summary label="Обновени" value={result.updated} />
             <Summary label="Пропуснати" value={result.skipped} />
             <Summary label="Грешки" value={result.failed} />
-            <Summary label="Марки/лога" value={result.brandsSynced ?? 0} />
+            <Summary label="Брандове/лога" value={result.brandsSynced ?? 0} />
           </div>
 
           {result.rows.length > 0 && (
