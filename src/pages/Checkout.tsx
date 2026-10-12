@@ -679,12 +679,12 @@ const Checkout = () => {
               {cart?.items.map((item) => (
                 <div
                   key={item.productId}
-                  className="flex gap-3 rounded-2xl border border-slate-100 bg-slate-50 p-3"
+                  className="flex gap-3 rounded-none border border-slate-100 bg-slate-50 p-3"
                 >
                   <img
                     src={item.primaryImageUri || "/higiqlogo.png"}
                     alt={item.title}
-                    className="h-20 w-20 shrink-0 rounded-xl bg-white object-contain"
+                    className="h-20 w-20 shrink-0 rounded-none bg-white object-contain"
                     onError={(event) => {
                       if (!event.currentTarget.src.endsWith("/higiqlogo.png")) {
                         event.currentTarget.src = "/higiqlogo.png";

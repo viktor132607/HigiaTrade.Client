@@ -123,7 +123,7 @@ const Compare = () => {
         <>
           <div className="grid gap-4 md:hidden">
             {products.map((product) => (
-              <article key={product.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <article key={product.id} className="overflow-hidden rounded-none border border-slate-200 bg-white shadow-sm">
                 <div className="relative p-4">
                   <button type="button" onClick={() => dispatch(removeFromCompare(product.id))} className="absolute right-3 top-3 z-10 flex min-h-10 min-w-10 items-center justify-center rounded-full border border-slate-200 bg-white p-2 text-slate-500 shadow-sm" title={isBg ? "Премахни" : "Remove"}><XMarkIcon className="h-4 w-4" /></button>
                   <Link to={`/products/${product.id}`} className="block pr-12">

@@ -119,7 +119,7 @@ const Wishlist = () => {
           {wishlistProducts.map((product) => {
             const displayPrice = product.discountedPrice && product.discountedPrice > 0 ? product.discountedPrice : product.regularPrice;
             return (
-              <article key={product.id} className="overflow-hidden rounded-2xl bg-white shadow-md transition-shadow hover:shadow-lg sm:rounded-[2rem]">
+              <article key={product.id} className="overflow-hidden rounded-none bg-white shadow-md transition-shadow hover:shadow-lg">
                 <div className="relative">
                   <Link to={`/products/${product.id}`} className="block aspect-square w-full overflow-hidden bg-gray-200"><img src={product.mainImageUrl || "/higiqlogo.png"} alt={product.title} className="h-full w-full object-cover object-center" /></Link>
                   <button type="button" onClick={() => dispatch(removeFromWishlist(product.id))} className="absolute right-2 top-2 flex min-h-10 min-w-10 items-center justify-center rounded-full bg-white p-2 shadow-md hover:bg-gray-100" title={isBg ? "Премахни от любими" : "Remove from wishlist"}><HeartIcon className="h-5 w-5 text-red-500" /></button>

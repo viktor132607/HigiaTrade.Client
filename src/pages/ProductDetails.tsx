@@ -309,20 +309,20 @@ const ProductDetails = () => {
               {images.length > 1 && (
                 <div className="flex max-h-[380px] w-16 shrink-0 flex-col gap-2 overflow-y-auto pr-1 sm:w-[68px]">
                   {images.map((image, index) => (
-                    <button key={`${image}-${index}`} type="button" onClick={() => setSelectedImage(index)} className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-slate-100 transition ${selectedImage === index ? "border-[#18b99f]" : "border-slate-200 hover:border-slate-400"}`}>
+                    <button key={`${image}-${index}`} type="button" onClick={() => setSelectedImage(index)} className={`h-16 w-16 shrink-0 overflow-hidden rounded-none border-2 bg-slate-100 transition ${selectedImage === index ? "border-[#18b99f]" : "border-slate-200 hover:border-slate-400"}`}>
                       <img src={image} alt={`${product.title} ${index + 1}`} onError={imageErrorFallback} className="h-full w-full object-cover" />
                     </button>
                   ))}
                 </div>
               )}
 
-              <button type="button" onClick={() => setGalleryOpen(true)} className="relative block aspect-square min-w-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 text-left" aria-label={tr("Отвори галерията", "Open gallery")}>
+              <button type="button" onClick={() => setGalleryOpen(true)} className="relative block aspect-square min-w-0 flex-1 overflow-hidden rounded-none border border-slate-200 bg-slate-100 text-left" aria-label={tr("Отвори галерията", "Open gallery")}>
                 <img src={images[selectedImage] || "/higiqlogo.png"} alt={product.title} onError={imageErrorFallback} className="h-full w-full object-cover transition duration-200 hover:scale-[1.015]" />
               </button>
             </div>
           </section>
 
-          <section className="flex h-fit min-h-[532px] flex-col rounded-2xl border border-slate-200 bg-white p-4 lg:p-5">
+          <section className="flex h-fit min-h-[532px] flex-col rounded-none border border-slate-200 bg-white p-4 lg:p-5">
             <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-slate-500">
               {product.categoryName && (
                 <span>
@@ -400,26 +400,26 @@ const ProductDetails = () => {
           </section>
         </div>
 
-        <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+        <section className="mt-5 rounded-none border border-slate-200 bg-white p-5 sm:p-6">
           <h2 className="text-lg font-bold text-slate-950">{tr("Описание", "Description")}</h2>
           <div className="mt-4 text-sm leading-6 text-slate-700 [&_b]:font-bold [&_strong]:font-bold [&_i]:italic [&_em]:italic [&_u]:underline [&_p]:my-2.5 [&_ul]:my-2.5 [&_ul]:ml-5 [&_ul]:list-disc [&_ol]:my-2.5 [&_ol]:ml-5 [&_ol]:list-decimal [&_li]:my-1" dangerouslySetInnerHTML={{ __html: product.description || "" }} />
         </section>
 
         {similarProducts.length > 0 && (
-          <section className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-5 sm:p-7">
+          <section className="mt-8 rounded-none border border-slate-200 bg-white p-5 sm:p-7">
             <h2 className="text-2xl font-black text-slate-950">{tr("Подобни продукти", "Similar products")}</h2>
             <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{similarProducts.map((item) => <ProductCard key={item.id} product={item} />)}</div>
           </section>
         )}
 
         {recentlyViewed.length > 0 && (
-          <section className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-5 sm:p-7">
+          <section className="mt-8 rounded-none border border-slate-200 bg-white p-5 sm:p-7">
             <h2 className="text-2xl font-black text-slate-950">{tr("Последно разглеждани", "Recently viewed")}</h2>
             <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{recentlyViewed.map((item) => <ProductCard key={item.id} product={item} />)}</div>
           </section>
         )}
 
-        <section className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-5 sm:p-7">
+        <section className="mt-8 rounded-none border border-slate-200 bg-white p-5 sm:p-7">
           <h2 className="text-2xl font-black text-slate-950">{tr("Оценки и ревюта", "Ratings & reviews")}</h2>
           {token ? (
             <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
