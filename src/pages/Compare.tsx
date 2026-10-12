@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { RootState } from "../store";
 import { addItem } from "../store/slices/cartSlice";
 import { clearCompare, removeFromCompare } from "../store/slices/compareSlice";
+import { productSeoPath, seoImageUrl } from "../utils/seo";
 import { Product } from "../types";
 import { formatCurrency } from "../utils/currency";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
@@ -18,28 +19,50 @@ const Compare = () => {
   const token = useSelector((state: RootState) => state.auth.token);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const [differencesOnly, setDifferencesOnly] = useState(false);
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
 
   useEffect(() => {
+    const controller = new AbortController();
     if (productIds.length === 0) {
       setProducts([]);
-      return;
+      setLoadError(false);
+      setLoading(false);
+      return () => controller.abort();
     }
     const load = async () => {
       setLoading(true);
+      setLoadError(false);
       try {
-        const items = await Promise.all(productIds.map(async (id) => {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products/${id}`);
-          return response.ok ? ((await response.json()) as Product) : null;
+        // One missing item must not hide other successfully loaded products.
+        const results = await Promise.allSettled(productIds.map(async id => {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/Products/${encodeURIComponent(id)}`,
+            { signal: controller.signal }
+          );
+          if (!response.ok) throw new Error(`Product ${id}: ${response.status}`);
+          return (await response.json()) as Product;
         }));
-        setProducts(items.filter((item): item is Product => Boolean(item)));
+        if (controller.signal.aborted) return;
+        setProducts(results.flatMap(result =>
+          result.status === "fulfilled" && result.value?.id ? [result.value] : []
+        ));
+        setLoadError(results.some(result => result.status === "rejected"));
+      } catch {
+        if (!controller.signal.aborted) {
+          setProducts([]);
+          setLoadError(true);
+        }
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
     void load();
-  }, [productIds]);
+    return () => controller.abort();
+  }, [productIds, retry]);
 
   const cartAction = async (product: Product, openCart: boolean) => {
     if (product.quantity <= 0) return;
@@ -95,6 +118,10 @@ const Compare = () => {
     { labelBg: "Описание", labelEn: "Description", render: (p: Product) => p.description?.replace(/<[^>]+>/g, " ").trim() || "—" },
   ];
 
+  const comparedRows = differencesOnly && products.length > 1
+    ? rows.filter(row => new Set(products.map(product => row.render(product))).size > 1)
+    : rows;
+
   if (productIds.length === 0) {
     return (
       <div className="site-container py-8 sm:py-12">
@@ -114,11 +141,26 @@ const Compare = () => {
           <h1 className="text-2xl font-bold text-slate-950 sm:text-3xl">{isBg ? "Сравнение на продукти" : "Compare products"}</h1>
           <p className="mt-1 text-sm text-slate-500">{isBg ? "До 4 продукта едновременно." : "Compare up to 4 products at once."}</p>
         </div>
-        <button type="button" onClick={() => dispatch(clearCompare())} className="min-h-11 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">{isBg ? "Изчисти всички" : "Clear all"}</button>
+        <div className="flex flex-wrap items-center gap-3">
+          {products.length > 1 && <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700">
+            <input type="checkbox" checked={differencesOnly} onChange={event => setDifferencesOnly(event.target.checked)} className="accent-[#18b99f]" />
+            {isBg ? "Само разликите" : "Differences only"}
+          </label>}
+          <Link to="/products" className="min-h-11 rounded-md border border-[#18b99f] bg-white px-4 py-3 text-sm font-semibold text-[#148f7c] hover:bg-teal-50">{isBg ? "Добави още" : "Add more"}</Link>
+          <button type="button" onClick={() => dispatch(clearCompare())} className="min-h-11 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">{isBg ? "Изчисти всички" : "Clear all"}</button>
+        </div>
       </div>
 
+      {loadError && !loading && (
+        <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <span>{isBg ? "Някои продукти не можаха да бъдат заредени. Опитай отново или ги премахни от сравнението." : "Some products could not be loaded. Retry or remove them from the comparison."}</span>
+          <button type="button" className="rounded-md border border-amber-500 px-3 py-2 font-semibold" onClick={() => setRetry(value => value + 1)}>{isBg ? "Опитай отново" : "Retry"}</button>
+        </div>
+      )}
       {loading ? (
         <div className="py-16 text-center text-slate-500">{isBg ? "Зареждане..." : "Loading..."}</div>
+      ) : products.length === 0 ? (
+        <div className="py-12 text-center text-slate-500">{isBg ? "Няма заредени продукти за сравнение." : "No comparison products loaded."}</div>
       ) : (
         <>
           <div className="grid gap-4 md:hidden">
@@ -126,15 +168,15 @@ const Compare = () => {
               <article key={product.id} className="origin-top scale-95 overflow-hidden rounded-none border border-slate-200 bg-white shadow-sm">
                 <div className="relative p-4">
                   <button type="button" onClick={() => dispatch(removeFromCompare(product.id))} className="absolute right-3 top-3 z-10 flex min-h-10 min-w-10 items-center justify-center rounded-full border border-slate-200 bg-white p-2 text-slate-500 shadow-sm" title={isBg ? "Премахни" : "Remove"}><XMarkIcon className="h-4 w-4" /></button>
-                  <Link to={`/products/${product.id}`} className="block pr-12">
-                    <img src={product.mainImageUrl || "/higiqlogo.png"} alt={product.title} className="mx-auto h-44 w-full object-contain" />
+                  <Link to={productSeoPath(product)} className="block pr-12">
+                    <img src={seoImageUrl(product.mainImageUrl, product.title, product.usesDefaultImage === true)} alt={product.title} className="mx-auto h-44 w-full object-contain" />
                     <h2 className="mt-3 text-base font-semibold text-slate-950">{product.title}</h2>
                   </Link>
                   <div className="mt-3"><ProductActions productId={product.id} showLabels compact /></div>
                   {purchaseButtons(product)}
                 </div>
                 <dl className="divide-y divide-slate-100 border-t border-slate-200">
-                  {rows.map((row) => (
+                  {comparedRows.map((row) => (
                     <div key={row.labelBg} className="grid grid-cols-[minmax(110px,0.8fr)_minmax(0,1.2fr)] gap-3 px-4 py-3 text-sm">
                       <dt className="font-medium text-slate-500">{isBg ? row.labelBg : row.labelEn}</dt>
                       <dd className="break-words text-right text-slate-800">{row.render(product)}</dd>
@@ -154,14 +196,14 @@ const Compare = () => {
                     <td key={product.id} className="min-w-52 border-l border-slate-200 p-4">
                       <div className="relative">
                         <button type="button" onClick={() => dispatch(removeFromCompare(product.id))} className="absolute right-0 top-0 rounded-full border border-slate-200 bg-white p-1.5 text-slate-500 hover:text-rose-600" title={isBg ? "Премахни" : "Remove"}><XMarkIcon className="h-4 w-4" /></button>
-                        <Link to={`/products/${product.id}`}><img src={product.mainImageUrl || "/higiqlogo.png"} alt={product.title} className="mx-auto h-36 w-36 object-contain" /><div className="mt-3 pr-7 font-semibold text-slate-950 hover:text-[#18b99f]">{product.title}</div></Link>
+                        <Link to={productSeoPath(product)}><img src={seoImageUrl(product.mainImageUrl, product.title, product.usesDefaultImage === true)} alt={product.title} className="mx-auto h-36 w-36 object-contain" /><div className="mt-3 pr-7 font-semibold text-slate-950 hover:text-[#18b99f]">{product.title}</div></Link>
                         <div className="mt-3"><ProductActions productId={product.id} showLabels compact /></div>
                         {purchaseButtons(product)}
                       </div>
                     </td>
                   ))}
                 </tr>
-                {rows.map((row) => (
+                {comparedRows.map((row) => (
                   <tr key={row.labelBg} className="border-b border-slate-200 align-top last:border-b-0">
                     <th className="bg-slate-50 p-4 text-left text-sm font-semibold text-slate-600">{isBg ? row.labelBg : row.labelEn}</th>
                     {products.map((product) => <td key={product.id} className="border-l border-slate-200 p-4 text-sm text-slate-700">{row.render(product)}</td>)}

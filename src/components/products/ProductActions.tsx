@@ -46,6 +46,12 @@ const ProductActions = ({ productId, showLabels = false, compact = false }: Prop
     }
 
     dispatch(toggleCompare(productId));
+    toast.info(isCompared
+      ? (isBg ? "Премахнат от сравнението." : "Removed from comparison.")
+      : (isBg ? `Добавен за сравнение (${compareItems.length + 1}/${MAX_COMPARE_ITEMS}). Натисни „Сравни“ горе.`
+              : `Added for comparison (${compareItems.length + 1}/${MAX_COMPARE_ITEMS}). Open Compare above.`),
+      { autoClose: 2700 }
+    );
   };
 
   const baseClass = compact
@@ -62,7 +68,9 @@ const ProductActions = ({ productId, showLabels = false, compact = false }: Prop
             ? "border-[#18b99f] bg-[#18b99f]/10 text-[#148f7c]"
             : "border-slate-300 bg-white text-slate-600 hover:border-[#18b99f] hover:text-[#18b99f]"
         }`}
-        title={isBg ? "Сравни" : "Compare"}
+        title={isBg ? (isCompared ? "Премахни от сравнението" : "Добави за сравнение") : (isCompared ? "Remove from comparison" : "Add to comparison")}
+        aria-label={isBg ? (isCompared ? "Премахни от сравнението" : "Добави за сравнение") : (isCompared ? "Remove from comparison" : "Add to comparison")}
+        aria-pressed={isCompared}
       >
         <ArrowsRightLeftIcon className={`${compact ? "h-4 w-4" : "h-5 w-5"} shrink-0`} />
         {showLabels ? <span className="hidden whitespace-nowrap break-normal sm:inline">{isBg ? (isCompared ? "Добавен" : "Сравни") : isCompared ? "Added" : "Compare"}</span> : null}
