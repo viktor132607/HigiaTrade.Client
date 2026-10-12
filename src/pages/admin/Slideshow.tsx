@@ -363,9 +363,27 @@ const AdminSlideshow = () => {
     setSlides(current => current.map(slide => {
       if (slide.id !== slideId || (slide.elements ?? []).length >= 30) return slide;
       const count = (slide.elements ?? []).length;
+      const titlePosition = slide.layouts?.[previewMode]?.positions?.title ?? slide.positions?.title;
+      const initialPosition = {
+        x: titlePosition?.x ?? 5,
+        y: Math.min(85, (kind === "button" ? 65 : 43) + count * 6),
+        scale: 1,
+      };
+      const device = slide.layouts?.[previewMode];
       return {
-        ...slide, elements: [...(slide.elements ?? []), element],
-        positions: { ...slide.positions, [`extra:${id}`]: { x: 25, y: Math.min(75, 24 + count * 9), scale: 1 } },
+        ...slide,
+        elements: [...(slide.elements ?? []), element],
+        // The base coordinates are a sensible fallback; the edited screen
+        // gets its own copy, so moving it never shifts another device.
+        positions: { ...slide.positions, [`extra:${id}`]: initialPosition },
+        layouts: {
+          ...slide.layouts,
+          [previewMode]: {
+            ...device,
+            positions: { ...device?.positions, [`extra:${id}`]: { ...initialPosition } },
+            hidden: device?.hidden ?? [],
+          },
+        },
       };
     }));
     setEditing({ slideId, field: `extra:${id}` });
