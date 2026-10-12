@@ -126,8 +126,8 @@ const ProductSearchEnhancer = () => {
         if (!wrapper) return;
 
         if (input.closest("header")) {
-          input.placeholder = isBg ? "ТЪРСЕНЕ НА ПРОДУКТ" : "PRODUCT SEARCH";
-          input.setAttribute("aria-label", isBg ? "Търсене на продукт" : "Product search");
+          input.placeholder = isBg ? "ТЪРСЕНЕ" : "SEARCH";
+          input.setAttribute("aria-label", isBg ? "Търсене" : "Search");
         }
 
         const previousPosition = wrapper.style.position;
