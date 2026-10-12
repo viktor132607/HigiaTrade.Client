@@ -22,7 +22,14 @@ const gradientOptions = [
   { value: "from-violet-100 via-purple-50 to-white", bg: "Лилав", en: "Purple" },
 ];
 
-type PreviewMode = "desktop" | "mobile";
+type PreviewMode = "mobile" | "laptop" | "monitor24" | "monitor27";
+
+const previewModes: { key: PreviewMode; width: number; labelBg: string; labelEn: string }[] = [
+  { key: "mobile", width: 390, labelBg: "Телефон", labelEn: "Phone" },
+  { key: "laptop", width: 1366, labelBg: "Лаптоп", labelEn: "Laptop" },
+  { key: "monitor24", width: 1920, labelBg: 'Монитор 24″', labelEn: 'Monitor 24″' },
+  { key: "monitor27", width: 2560, labelBg: 'Монитор 27″', labelEn: 'Monitor 27″' },
+];
 type BgTranslationKey = "eyebrowBg" | "titleBg" | "badgeBg" | "noteBg" | "ctaBg";
 type EnTranslationKey = "eyebrowEn" | "titleEn" | "badgeEn" | "noteEn" | "ctaEn";
 
@@ -64,7 +71,7 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
   const sceneRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [height, setHeight] = useState(0);
-  const width = mode === "desktop" ? (typeof window !== "undefined" ? window.innerWidth : 1920) : 390;
+  const width = previewModes.find((option) => option.key === mode)?.width ?? 1366;
 
   useEffect(() => {
     const host = hostRef.current, scene = sceneRef.current;
@@ -83,7 +90,7 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
 
   return <div ref={hostRef} className="w-full overflow-hidden border border-slate-300 bg-white">
     <div style={{ height }}>
-      <div ref={sceneRef} className={mode === "mobile" ? "home-hero-mobile-preview" : ""}
+      <div ref={sceneRef} className={`home-hero-${mode}-preview`}
         style={{ width, transform: `scale(${scale})`, transformOrigin: "top left" }}>
         <HomeHeroSlider preview={{slide, index, total, onMove}} />
       </div>
@@ -102,7 +109,7 @@ const AdminSlideshow = () => {
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
-  const [previewMode, setPreviewMode] = useState<PreviewMode>("desktop");
+  const [previewMode, setPreviewMode] = useState<PreviewMode>("laptop");
   const [translatingFields, setTranslatingFields] = useState<Record<string, boolean>>({});
   const translationTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const translationRequestIds = useRef<Record<string, number>>({});
@@ -293,9 +300,21 @@ const AdminSlideshow = () => {
             />
             <span className="text-xs text-slate-500">{isBg ? "сек." : "sec"}</span>
           </label>
-          <div className="inline-flex rounded-lg border border-slate-300 bg-white p-1">
-            <button type="button" onClick={() => setPreviewMode("desktop")} className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold ${previewMode === "desktop" ? "bg-slate-950 text-white" : "text-slate-600 hover:bg-slate-50"}`}><ComputerDesktopIcon className="h-5 w-5" />{isBg ? "Компютър" : "Desktop"}</button>
-            <button type="button" onClick={() => setPreviewMode("mobile")} className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold ${previewMode === "mobile" ? "bg-slate-950 text-white" : "text-slate-600 hover:bg-slate-50"}`}><DevicePhoneMobileIcon className="h-5 w-5" />{isBg ? "Телефон" : "Mobile"}</button>
+          <div role="group" aria-label={isBg ? "Размер на прегледа" : "Preview viewport size"} className="flex max-w-full flex-wrap gap-1 rounded-lg border border-slate-300 bg-white p-1">
+            {previewModes.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                aria-pressed={previewMode === option.key}
+                onClick={() => setPreviewMode(option.key)}
+                className={`inline-flex min-h-10 items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition-colors ${previewMode === option.key ? "bg-slate-950 text-white" : "text-slate-600 hover:bg-slate-50"}`}
+              >
+                {option.key === "mobile"
+                  ? <DevicePhoneMobileIcon className="h-5 w-5 shrink-0" />
+                  : <ComputerDesktopIcon className="h-5 w-5 shrink-0" />}
+                <span>{isBg ? option.labelBg : option.labelEn}</span>
+              </button>
+            ))}
           </div>
           <button type="button" onClick={addSlide} className="inline-flex min-h-11 items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"><PlusIcon className="mr-2 h-5 w-5" />{isBg ? "Добави слайд" : "Add slide"}</button>
           <button type="button" onClick={() => void save()} disabled={saving || slides.length === 0} className="min-h-11 rounded-md bg-[#18b99f] px-5 py-2 text-sm font-bold text-white hover:bg-[#149f8a] disabled:opacity-50">{saving ? (isBg ? "Запазване..." : "Saving...") : (isBg ? "Запази промените" : "Save changes")}</button>
