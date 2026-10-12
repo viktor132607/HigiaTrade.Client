@@ -44,11 +44,11 @@ const Brands = () => {
         setLoadingBrands(true);
         setError("");
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Brands`);
-        if (!response.ok) throw new Error(isBg ? "Марките не можаха да бъдат заредени." : "Brands could not be loaded.");
+        if (!response.ok) throw new Error(isBg ? "Брандовете не можаха да бъдат заредени." : "Brands could not be loaded.");
         const data: Brand[] = await response.json();
         setBrands(Array.isArray(data) ? data : []);
       } catch (err) {
-        setError(err instanceof Error ? err.message : isBg ? "Марките не можаха да бъдат заредени." : "Brands could not be loaded.");
+        setError(err instanceof Error ? err.message : isBg ? "Брандовете не можаха да бъдат заредени." : "Brands could not be loaded.");
       } finally {
         setLoadingBrands(false);
       }
@@ -115,11 +115,11 @@ const Brands = () => {
             {isBg ? "Нашите партньори" : "Our partners"}
           </p>
           <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-            {selectedBrand ? selectedBrand.name : isBg ? "Марки" : "Brands"}
+            {selectedBrand ? selectedBrand.name : isBg ? "Брандове" : "Brands"}
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-600 sm:text-base">
             {selectedBrand?.description || (isBg
-              ? "Разгледай портфолиото ни от марки и продуктите, които предлагаме от всяка от тях."
+              ? "Разгледай портфолиото ни от брандове и продуктите, които предлагаме от всяка от тях."
               : "Browse our brand portfolio and the products we offer from each brand.")}
           </p>
         </div>
@@ -132,7 +132,7 @@ const Brands = () => {
           </div>
         ) : brands.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">
-            {isBg ? "Все още няма добавени марки." : "No brands have been added yet."}
+            {isBg ? "Все още няма добавени брандове." : "No brands have been added yet."}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -151,7 +151,7 @@ const Brands = () => {
                     {brand.thumbnailImageUrl ? (
                       <img
                         src={brand.thumbnailImageUrl}
-                        alt={`${brand.name} ${isBg ? "марка" : "brand"}`}
+                        alt={`${brand.name} ${isBg ? "бранд" : "brand"}`}
                         width={640}
                         height={360}
                         loading="lazy"
@@ -195,7 +195,7 @@ const Brands = () => {
 
         {routeBrandSlug && !loadingBrands && brands.length > 0 && !selectedBrand && (
           <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-800">
-            {isBg ? "Тази марка вече не е активна или не съществува." : "This brand is no longer active or does not exist."}
+            {isBg ? "Този бранд вече не е активна или не съществува." : "This brand is no longer active or does not exist."}
           </div>
         )}
 
@@ -204,7 +204,7 @@ const Brands = () => {
             <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#18b99f]">
-                  {isBg ? "Продукти на марката" : "Brand products"}
+                  {isBg ? "Продукти на бранда" : "Brand products"}
                 </p>
                 <h2 className="mt-2 text-2xl font-bold text-slate-950">{selectedBrand.name}</h2>
               </div>
@@ -219,7 +219,7 @@ const Brands = () => {
               </div>
             ) : products.length === 0 ? (
               <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500">
-                {isBg ? "Няма активни продукти от тази марка." : "There are no active products from this brand."}
+                {isBg ? "Няма активни продукти от този бранд." : "There are no active products from this brand."}
               </div>
             ) : (
               <div className="product-card-grid">
