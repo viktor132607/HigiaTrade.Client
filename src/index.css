@@ -112,6 +112,7 @@
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
+  scroll-padding-inline: 0.75rem;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
   padding: 1.5rem 0.75rem 4rem;
@@ -123,6 +124,7 @@
   flex: 0 0 calc((100% - 0.75rem) / 2);
   min-width: 0;
   scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 /* A subtle, contained card shadow avoids the cut-off grey bands in the carousel. */
 .home-product-carousel__item > article {

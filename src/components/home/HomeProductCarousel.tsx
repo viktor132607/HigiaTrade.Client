@@ -12,47 +12,74 @@ type Props = {
 };
 
 export default function HomeProductCarousel({ products, label, className = "" }: Props) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
-  const [canScrollBack, setCanScrollBack] = useState(false);
-  const [canScrollForward, setCanScrollForward] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const [arrowCenter, setArrowCenter] = useState<number | null>(null);
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
 
-  const updateArrows = useCallback(() => {
+  const updateLayout = useCallback(() => {
     const track = trackRef.current;
-    if (!track) return;
-    setCanScrollBack(track.scrollLeft > 2);
-    setCanScrollForward(track.scrollLeft + track.clientWidth < track.scrollWidth - 2);
+    const wrapper = wrapperRef.current;
+    if (!track || !wrapper) return;
+
+    setHasOverflow(track.scrollWidth > track.clientWidth + 2);
+    // Anchor navigation to the actual scaled product card, not to the track's
+    // large top/bottom padding for shadows and focus outlines.
+    const card = track.querySelector<HTMLElement>(".home-product-carousel__item article");
+    if (card) {
+      const cardBox = card.getBoundingClientRect();
+      const wrapperBox = wrapper.getBoundingClientRect();
+      setArrowCenter(cardBox.top + cardBox.height / 2 - wrapperBox.top);
+    }
   }, []);
 
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return;
-
-    updateArrows();
-    const observer = new ResizeObserver(updateArrows);
+    updateLayout();
+    const observer = new ResizeObserver(updateLayout);
     observer.observe(track);
-    return () => observer.disconnect();
-  }, [products.length, updateArrows]);
+    const firstCard = track.querySelector(".home-product-carousel__item article");
+    if (firstCard) observer.observe(firstCard);
+    window.addEventListener("resize", updateLayout);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateLayout);
+    };
+  }, [products.length, updateLayout]);
 
   const move = (direction: -1 | 1) => {
     const track = trackRef.current;
-    if (!track) return;
+    if (!track || !hasOverflow) return;
 
-    const first = track.firstElementChild as HTMLElement | null;
-    const second = first?.nextElementSibling as HTMLElement | null;
-    const distance = first && second ? second.offsetLeft - first.offsetLeft : track.clientWidth;
-    track.scrollBy({ left: direction * distance, behavior: "smooth" });
+    const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+    // After the last card, continue again from the beginning (and vice versa).
+    if (direction > 0 && track.scrollLeft >= maxScroll - 2) {
+      track.scrollTo({ left: 0, behavior: "auto" });
+    } else if (direction < 0 && track.scrollLeft <= 2) {
+      track.scrollTo({ left: maxScroll, behavior: "auto" });
+    } else {
+      const first = track.firstElementChild as HTMLElement | null;
+      const second = first?.nextElementSibling as HTMLElement | null;
+      const step = first && second ? second.offsetLeft - first.offsetLeft : track.clientWidth;
+      track.scrollBy({ left: direction * step, behavior: "smooth" });
+    }
   };
 
+  const arrowClasses = "absolute z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-md transition hover:border-[#18b99f] hover:text-[#18b99f] disabled:cursor-not-allowed disabled:opacity-30 dark:border-slate-600 dark:bg-slate-800 dark:text-white sm:h-11 sm:w-11";
+  const arrowStyle = { top: arrowCenter === null ? "50%" : `${arrowCenter}px` };
+
   return (
-    <div className={`relative ${className}`}>
+    <div ref={wrapperRef} className={`relative ${className}`}>
       <button
         type="button"
         aria-label={isBg ? `Предишни продукти: ${label}` : `Previous products: ${label}`}
-        disabled={!canScrollBack}
+        disabled={!hasOverflow}
         onClick={() => move(-1)}
-        className="absolute left-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-md transition hover:border-[#18b99f] hover:text-[#18b99f] disabled:cursor-not-allowed disabled:opacity-30 dark:border-slate-600 dark:bg-slate-800 dark:text-white sm:h-11 sm:w-11"
+        style={arrowStyle}
+        className={`left-0 ${arrowClasses}`}
       >
         <ChevronLeftIcon className="h-5 w-5" aria-hidden="true" />
       </button>
@@ -61,7 +88,6 @@ export default function HomeProductCarousel({ products, label, className = "" }:
         role="region"
         aria-roledescription="carousel"
         aria-label={label}
-        onScroll={updateArrows}
         className="home-product-carousel__track mx-10 sm:mx-12"
       >
         {products.map((product) => (
@@ -73,9 +99,10 @@ export default function HomeProductCarousel({ products, label, className = "" }:
       <button
         type="button"
         aria-label={isBg ? `Следващи продукти: ${label}` : `Next products: ${label}`}
-        disabled={!canScrollForward}
+        disabled={!hasOverflow}
         onClick={() => move(1)}
-        className="absolute right-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-800 shadow-md transition hover:border-[#18b99f] hover:text-[#18b99f] disabled:cursor-not-allowed disabled:opacity-30 dark:border-slate-600 dark:bg-slate-800 dark:text-white sm:h-11 sm:w-11"
+        style={arrowStyle}
+        className={`right-0 ${arrowClasses}`}
       >
         <ChevronRightIcon className="h-5 w-5" aria-hidden="true" />
       </button>

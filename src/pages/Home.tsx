@@ -41,42 +41,66 @@ const Home = () => {
   const isBg = language === "bg";
   const [categories, setCategories] = useState<Category[]>([]);
   const [bestSellers, setBestSellers] = useState<Product[]>([]);
-  const [latestProducts, setLatestProducts] = useState<Product[]>([]);
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
   const [activeProductTab, setActiveProductTab] = useState<"best" | "popular" | "rating">("best");
 
   useEffect(() => {
+    const controller = new AbortController();
+    const api = process.env.NEXT_PUBLIC_API_URL;
     const fetchHomeData = async () => {
+      // Load every public catalog page. The previous 12/20-product limits stopped
+      // the carousel before reaching the remaining products.
       try {
-        const [categoriesResponse, bestSellersResponse, latestResponse, catalogResponse] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/Categories`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products/best-sellers?numOfBestSellers=12`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products?PageNumber=1&PageSize=12&SortBy=createdOn&SortDescending=true`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products?PageNumber=1&PageSize=100&SortBy=title&SortDescending=false`),
-        ]);
-
-        if (categoriesResponse.ok) {
-          const data = await categoriesResponse.json();
-          setCategories(Array.isArray(data) ? data : []);
-        }
-        if (bestSellersResponse.ok) {
-          const data = await bestSellersResponse.json();
-          setBestSellers(Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : []);
-        }
-        if (latestResponse.ok) {
-          const data = await latestResponse.json();
-          setLatestProducts(Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : []);
-        }
-        if (catalogResponse.ok) {
-          const data = await catalogResponse.json();
-          setCatalogProducts(Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : []);
+        const pageSize = 100;
+        const allProducts: Product[] = [];
+        const seen = new Set<string>();
+        for (let page = 1; !controller.signal.aborted; page += 1) {
+          const response = await fetch(
+            `${api}/Products?PageNumber=${page}&PageSize=${pageSize}&SortBy=CreatedOn&SortDescending=true`,
+            { signal: controller.signal }
+          );
+          if (!response.ok) throw new Error(`Catalog request failed: ${response.status}`);
+          const result = await response.json();
+          const items: Product[] = Array.isArray(result) ? result : Array.isArray(result?.items) ? result.items : [];
+          for (const product of items) {
+            if (!seen.has(product.id)) {
+              seen.add(product.id);
+              allProducts.push(product);
+            }
+          }
+          if (!controller.signal.aborted) setCatalogProducts([...allProducts]);
+          const totalCount = Number(result?.totalCount);
+          if (items.length < pageSize || (Number.isFinite(totalCount) && totalCount > 0 && allProducts.length >= totalCount)) break;
         }
       } catch (error) {
-        console.error("Home data fetch failed:", error);
+        if (!controller.signal.aborted) console.error("Home catalog fetch failed:", error);
+      }
+    };
+
+    const fetchOtherHomeData = async () => {
+      const requests = await Promise.allSettled([
+        fetch(`${api}/Categories`, { signal: controller.signal }),
+        fetch(`${api}/Products/best-sellers?numOfBestSellers=12`, { signal: controller.signal }),
+      ]);
+      if (controller.signal.aborted) return;
+      const [categoryRequest, sellerRequest] = requests;
+      try {
+        if (categoryRequest.status === "fulfilled" && categoryRequest.value.ok) {
+          const data = await categoryRequest.value.json();
+          if (!controller.signal.aborted) setCategories(Array.isArray(data) ? data : []);
+        }
+        if (sellerRequest.status === "fulfilled" && sellerRequest.value.ok) {
+          const data = await sellerRequest.value.json();
+          if (!controller.signal.aborted) setBestSellers(Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : []);
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) console.error("Home data fetch failed:", error);
       }
     };
 
     void fetchHomeData();
+    void fetchOtherHomeData();
+    return () => controller.abort();
   }, []);
 
   const mainCategories = useMemo(
@@ -87,17 +111,17 @@ const Home = () => {
   const discountedProducts = useMemo(() =>
     catalogProducts
       .filter((product) => (product.discountPercentage ?? 0) > 0 && (product.discountedPrice ?? 0) > 0)
-      .sort((a, b) => (b.discountPercentage ?? 0) - (a.discountPercentage ?? 0))
-      .slice(0, 20),
+      .sort((a, b) => (b.discountPercentage ?? 0) - (a.discountPercentage ?? 0)),
   [catalogProducts]);
 
   const tabProducts = useMemo(() => {
     if (activeProductTab === "rating") {
       return [...catalogProducts].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
     }
-    if (activeProductTab === "popular") return latestProducts;
-    return bestSellers;
-  }, [activeProductTab, bestSellers, latestProducts, catalogProducts]);
+    if (activeProductTab === "popular") return catalogProducts;
+    const priority = new Set(bestSellers.map((product) => product.id));
+    return [...bestSellers, ...catalogProducts.filter((product) => !priority.has(product.id))];
+  }, [activeProductTab, bestSellers, catalogProducts]);
 
   const text = {
     best: isBg ? "Най-продавани" : "Best sellers",
@@ -154,7 +178,7 @@ const Home = () => {
 
       {tabProducts.length > 0 && (
         <section className="site-container pt-3.5 pb-7 sm:pt-4 sm:pb-8">
-          <HomeProductCarousel key={activeProductTab} products={tabProducts.slice(0, 20)} label={activeProductTab === "best" ? text.best : activeProductTab === "popular" ? text.popular : text.rating} />
+          <HomeProductCarousel key={activeProductTab} products={tabProducts} label={activeProductTab === "best" ? text.best : activeProductTab === "popular" ? text.popular : text.rating} />
         </section>
       )}
 
@@ -176,10 +200,10 @@ const Home = () => {
         </div>
       </section>
 
-      {latestProducts.length > 0 && (
+      {catalogProducts.length > 0 && (
         <section className="site-container py-8 sm:py-10">
           <div className="text-center"><h2 className="font-display text-2xl font-bold text-slate-950 sm:text-3xl dark:text-white">{text.latest}</h2></div>
-          <HomeProductCarousel products={latestProducts} label={text.latest} className="mt-6 sm:mt-8" />
+          <HomeProductCarousel products={catalogProducts} label={text.latest} className="mt-6 sm:mt-8" />
         </section>
       )}
 
