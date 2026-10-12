@@ -30,7 +30,7 @@ const navigation = [
   { to: "/admin/products", labelBg: "Продукти", labelEn: "Products", icon: CubeIcon, notification: "products" as const },
   { to: "/admin/invoice-import", labelBg: "Фактури", labelEn: "Invoices", icon: DocumentArrowUpIcon, notification: "invoices" as const },
   { to: "/admin/categories", labelBg: "Категории", labelEn: "Categories", icon: ChartBarSquareIcon },
-  { to: "/admin/brands", labelBg: "Марки", labelEn: "Brands", icon: TagIcon },
+  { to: "/admin/brands", labelBg: "Брандове", labelEn: "Brands", icon: TagIcon },
   { to: "/admin/slideshow", labelBg: "Слайдшоу", labelEn: "Slideshow", icon: PhotoIcon },
   { to: "/admin/users", labelBg: "Клиенти", labelEn: "Customers", icon: UsersIcon },
   { to: "/admin/reports", labelBg: "Справки", labelEn: "Reports", icon: DocumentChartBarIcon },
