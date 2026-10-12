@@ -154,7 +154,7 @@ const SeoDashboard = () => {
   const cards = [
     [isBg ? "Активни продукти" : "Active products", audit.summary.activeProducts],
     [isBg ? "Категории" : "Categories", audit.summary.categories],
-    [isBg ? "Марки" : "Brands", audit.summary.brands],
+    [isBg ? "Брандове" : "Brands", audit.summary.brands],
     [isBg ? "Индексируеми URL-и" : "Indexable URLs", manifest?.generatedRoutes ?? audit.summary.estimatedIndexableUrls],
   ] as const;
 
