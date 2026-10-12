@@ -45,6 +45,11 @@ const preloadImage = (url: string) =>
     }
   });
 
+export const invalidateHomeSlideshowPreload = () => {
+  cachedPayload = null;
+  preloadPromise = null;
+};
+
 export const getPreloadedHomeSlideshow = () => cachedPayload;
 
 export const preloadHomeSlideshow = () => {

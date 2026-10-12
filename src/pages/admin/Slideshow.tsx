@@ -12,6 +12,7 @@ import { API_BASE_URL, readApiJson } from "../../config/api";
 import { RootState } from "../../store";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 import HomeHeroSlider, {type HomeSlide, type HomeSlideshowPayload, type SlideField, type SlidePosition} from "../../components/home/HomeHeroSlider";
+import { invalidateHomeSlideshowPreload } from "../../utils/homeSlideshowPreload";
 
 const gradientOptions = [
   { value: "from-teal-100 via-cyan-50 to-white", bg: "Тюркоаз", en: "Teal" },
@@ -254,6 +255,7 @@ const AdminSlideshow = () => {
       const savedPayload = await readApiJson<HomeSlideshowPayload>(response);
       setSlideDurationSeconds(savedPayload.slideDurationSeconds ?? slideDurationSeconds);
       setSlides(savedPayload.slides ?? payload.slides);
+      invalidateHomeSlideshowPreload();
       setSaved(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : isBg ? "Промените не можаха да бъдат запазени." : "The changes could not be saved.");
