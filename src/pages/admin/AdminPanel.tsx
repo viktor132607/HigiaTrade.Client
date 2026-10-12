@@ -138,7 +138,7 @@ const AdminPanel = ({ children }: AdminPanelProps) => {
                 <item.icon className="h-5 w-5 flex-none" />
                 <span>{isBg ? item.labelBg : item.labelEn}</span>
                 {hasNotification(item.notification) && (
-                  <span className="ml-auto h-2.5 w-2.5 flex-none rounded-full bg-red-500 ring-2 ring-slate-950" aria-label={notificationTitle(item.notification)} />
+                  <span className="ml-auto h-2.5 w-2.5 flex-none rounded-full bg-red-500" aria-label={notificationTitle(item.notification)} />
                 )}
               </NavLink>
             ))}
@@ -169,7 +169,7 @@ const AdminPanel = ({ children }: AdminPanelProps) => {
               <div className="relative">
                 <item.icon className="h-5 w-5 flex-none" />
                 {hasNotification(item.notification) && (
-                  <span className="absolute -right-1.5 -top-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-slate-950" aria-label={notificationTitle(item.notification)} />
+                  <span className="absolute -right-1.5 -top-1 h-2.5 w-2.5 rounded-full bg-red-500" aria-label={notificationTitle(item.notification)} />
                 )}
               </div>
               <span className="max-w-full text-center">{isBg ? item.labelBg : item.labelEn}</span>
