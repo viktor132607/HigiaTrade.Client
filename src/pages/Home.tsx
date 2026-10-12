@@ -265,7 +265,7 @@ const Home = ({ heroPreview }: { heroPreview?: PreviewConfig } = {}) => {
             {mainCategories.slice(0, 10).map((category) => {
               const image = category.imageUri ?? category.imageURI ?? "";
               return (
-                <Link key={category.id} to={categorySeoPath(category)} className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-black">
+                <Link key={category.id} to={categorySeoPath(category)} className="group overflow-hidden rounded-xl bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:bg-black">
                   <div className="aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-900">{image ? <img src={image} alt={category.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center p-2 text-center text-xs text-slate-400">{text.noCategoryImage}</div>}</div>
                   <div className="p-3 sm:p-4"><p className="line-clamp-2 text-sm font-bold text-slate-950 dark:text-white sm:text-base">{category.name}</p><p className="mt-1 text-xs text-slate-500 dark:text-slate-300">{text.viewProducts}</p></div>
                 </Link>
