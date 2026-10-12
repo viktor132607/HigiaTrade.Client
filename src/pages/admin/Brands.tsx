@@ -175,7 +175,7 @@ const AdminBrands = () => {
       await loadBrands();
       closeModal();
     } catch (err) {
-      setError(err instanceof Error ? err.message : isBg ? "Брандът не можа да бъде запазена." : "The brand could not be saved.");
+      setError(err instanceof Error ? err.message : isBg ? "Брандът не можа да бъде запазен." : "The brand could not be saved.");
     } finally {
       setSaving(false);
     }
@@ -194,7 +194,7 @@ const AdminBrands = () => {
       await loadBrands();
     } catch (err) {
       setBrandToDelete(null);
-      setError(err instanceof Error ? err.message : isBg ? "Брандът не можа да бъде изтрита." : "The brand could not be deleted.");
+      setError(err instanceof Error ? err.message : isBg ? "Брандът не можа да бъде изтрит." : "The brand could not be deleted.");
     }
   };
 
@@ -330,7 +330,7 @@ const AdminBrands = () => {
           <div className="w-full max-w-md rounded-2xl bg-white p-4 sm:p-6">
             <h2 className="text-xl font-bold text-slate-950">{text.delete}</h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              {isBg ? `Да се изтрие ли „${brandToDelete.name}“? Бранд, който е зададен на продукти, не може да бъде изтрита.` : `Delete “${brandToDelete.name}”? A brand assigned to products cannot be deleted.`}
+              {isBg ? `Да се изтрие ли „${brandToDelete.name}“? Бранд, който е зададен на продукти, не може да бъде изтрит.` : `Delete “${brandToDelete.name}”? A brand assigned to products cannot be deleted.`}
             </p>
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button type="button" onClick={() => setBrandToDelete(null)} className="rounded-md border border-slate-300 px-4 py-2 text-slate-700">{text.cancel}</button>
