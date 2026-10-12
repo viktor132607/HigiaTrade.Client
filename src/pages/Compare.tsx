@@ -87,7 +87,7 @@ const Compare = () => {
     { labelBg: "Цена", labelEn: "Price", render: (p: Product) => formatCurrency(p.discountedPrice && p.discountedPrice > 0 ? p.discountedPrice : p.regularPrice) },
     { labelBg: "Редовна цена", labelEn: "Regular price", render: (p: Product) => formatCurrency(p.regularPrice) },
     { labelBg: "Отстъпка", labelEn: "Discount", render: (p: Product) => p.discountPercentage ? `${p.discountPercentage}%` : "—" },
-    { labelBg: "Марка", labelEn: "Brand", render: (p: Product) => p.brand || "—" },
+    { labelBg: "Бранд", labelEn: "Brand", render: (p: Product) => p.brand || "—" },
     { labelBg: "Категория", labelEn: "Category", render: (p: Product) => p.categoryName || "—" },
     { labelBg: "Рейтинг", labelEn: "Rating", render: (p: Product) => `${(p.rating ?? 0).toFixed(1)} / 5` },
     { labelBg: "Наличност", labelEn: "Stock", render: (p: Product) => p.quantity > 0 ? (isBg ? `${p.quantity} бр.` : `${p.quantity} pcs`) : (isBg ? "Няма наличност" : "Out of stock") },
