@@ -402,6 +402,25 @@ html.dark ::selection { background: rgba(20,184,166,.38); color: #fff; }
   align-items: stretch !important;
 }
 
+/* Widths 768–1023px use the live tablet layout even if the admin is opened on desktop. */
+.home-hero-tablet-preview .home-hero-frame {
+  aspect-ratio: 256 / 55 !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+.home-hero-tablet-preview .home-hero-frame > img { height: 100% !important; }
+.home-hero-tablet-preview .home-hero-content {
+  position: relative !important;
+  inset: auto !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 4rem !important;
+  align-items: stretch !important;
+}
+.home-hero-tablet-preview .home-hero-copy { transform: none !important; }
+.home-hero-tablet-preview .home-hero-content h1 { font-size: 3rem !important; }
+.home-hero-tablet-preview .home-hero-content p { font-size: 1.125rem !important; }
+
 /* Simulate a narrow mobile viewport inside the desktop slideshow editor. */
 .home-hero-mobile-preview .home-hero-frame { aspect-ratio: auto !important; height: auto !important; min-height: 390px; }
 .home-hero-mobile-preview .home-hero-frame > img,

@@ -22,14 +22,32 @@ const gradientOptions = [
   { value: "from-violet-100 via-purple-50 to-white", bg: "Лилав", en: "Purple" },
 ];
 
-type PreviewMode = "mobile" | "laptop" | "monitor24" | "monitor27";
-
-const previewModes: { key: PreviewMode; width: number; labelBg: string; labelEn: string }[] = [
-  { key: "mobile", width: 390, labelBg: "Телефон", labelEn: "Phone" },
-  { key: "laptop", width: 1366, labelBg: "Лаптоп", labelEn: "Laptop" },
-  { key: "monitor24", width: 1920, labelBg: 'Монитор 24″', labelEn: 'Monitor 24″' },
-  { key: "monitor27", width: 2560, labelBg: 'Монитор 27″', labelEn: 'Monitor 27″' },
-];
+// Widths are CSS viewport pixels (not physical panel resolution).
+const previewModes = [
+  { key: "mobile", category: "standard", width: 390, labelBg: "Телефон", labelEn: "Phone" },
+  { key: "laptop", category: "standard", width: 1366, labelBg: "Лаптоп", labelEn: "Laptop" },
+  { key: "monitor24", category: "standard", width: 1920, labelBg: 'Монитор 24″', labelEn: 'Monitor 24″' },
+  { key: "monitor27", category: "standard", width: 2560, labelBg: 'Монитор 27″', labelEn: 'Monitor 27″' },
+  { key: "iphoneSE", category: "apple", width: 375, labelBg: "iPhone SE", labelEn: "iPhone SE" },
+  { key: "iphone15", category: "apple", width: 393, labelBg: "iPhone 15 / 16", labelEn: "iPhone 15 / 16" },
+  { key: "iphonePro", category: "apple", width: 402, labelBg: "iPhone 16 / 17 Pro", labelEn: "iPhone 16 / 17 Pro" },
+  { key: "iphoneProMax", category: "apple", width: 440, labelBg: "iPhone 16 / 17 Pro Max", labelEn: "iPhone 16 / 17 Pro Max" },
+  { key: "ipadMini", category: "apple", width: 744, labelBg: "iPad mini", labelEn: "iPad mini" },
+  { key: "ipad11", category: "apple", width: 820, labelBg: "iPad 11″ / Air 11″", labelEn: "iPad 11″ / Air 11″" },
+  { key: "ipadPro11", category: "apple", width: 834, labelBg: "iPad Pro 11″", labelEn: "iPad Pro 11″" },
+  { key: "ipad13", category: "apple", width: 1032, labelBg: "iPad Air / Pro 13″", labelEn: "iPad Air / Pro 13″" },
+  { key: "macbookAir13", category: "apple", width: 1280, labelBg: "MacBook Air 13″", labelEn: "MacBook Air 13″" },
+  { key: "macbookAir15", category: "apple", width: 1440, labelBg: "MacBook Air 15″", labelEn: "MacBook Air 15″" },
+  { key: "macbookPro14", category: "apple", width: 1512, labelBg: "MacBook Pro 14″", labelEn: "MacBook Pro 14″" },
+  { key: "macbookPro16", category: "apple", width: 1728, labelBg: "MacBook Pro 16″", labelEn: "MacBook Pro 16″" },
+  { key: "imac24", category: "apple", width: 1920, labelBg: "iMac 24″", labelEn: "iMac 24″" },
+  { key: "tabletSmall", category: "tablet", width: 768, labelBg: "Таблет 8″", labelEn: "8″ tablet" },
+  { key: "tabletMedium", category: "tablet", width: 800, labelBg: "Таблет 10″", labelEn: "10″ tablet" },
+  { key: "tabletLarge", category: "tablet", width: 1024, labelBg: "Таблет 11″", labelEn: "11″ tablet" },
+  { key: "tabletXL", category: "tablet", width: 1200, labelBg: "Таблет 12–14″", labelEn: "12–14″ tablet" },
+] as const;
+type PreviewMode = (typeof previewModes)[number]["key"];
+type PreviewCategory = (typeof previewModes)[number]["category"];
 type BgTranslationKey = "eyebrowBg" | "titleBg" | "badgeBg" | "noteBg" | "ctaBg";
 type EnTranslationKey = "eyebrowEn" | "titleEn" | "badgeEn" | "noteEn" | "ctaEn";
 
@@ -72,6 +90,10 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
   const [scale, setScale] = useState(1);
   const [height, setHeight] = useState(0);
   const width = previewModes.find((option) => option.key === mode)?.width ?? 1366;
+  const responsiveClass = width < 768 ? "home-hero-mobile-preview"
+    : width < 1024 ? "home-hero-tablet-preview"
+    : width < 1920 ? "home-hero-laptop-preview"
+    : width < 2200 ? "home-hero-monitor24-preview" : "home-hero-monitor27-preview";
 
   useEffect(() => {
     const host = hostRef.current, scene = sceneRef.current;
@@ -90,7 +112,7 @@ const SlidePreview = ({slide, mode, index, total, onMove}: {
 
   return <div ref={hostRef} className="w-full overflow-hidden border border-slate-300 bg-white">
     <div style={{ height }}>
-      <div ref={sceneRef} className={`home-hero-${mode}-preview`}
+      <div ref={sceneRef} className={responsiveClass}
         style={{ width, transform: `scale(${scale})`, transformOrigin: "top left" }}>
         <HomeHeroSlider preview={{slide, index, total, onMove}} />
       </div>
@@ -301,7 +323,7 @@ const AdminSlideshow = () => {
             <span className="text-xs text-slate-500">{isBg ? "сек." : "sec"}</span>
           </label>
           <div role="group" aria-label={isBg ? "Размер на прегледа" : "Preview viewport size"} className="flex max-w-full flex-wrap gap-1 rounded-lg border border-slate-300 bg-white p-1">
-            {previewModes.map((option) => (
+            {previewModes.filter((option) => option.category === "standard").map((option) => (
               <button
                 key={option.key}
                 type="button"
@@ -315,6 +337,28 @@ const AdminSlideshow = () => {
                 <span>{isBg ? option.labelBg : option.labelEn}</span>
               </button>
             ))}
+            {(["apple", "tablet"] as PreviewCategory[]).map((category) => {
+              const choices = previewModes.filter((option) => option.category === category);
+              const selected = choices.some((option) => option.key === previewMode);
+              return (
+                <select
+                  key={category}
+                  aria-label={category === "apple" ? (isBg ? "Apple устройства" : "Apple devices") : (isBg ? "Таблети" : "Tablets")}
+                  value={selected ? previewMode : ""}
+                  onChange={(event) => {
+                    if (event.target.value) setPreviewMode(event.target.value as PreviewMode);
+                  }}
+                  className={`min-h-10 max-w-full cursor-pointer rounded-md border-0 px-3 py-2 text-sm font-semibold ${selected ? "bg-slate-950 text-white" : "bg-white text-slate-700 hover:bg-slate-50"}`}
+                >
+                  <option value="" disabled>{category === "apple" ? "Apple" : (isBg ? "Таблети" : "Tablets")}</option>
+                  {choices.map((option) => (
+                    <option key={option.key} value={option.key}>
+                      {isBg ? option.labelBg : option.labelEn} — {option.width} px
+                    </option>
+                  ))}
+                </select>
+              );
+            })}
           </div>
           <button type="button" onClick={addSlide} className="inline-flex min-h-11 items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"><PlusIcon className="mr-2 h-5 w-5" />{isBg ? "Добави слайд" : "Add slide"}</button>
           <button type="button" onClick={() => void save()} disabled={saving || slides.length === 0} className="min-h-11 rounded-md bg-[#18b99f] px-5 py-2 text-sm font-bold text-white hover:bg-[#149f8a] disabled:opacity-50">{saving ? (isBg ? "Запазване..." : "Saving...") : (isBg ? "Запази промените" : "Save changes")}</button>
