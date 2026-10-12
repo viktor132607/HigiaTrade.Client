@@ -291,7 +291,7 @@ function categoryFaq(category, products, region = null) {
       question: region ? `Предлага ли HygiaTrade ${category.name} за ${region.bg}?` : `Какви продукти има в категория ${category.name}?`,
       answer: region
         ? `Да. HygiaTrade показва ${products.length} активни продукта в категория ${category.name} и обслужва ${region.bg} в рамките на своя район на дистрибуция.`
-        : `В категория ${category.name} има ${products.length} активни продукта${brandNames.length ? ` от марки като ${brandNames.join(", ")}` : ""}.`,
+        : `В категория ${category.name} има ${products.length} активни продукта${brandNames.length ? ` от брандове като ${brandNames.join(", ")}` : ""}.`,
     },
     {
       question: `Доставя ли HygiaTrade ${category.name} за бизнеса?`,
@@ -305,7 +305,7 @@ function brandFaq(brand, products) {
   return [
     {
       question: `Предлага ли HygiaTrade продукти ${brand.name}?`,
-      answer: `Да. В актуалния каталог има ${products.length} активни продукта на марка ${brand.name}.`,
+      answer: `Да. В актуалния каталог има ${products.length} активни продукта на бранд ${brand.name}.`,
     },
     isSano
       ? {
@@ -370,7 +370,7 @@ async function enhanceProductPages(products, categories, brands) {
 
     const links = [
       ...(category ? [{ href: categoryPath(category), label: category.name }] : []),
-      ...(product.brand ? [{ href: brandPath(product.brand), label: `Марка ${product.brand}` }] : []),
+      ...(product.brand ? [{ href: brandPath(product.brand), label: `Бранд ${product.brand}` }] : []),
       ...related.map((candidate) => ({ href: productPath(candidate), label: candidate.title })),
       { href: "/company-info/", label: "За Хигия Трейд ООД" },
     ];
@@ -412,7 +412,7 @@ async function enhanceCollectionPages(products, categories, brands) {
       html = addBody(html, faqSection(faq), 'data-seo-enhancer="faq"');
       const links = [
         ...categoryProducts.slice(0, 8).map((product) => ({ href: productPath(product), label: product.title })),
-        ...[...new Set(categoryProducts.map((product) => product.brand).filter(Boolean))].slice(0, 4).map((brand) => ({ href: brandPath(brand), label: `Марка ${brand}` })),
+        ...[...new Set(categoryProducts.map((product) => product.brand).filter(Boolean))].slice(0, 4).map((brand) => ({ href: brandPath(brand), label: `Бранд ${brand}` })),
         { href: "/company-info/", label: "Хигия Трейд ООД" },
       ];
       html = addBody(html, linksSection("Още от HygiaTrade", links), 'data-seo-enhancer="internal-links"');
@@ -515,7 +515,7 @@ async function generateRegionalCategoryPages(template, products, categories) {
     <h1 style="margin:0;font-size:30px;line-height:1.2;color:#0f172a">${escapeHtml(category.name)} за ${escapeHtml(region.bg)}</h1>
     <p style="max-width:950px;margin:14px 0 0;line-height:1.7">${escapeHtml(description)}</p>
     <p style="max-width:950px;margin:10px 0 0;line-height:1.7">Районът на HygiaTrade включва ${REGIONS.map((item) => item.bg).join(", ")}. Показаните артикули и наличности се извличат от актуалния продуктов каталог.</p>
-    ${categoryBrands.length ? `<p style="margin:14px 0 0"><strong>Марки в категорията:</strong> ${escapeHtml(categoryBrands.join(", "))}</p>` : ""}
+    ${categoryBrands.length ? `<p style="margin:14px 0 0"><strong>Брандове в категорията:</strong> ${escapeHtml(categoryBrands.join(", "))}</p>` : ""}
     <h2 style="margin:26px 0 10px;font-size:21px;color:#0f172a">Продукти</h2>
     <ul style="margin:0;padding-left:22px;display:grid;gap:7px">${productsList}</ul>
   </div>
@@ -587,14 +587,14 @@ async function generateCompanyInfoPage(template, products, categories, brands) {
     <p style="max-width:900px;margin:0;line-height:1.75">SANO България публикува Хигия Трейд ООД като дистрибутор за Русе, Силистра, Разград, Свищов, Бяла и Търговище. В актуалния каталог на HygiaTrade има ${sanoProducts.length} активни SANO продукта.</p>
     <p style="margin:12px 0 0"><a href="https://sanobg.com/buy/" style="color:#0f766e;font-weight:800">Официална страница на SANO България за дистрибутори</a></p>
     <h2 style="margin:30px 0 10px;font-size:22px;color:#0f172a">Каталог</h2>
-    <p style="margin:0;line-height:1.75">Активни продукти: ${products.length}. Категории: ${categories.length}. Марки: ${brands.length}. Данните се обновяват автоматично при SEO build от продуктовата база.</p>
+    <p style="margin:0;line-height:1.75">Активни продукти: ${products.length}. Категории: ${categories.length}. Брандове: ${brands.length}. Данните се обновяват автоматично при SEO build от продуктовата база.</p>
   </div>
 </main>`;
   html = addBody(html, body, 'data-seo-enhancer="company-info"');
   html = addBody(html, linksSection("Основни ресурси", [
     { href: "/sano/", label: "SANO дистрибуция" },
     { href: "/products/", label: "Всички продукти" },
-    { href: "/brands/", label: "Марки" },
+    { href: "/brands/", label: "Брандове" },
     { href: "/contact/", label: "Контакти" },
     ...REGIONS.map((region) => ({ href: `/sano/${region.slug}/`, label: `SANO ${region.bg}` })),
   ]), 'data-seo-enhancer="internal-links"');
