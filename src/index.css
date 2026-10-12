@@ -65,15 +65,14 @@
 }
 @media (min-width: 768px) { .fixed.inset-0.bg-black.bg-opacity-50 { z-index: 60; } }
 
-/* Hero layout: width 1366 => 293.5px height; 1920 => 312.5px; 2560 => 450px.
-   The same media queries apply inside the iframe preview at selected device width.
-   Empty text fields no longer reserve grid rows; CTA follows visible copy. */
-/* On wide screens shorten the slideshow by exactly 100px at its bottom.
-   Keep the original 2560x550 image canvas so the image is clipped, not stretched. */
+/* Hero: removed the old three bottom action pills. On wide desktops the frame
+   is now 50px shorter, while the underlying 2560x550 image stays unscaled.
+   1920px viewport => 262.5px frame; 2048px => 290px; 2560px => 400px.
+   These rules also apply in the full-page admin preview iframe. */
 @media (min-width: 1920px) {
   .home-hero-frame {
     aspect-ratio: auto;
-    height: calc(min(100vw, 2560px) * 0.21484375 - 100px);
+    height: calc(min(100vw, 2560px) * 0.21484375 - 150px);
   }
 
   .home-hero-frame > img {
@@ -86,8 +85,17 @@
     width: 100%;
     height: 100%;
     padding-top: 3rem;
-    padding-bottom: 3rem;
+    padding-bottom: 1.5rem;
     align-items: center;
+  }
+
+  .home-hero-copy {
+    gap: 0.5rem;
+  }
+
+  .home-hero-copy h1 {
+    font-size: clamp(2.625rem, 2.35vw, 3.5rem);
+    line-height: 1.05;
   }
 }
 
