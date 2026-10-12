@@ -45,7 +45,7 @@ const Footer = () => {
             <Link to="/promotions" className="min-h-8 py-1 hover:text-orange-400">{isBg ? "Промоции" : "Promotions"}</Link>
             <Link to="/new-products" className="min-h-8 py-1 hover:text-orange-400">{isBg ? "Нови стоки" : "New products"}</Link>
             <Link to="/best-sellers" className="min-h-8 py-1 hover:text-orange-400">{isBg ? "Най-продавани" : "Best sellers"}</Link>
-            <Link to="/brands" className="min-h-8 py-1 hover:text-orange-400">{isBg ? "По марка" : "By brand"}</Link>
+            <Link to="/brands" className="min-h-8 py-1 hover:text-orange-400">{isBg ? "Брандове" : "By brand"}</Link>
             <Link to="/privacy" className="min-h-8 py-1 hover:text-orange-400">{isBg ? "Поверителност" : "Privacy"}</Link>
             <Link to="/security" className="min-h-8 py-1 hover:text-orange-400">{isBg ? "Сигурност" : "Security"}</Link>
             <Link to="/cookies" className="min-h-8 py-1 hover:text-orange-400">{isBg ? "Бисквитки" : "Cookies"}</Link>
