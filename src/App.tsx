@@ -21,6 +21,7 @@ import NewProducts from "./pages/NewProducts";
 import BestSellers from "./pages/BestSellers";
 import Promotions from "./pages/Promotions";
 import Compare from "./pages/Compare";
+import CompareStateSync from "./components/products/CompareStateSync";
 import Cart from "./pages/Cart";
 import StripeReturn from "./pages/StripeReturn";
 import Checkout from "./pages/Checkout";
@@ -59,6 +60,7 @@ function App() {
     <Provider store={store}>
       <LanguageThemeProvider>
         <GlobalUiEnhancer />
+        <CompareStateSync />
         <Router>
           <Routes>
             <Route path="/admin/slideshow-live-preview" element={<PrivateRoute><SlideshowLivePreview /></PrivateRoute>} />
