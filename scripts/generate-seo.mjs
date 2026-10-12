@@ -264,14 +264,20 @@ function sellerSchema() {
     name: "Хигия Трейд ООД",
     alternateName: "HygiaTrade",
     url: SITE_URL,
-    telephone: "+359888822861",
+    telephone: ["+359888822861", "+359883778177"],
     email: "higiatrade@abv.bg",
     address: {
       "@type": "PostalAddress",
-      streetAddress: "ул. Акад. Михаил Арнаудов №3",
+      streetAddress: "ул. Потсдам №1",
       addressLocality: "Русе",
       addressCountry: "BG",
     },
+    openingHoursSpecification: [{
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      opens: "08:00",
+      closes: "17:00",
+    }],
   };
 }
 
@@ -468,7 +474,7 @@ function merchantCsv(products) {
 
 function llmsText(products, categories, brands) {
   const sanoProducts = products.filter((product) => String(product.brand || "").toLowerCase() === "sano");
-  return `# HygiaTrade\n\nHygiaTrade is the online catalogue of Хигия Трейд ООД, based in Ruse, Bulgaria.\n\n## SANO distribution\nХигия Трейд ООД is listed by SANO Bulgaria as distributor for Ruse, Silistra, Razgrad, Svishtov, Byala and Targovishte.\nOfficial distributor reference: https://sanobg.com/buy/\nSANO landing page: ${SITE_URL}/sano/\nRegional pages:\n${REGIONS.map((region) => `- ${region.bg}: ${SITE_URL}/sano/${region.slug}/`).join("\n")}\n\n## Catalogue\nActive products: ${products.length}\nCategories: ${categories.length}\nBrands: ${brands.length}\nSANO products: ${sanoProducts.length}\nProduct feed XML: ${SITE_URL}/google-merchant.xml\nProduct feed CSV: ${SITE_URL}/google-merchant.csv\nImage sitemap: ${SITE_URL}/image-sitemap.xml\n\n## Brands\n${brands.slice(0, 100).map((brand) => `- ${brand.name}: ${canonical(brandPath(brand.name))}`).join("\n")}\n\n## Categories\n${categories.slice(0, 100).map((category) => `- ${category.name}: ${canonical(categoryPath(category))}`).join("\n")}\n\n## Product URLs\n${products.slice(0, 500).map((product) => `- ${product.title}: ${canonical(productPath(product))}`).join("\n")}\n\n## Contact\nAddress: гр. Русе, ул. Акад. Михаил Арнаудов №3\nPhone: +359 888 822 861\nEmail: higiatrade@abv.bg\nWebsite: ${SITE_URL}/\n`;
+  return `# HygiaTrade\n\nHygiaTrade is the online catalogue of Хигия Трейд ООД, based in Ruse, Bulgaria.\n\n## SANO distribution\nХигия Трейд ООД is listed by SANO Bulgaria as distributor for Ruse, Silistra, Razgrad, Svishtov, Byala and Targovishte.\nOfficial distributor reference: https://sanobg.com/buy/\nSANO landing page: ${SITE_URL}/sano/\nRegional pages:\n${REGIONS.map((region) => `- ${region.bg}: ${SITE_URL}/sano/${region.slug}/`).join("\n")}\n\n## Catalogue\nActive products: ${products.length}\nCategories: ${categories.length}\nBrands: ${brands.length}\nSANO products: ${sanoProducts.length}\nProduct feed XML: ${SITE_URL}/google-merchant.xml\nProduct feed CSV: ${SITE_URL}/google-merchant.csv\nImage sitemap: ${SITE_URL}/image-sitemap.xml\n\n## Brands\n${brands.slice(0, 100).map((brand) => `- ${brand.name}: ${canonical(brandPath(brand.name))}`).join("\n")}\n\n## Categories\n${categories.slice(0, 100).map((category) => `- ${category.name}: ${canonical(categoryPath(category))}`).join("\n")}\n\n## Product URLs\n${products.slice(0, 500).map((product) => `- ${product.title}: ${canonical(productPath(product))}`).join("\n")}\n\n## Contact\nAddress: гр. Русе, ул. Потсдам №1\nPhones: +359 888 822 861, +359 883 778 177\nWorking hours: Monday–Friday, 08:00–17:00\nEmail: higiatrade@abv.bg\nWebsite: ${SITE_URL}/\n`;
 }
 
 async function main() {
