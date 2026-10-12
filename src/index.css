@@ -65,6 +65,24 @@
 }
 @media (min-width: 768px) { .fixed.inset-0.bg-black.bg-opacity-50 { z-index: 60; } }
 
+/* On wide screens shorten the slideshow by exactly 100px at its bottom.
+   Keep the original 2560x550 image canvas so the image is clipped, not stretched. */
+@media (min-width: 1920px) {
+  .home-hero-frame {
+    aspect-ratio: auto;
+    height: calc(min(100vw, 2560px) * 0.21484375 - 100px);
+  }
+
+  .home-hero-frame > img {
+    height: calc(min(100vw, 2560px) * 0.21484375) !important;
+  }
+
+  .home-hero-content {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+}
+
 /* Laptop hero: keep the same banner scale as desktop so images and copy are not over-cropped. */
 @media (min-width: 1024px) and (max-width: 1919px) {
   .home-hero-frame {
