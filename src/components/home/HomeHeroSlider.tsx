@@ -302,7 +302,7 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
     // Only actual visible text/button nodes form the default vertical stack.
     return (
       <div key={slide.id} className="contents">
-        {(["eyebrow", "title", "badge", "note", "cta"] as SlideField[])
+        {(["eyebrow", "title", "badge", "note", "cta"] as LegacySlideField[])
           .filter(field => Boolean(labels[field]) && !slide.positions?.[field])
           .map(field => (
             <div key={field} data-hero-field={field}
