@@ -5,7 +5,7 @@ import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 import { getPreloadedHomeSlideshow, preloadHomeSlideshow } from "../../utils/homeSlideshowPreload";
 
 export type SlideField = "eyebrow" | "title" | "badge" | "note" | "cta";
-export type SlidePosition = { x: number; y: number };
+export type SlidePosition = { x: number; y: number; scale?: number };
 export interface HomeSlide {
   id: string;
   order: number;
@@ -33,9 +33,18 @@ export interface HomeSlideshowPayload {
   slides: HomeSlide[];
 }
 
-export type PreviewConfig = { slide: HomeSlide; index: number; total: number; onMove: (key: SlideField, pos: SlidePosition) => void };
+export type PreviewConfig = {
+  slide: HomeSlide;
+  index: number;
+  total: number;
+  selected?: SlideField | null;
+  snapEnabled?: boolean;
+  onSelect?: (key: SlideField) => void;
+  onMove: (key: SlideField, pos: SlidePosition) => void;
+};
 const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
   const frameRef = useRef<HTMLDivElement>(null);
+  const [snapGuide, setSnapGuide] = useState<{ x?: number; y?: number }>({});
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
   const [slides, setSlides] = useState<HomeSlide[]>([]);
@@ -135,32 +144,110 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
 
   const onEditorPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     const frame = frameRef.current;
-    if (!preview || !frame) return;
-    const element = (event.target as Element).closest<HTMLElement>("[data-hero-field]");
-    if (!element || !frame.contains(element)) return;
-    const key = element.dataset.heroField as SlideField;
-    if (!(["eyebrow", "title", "badge", "note", "cta"] as string[]).includes(key)) return;
+    if (!preview || !frame || event.button !== 0) return;
+    const node = (event.target as Element).closest<HTMLElement>("[data-hero-field]");
+    if (!node || !frame.contains(node)) return;
+    const field = node.dataset.heroField as SlideField;
+    if (!(["eyebrow", "title", "badge", "note", "cta"] as string[]).includes(field)) return;
+
     event.preventDefault();
-    const elRect = element.getBoundingClientRect();
-    const offsetX = event.clientX - elRect.left, offsetY = event.clientY - elRect.top;
-    const move = (e: PointerEvent) => {
-      const f = frame.getBoundingClientRect();
-      if (!f.width || !f.height) return;
-      const x = 100 * (e.clientX - f.left - offsetX) / f.width;
-      const y = 100 * (e.clientY - f.top - offsetY) / f.height;
-      preview.onMove(key, {
-        x: Math.round(Math.max(0, Math.min(100 * (f.width - elRect.width) / f.width, x)) * 100) / 100,
-        y: Math.round(Math.max(0, Math.min(100 * (f.height - elRect.height) / f.height, y)) * 100) / 100,
-      });
+    preview.onSelect?.(field);
+    const resizing = Boolean((event.target as Element).closest("[data-scale-handle]"));
+    const frameRect = frame.getBoundingClientRect();
+    // Default grid rows have padding. Measure their content, not the row,
+    // so the first selection doesn't jump when it becomes positioned.
+    const content = preview.slide.positions?.[field] ? node : node.firstElementChild as HTMLElement | null;
+    const rect = (content ?? node).getBoundingClientRect();
+    const existing = preview.slide.positions?.[field];
+    const scale = existing?.scale ?? 1;
+    const initial = existing ?? {
+      x: 100 * (rect.left - frameRect.left) / frameRect.width,
+      y: 100 * (rect.top - frameRect.top) / frameRect.height,
+      scale,
     };
-    const end = () => {
+    const first = {
+      x: Math.max(0, initial.x),
+      y: Math.max(0, initial.y),
+      scale,
+    };
+    if (!existing) preview.onMove(field, first);
+
+    const xStart = event.clientX;
+    const yStart = event.clientY;
+    const targetW = rect.width / frameRect.width * 100;
+    const targetH = rect.height / frameRect.height * 100;
+    let latest = first;
+
+    const snap = (value: number, length: number, axis: "x" | "y") => {
+      const size = axis === "x" ? frameRect.width : frameRect.height;
+      const anchors: number[] = [0, 5, 50, 95, 100];
+      for (const other of frame.querySelectorAll<HTMLElement>("[data-hero-field]")) {
+        if (other === node || other.dataset.heroField === field) continue;
+        if (window.getComputedStyle(other).visibility === "hidden") continue;
+        const box = other.getBoundingClientRect();
+        if (box.width < 1 || box.height < 1) continue;
+        const beginning = axis === "x" ? box.left - frameRect.left : box.top - frameRect.top;
+        const measure = axis === "x" ? box.width : box.height;
+        anchors.push(100 * beginning / size, 100 * (beginning + measure / 2) / size, 100 * (beginning + measure) / size);
+      }
+
+      let closest: { left: number; guide: number; distance: number } | null = null;
+      for (const guide of anchors) {
+        for (const fraction of [0, 0.5, 1]) {
+          const possibleLeft = guide - fraction * length;
+          const distance = Math.abs(possibleLeft - value) * size / 100;
+          if (distance <= 10 && (!closest || distance < closest.distance)) {
+            closest = { left: possibleLeft, guide, distance };
+          }
+        }
+      }
+      return closest;
+    };
+
+    const move = (pointer: PointerEvent) => {
+      const bounds = frame.getBoundingClientRect();
+      if (!bounds.width || !bounds.height) return;
+      if (resizing) {
+        const delta = (pointer.clientX - xStart) / Math.max(rect.width, 24);
+        const increment = (pointer.clientY - yStart) / Math.max(rect.height, 24);
+        const desired = Math.round(Math.max(0.5, Math.min(2.5, scale * (1 + delta + increment / 2))) * 20) / 20;
+        const originalWidth = targetW / scale;
+        const originalHeight = targetH / scale;
+        const allowableX = (100 - first.x) / Math.max(originalWidth, 1);
+        const allowableY = (100 - first.y) / Math.max(originalHeight, 1);
+        const nextScale = Math.max(0.5, Math.min(desired, allowableX, allowableY));
+        latest = { ...first, scale: nextScale };
+        setSnapGuide({});
+      } else {
+        let x = first.x + 100 * (pointer.clientX - xStart) / bounds.width;
+        let y = first.y + 100 * (pointer.clientY - yStart) / bounds.height;
+        const guideX = preview.snapEnabled !== false ? snap(x, targetW, "x") : null;
+        const guideY = preview.snapEnabled !== false ? snap(y, targetH, "y") : null;
+        if (guideX) x = guideX.left;
+        if (guideY) y = guideY.left;
+        const maxX = Math.max(0, 100 - targetW);
+        const maxY = Math.max(0, 100 - targetH);
+        latest = {
+          x: Math.round(Math.max(0, Math.min(maxX, x)) * 100) / 100,
+          y: Math.round(Math.max(0, Math.min(maxY, y)) * 100) / 100,
+          scale,
+        };
+        setSnapGuide({
+          x: guideX?.guide,
+          y: guideY?.guide,
+        });
+      }
+      preview.onMove(field, latest);
+    };
+    const finish = () => {
+      setSnapGuide({});
       window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", end);
-      window.removeEventListener("pointercancel", end);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", finish);
     };
     window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", end);
-    window.addEventListener("pointercancel", end);
+    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointercancel", finish);
   };
 
   const contentByField = (slide: HomeSlide, field: SlideField) => {
@@ -187,7 +274,7 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
 
     return (
       <div key={slide.id} className="contents" aria-hidden={!active}>
-        <div data-hero-field="eyebrow" className={`col-start-1 row-start-1 transition-opacity duration-300 ${slotState} ${slide.positions?.eyebrow ? "invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
+        <div data-hero-field="eyebrow" className={`justify-self-start w-fit max-w-full col-start-1 row-start-1 transition-opacity duration-300 ${slotState} ${slide.positions?.eyebrow ? "invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
           {Boolean(eyebrow) && (
             <p className="text-sm font-semibold text-teal-700 sm:text-xl dark:text-teal-300">
               {eyebrow}
@@ -195,13 +282,13 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
           )}
         </div>
 
-        <div data-hero-field="title" className={`col-start-1 row-start-2 pt-3 transition-opacity duration-300 ${slotState} ${slide.positions?.title ? "invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
+        <div data-hero-field="title" className={`justify-self-start w-fit max-w-full col-start-1 row-start-2 pt-3 transition-opacity duration-300 ${slotState} ${slide.positions?.title ? "invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
           <h1 className="font-display text-3xl font-extrabold uppercase leading-[1.05] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl dark:text-white">
             {title}
           </h1>
         </div>
 
-        <div data-hero-field="badge" className={`col-start-1 row-start-3 pt-5 transition-opacity duration-300 ${slotState} ${slide.positions?.badge ? "invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
+        <div data-hero-field="badge" className={`justify-self-start w-fit max-w-full col-start-1 row-start-3 pt-5 transition-opacity duration-300 ${slotState} ${slide.positions?.badge ? "invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
           {Boolean(badge) && (
             <span className="inline-flex rounded-full bg-slate-950 px-4 py-2 text-xs font-black tracking-wide text-white dark:bg-white dark:text-black">
               {badge}
@@ -209,7 +296,7 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
           )}
         </div>
 
-        <div data-hero-field="note" className={`col-start-1 row-start-4 pt-6 transition-opacity duration-300 sm:pt-8 ${slotState} ${slide.positions?.note ? "invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
+        <div data-hero-field="note" className={`justify-self-start w-fit max-w-full col-start-1 row-start-4 pt-6 transition-opacity duration-300 sm:pt-8 ${slotState} ${slide.positions?.note ? "invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
           {Boolean(note) && (
             <p className="max-w-lg text-sm font-semibold leading-6 text-slate-700 sm:text-lg dark:text-slate-200">
               {note}
@@ -217,7 +304,7 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
           )}
         </div>
 
-        <div data-hero-field="cta" className={`col-start-1 row-start-5 pt-6 transition-opacity duration-300 sm:pt-8 ${slotState} ${slide.positions?.cta ? "invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
+        <div data-hero-field="cta" className={`justify-self-start w-fit max-w-full col-start-1 row-start-5 pt-6 transition-opacity duration-300 sm:pt-8 ${slotState} ${slide.positions?.cta ? "invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
           {Boolean(cta) && (
             <Link
               to={slide.ctaUrl || "/products"}
@@ -299,9 +386,27 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
             : field === "note" ? (isBg ? activeSlide.noteBg : activeSlide.noteEn)
             : (isBg ? activeSlide.ctaBg : activeSlide.ctaEn);
           return pos && visible ? <div key={field} data-hero-field={field}
-            className={`absolute z-[15] max-w-[min(35rem,90%)] ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}
-            style={{ left: `${pos.x}%`, top: `${pos.y}%` }}>{contentByField(activeSlide, field)}</div> : null;
+            className={`absolute z-[15] w-max max-w-[min(35rem,90%)] ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""} ${preview?.selected === field ? "outline outline-2 outline-teal-500" : ""}`}
+            style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: `scale(${pos.scale ?? 1})`, transformOrigin: "top left" }}>
+              {contentByField(activeSlide, field)}
+              {preview?.selected === field && (
+                <span data-scale-handle="true" title={isBg ? "Плъзни за мащабиране" : "Drag to resize"}
+                  className="absolute -bottom-3 -right-3 z-30 flex h-7 w-7 cursor-nwse-resize touch-none items-center justify-center rounded border-2 border-white bg-teal-600 text-lg font-bold leading-none text-white shadow-lg">↘</span>
+              )}
+            </div> : null;
         })}
+        {preview?.selected && (
+          <div className="pointer-events-none absolute inset-0 z-[19]" aria-hidden="true">
+            <div className="absolute inset-y-0 left-1/2 border-l border-dashed border-teal-500/45" />
+            <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-teal-500/45" />
+            {snapGuide.x !== undefined && (
+              <div className="absolute inset-y-0 border-l-2 border-teal-500" style={{ left: `${snapGuide.x}%` }} />
+            )}
+            {snapGuide.y !== undefined && (
+              <div className="absolute inset-x-0 border-t-2 border-teal-500" style={{ top: `${snapGuide.y}%` }} />
+            )}
+          </div>
+        )}
         {preview && <div className="pointer-events-none absolute inset-x-0 bottom-3 z-30 flex justify-center gap-2 px-3">
           {[isBg ? "Най-продавани" : "Best sellers", isBg ? "Последно добавени" : "Recently added", isBg ? "Най-висок рейтинг" : "Highest rating"].map((label, i) =>
             <span key={label} className={`min-h-10 rounded-full px-4 py-2 text-xs font-bold uppercase sm:px-6 ${i === 0 ? "bg-orange-500 text-white" : "bg-slate-800 text-white"}`}>{label}</span>)}
