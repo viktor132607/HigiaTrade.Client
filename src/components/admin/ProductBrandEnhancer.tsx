@@ -79,7 +79,7 @@ const ProductBrandEnhancer = () => {
         body: JSON.stringify({ name, thumbnailImageUrl: null, description: null }),
       });
       const data = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(data?.message || (isBg ? "Брандът не можа да бъде създадена." : "The brand could not be created."));
+      if (!response.ok) throw new Error(data?.message || (isBg ? "Брандът не можа да бъде създаден." : "The brand could not be created."));
 
       const created: BrandOption = {
         id: data?.id ? String(data.id) : undefined,
@@ -95,7 +95,7 @@ const ProductBrandEnhancer = () => {
       setNewBrandName("");
       setIsCreatingBrand(false);
     } catch (error) {
-      setBrandCreateError(error instanceof Error ? error.message : isBg ? "Брандът не можа да бъде създадена." : "The brand could not be created.");
+      setBrandCreateError(error instanceof Error ? error.message : isBg ? "Брандът не можа да бъде създаден." : "The brand could not be created.");
     } finally {
       setCreatingBrand(false);
     }
@@ -192,7 +192,7 @@ const ProductBrandEnhancer = () => {
 
       <div className="mt-2">
         {!isCreatingBrand ? (
-          <button type="button" onClick={() => { setIsCreatingBrand(true); setNewBrandName(""); setBrandCreateError(""); }} className="min-h-10 text-sm font-semibold text-[#138b78] hover:underline">{isBg ? "+ Добави нова бранд" : "+ Add new brand"}</button>
+          <button type="button" onClick={() => { setIsCreatingBrand(true); setNewBrandName(""); setBrandCreateError(""); }} className="min-h-10 text-sm font-semibold text-[#138b78] hover:underline">{isBg ? "+ Добави нов бранд" : "+ Add new brand"}</button>
         ) : (
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
             <div className="flex flex-col gap-2 sm:flex-row">
