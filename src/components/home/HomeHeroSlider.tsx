@@ -3,6 +3,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 import { getPreloadedHomeSlideshow, preloadHomeSlideshow } from "../../utils/homeSlideshowPreload";
+import { resolveHeroScreenMode, type HeroScreenMode } from "../../config/heroScreenProfiles";
 
 export type LegacySlideField = "eyebrow" | "title" | "badge" | "note" | "cta";
 export type SlideField = LegacySlideField | `extra:${string}`;
@@ -17,6 +18,10 @@ export type HeroOverlayElement = {
   fontSize: number;
 };
 export type SlidePosition = { x: number; y: number; scale?: number };
+export type HeroDeviceLayout = {
+  positions?: Partial<Record<SlideField, SlidePosition>>;
+  hidden?: SlideField[];
+};
 export interface HomeSlide {
   id: string;
   order: number;
@@ -37,6 +42,7 @@ export interface HomeSlide {
   imageLightening?: number;
   accent: string;
   positions?: Partial<Record<SlideField, SlidePosition>>;
+  layouts?: Partial<Record<HeroScreenMode, HeroDeviceLayout>>;
   elements?: HeroOverlayElement[];
 }
 
@@ -47,6 +53,7 @@ export interface HomeSlideshowPayload {
 
 export type PreviewConfig = {
   slide: HomeSlide;
+  mode?: HeroScreenMode;
   index: number;
   total: number;
   selected?: SlideField | null;
@@ -58,8 +65,16 @@ export type PreviewConfig = {
 const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
   const frameRef = useRef<HTMLDivElement>(null);
   const [snapGuide, setSnapGuide] = useState<{ x?: number; y?: number }>({});
+  const [viewportWidth, setViewportWidth] = useState(1366);
   const { language } = useLanguageTheme();
   const isBg = language === "bg";
+  useEffect(() => {
+    if (preview) return;
+    const sync = () => setViewportWidth(window.innerWidth);
+    sync();
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
+  }, [Boolean(preview)]);
   const [slides, setSlides] = useState<HomeSlide[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [previousSlide, setPreviousSlide] = useState<HomeSlide | null>(null);
@@ -118,6 +133,13 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
   }, [activeIndex, slides.length]);
 
   const activeSlide = useMemo(() => preview?.slide ?? slides[activeIndex] ?? slides[0] ?? null, [activeIndex, slides, preview]);
+  const screenMode = preview?.mode ?? resolveHeroScreenMode(viewportWidth);
+  const deviceLayout = activeSlide?.layouts?.[screenMode];
+  const effectivePositions = useMemo(
+    () => ({ ...(activeSlide?.positions ?? {}), ...(deviceLayout?.positions ?? {}) }),
+    [activeSlide?.positions, deviceLayout?.positions]
+  );
+  const hiddenFields = useMemo(() => new Set(deviceLayout?.hidden ?? []), [deviceLayout?.hidden]);
   const canNavigate = preview ? preview.total > 1 : slides.length > 1;
 
   const showSlide = useCallback((nextIndex: number, nextDirection: "next" | "previous") => {
@@ -169,9 +191,9 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
     const frameRect = frame.getBoundingClientRect();
     // Default grid rows have padding. Measure their content, not the row,
     // so the first selection doesn't jump when it becomes positioned.
-    const content = preview.slide.positions?.[field] ? node : node.firstElementChild as HTMLElement | null;
+    const content = effectivePositions[field] ? node : node.firstElementChild as HTMLElement | null;
     const rect = (content ?? node).getBoundingClientRect();
-    const existing = preview.slide.positions?.[field];
+    const existing = effectivePositions[field];
     const scale = existing?.scale ?? 1;
     const initial = existing ?? {
       x: 100 * (rect.left - frameRect.left) / frameRect.width,
@@ -303,7 +325,7 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
     return (
       <div key={slide.id} className="contents">
         {(["eyebrow", "title", "badge", "note", "cta"] as LegacySlideField[])
-          .filter(field => Boolean(labels[field]) && !slide.positions?.[field])
+          .filter(field => Boolean(labels[field]) && !effectivePositions[field] && !hiddenFields.has(field))
           .map(field => (
             <div key={field} data-hero-field={field}
               className={`w-fit max-w-full ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
@@ -377,7 +399,7 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
           "eyebrow", "title", "badge", "note", "cta",
           ...(activeSlide.elements ?? []).map(element => `extra:${element.id}` as SlideField)
         ] as SlideField[]).map(field => {
-          const pos = activeSlide.positions?.[field];
+          const pos = effectivePositions[field];
           const visible = field.startsWith("extra:")
             ? (() => { const item = activeSlide.elements?.find(element => `extra:${element.id}` === field); return item && (isBg ? item.textBg : item.textEn || item.textBg); })()
             : field === "eyebrow" ? (isBg ? activeSlide.eyebrowBg : activeSlide.eyebrowEn)
@@ -385,7 +407,7 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
             : field === "badge" ? (isBg ? activeSlide.badgeBg : activeSlide.badgeEn)
             : field === "note" ? (isBg ? activeSlide.noteBg : activeSlide.noteEn)
             : (isBg ? activeSlide.ctaBg : activeSlide.ctaEn);
-          return pos && visible ? <div key={field} data-hero-field={field}
+          return pos && visible && !hiddenFields.has(field) ? <div key={field} data-hero-field={field}
             className={`absolute z-[15] w-max max-w-[min(35rem,90%)] ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""} ${preview?.selected === field ? "outline outline-2 outline-teal-500" : ""}`}
             style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: `scale(${pos.scale ?? 1})`, transformOrigin: "top left" }}>
               {contentByField(activeSlide, field)}
