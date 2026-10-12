@@ -13,8 +13,8 @@ export const metadata: Metadata = {
   },
   description:
     "Хигия Трейд ООД е дистрибутор на SANO за Русе, Силистра, Разград, Свищов, Бяла и Търговище. Перилни и почистващи препарати, консумативи и доставки за дома и бизнеса.",
-  // Transparent favicon uploaded in commit b16ce226; retain the site's
-  // existing logo for organization and social-sharing metadata.
+  // Transparent favicon is for tabs. Sharing cards use a separate, correctly
+  // proportioned 1200×630 asset with the real company logo fully visible.
   icons: {
     icon: [{ url: "/cleaning-icon-transparent-original.png", type: "image/png" }],
     shortcut: "/cleaning-icon-transparent-original.png",
@@ -42,22 +42,25 @@ export const metadata: Metadata = {
     locale: "bg_BG",
     url: SITE_URL,
     siteName: "HygiaTrade",
-    title: "HygiaTrade | SANO дистрибутор за Русе и региона",
+    title: "HygiaTrade | Хигия Трейд",
     description:
-      "SANO, перилни и почистващи препарати за Русе, Силистра, Разград, Свищов, Бяла и Търговище.",
+      "SANO дистрибутор за Русе и региона. Перилни и почистващи препарати за дома и бизнеса.",
     images: [
       {
-        url: "/higiqlogo.png",
-        alt: "HygiaTrade - Хигия Трейд ООД",
+        url: "/social-card-2026.png",
+        width: 1200,
+        height: 630,
+        type: "image/png",
+        alt: "Хигия Трейд ООД — SANO дистрибутор за Русе и региона",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "HygiaTrade | SANO дистрибутор за Русе и региона",
+    title: "HygiaTrade | Хигия Трейд",
     description:
-      "Хигия Трейд ООД - SANO дистрибутор и доставчик на перилни и почистващи препарати за Русе и региона.",
-    images: ["/higiqlogo.png"],
+      "SANO дистрибутор за Русе и региона. Перилни и почистващи препарати за дома и бизнеса.",
+    images: ["/social-card-2026.png"],
   },
   robots: {
     index: true,

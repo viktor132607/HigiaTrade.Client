@@ -193,7 +193,7 @@ function cleanTemplateHead(template) {
     .replace(/<title>[\s\S]*?<\/title>/gi, "")
     .replace(/<meta[^>]+name=["']description["'][^>]*>/gi, "")
     .replace(/<meta[^>]+name=["']robots["'][^>]*>/gi, "")
-    .replace(/<meta[^>]+property=["']og:(?:title|description|type|url|image)["'][^>]*>/gi, "")
+    .replace(/<meta[^>]+property=["']og:(?:title|description|type|url|image(?::(?:width|height|type|alt))?)["'][^>]*>/gi, "")
     .replace(/<meta[^>]+name=["']twitter:(?:card|title|description|image)["'][^>]*>/gi, "")
     .replace(/<link[^>]+rel=["']canonical["'][^>]*>/gi, "");
 }
@@ -202,7 +202,8 @@ function pageHead({ title, description, path, image, type = "website", jsonLd })
   const url = canonical(path);
   const safeTitle = escapeHtml(title);
   const safeDescription = escapeHtml(truncate(description, 165));
-  const imageUrl = image || `${SITE_URL}/higiqlogo.png`;
+  const imageUrl = image || `${SITE_URL}/social-card-2026.png`;
+  const shareCardDetails = image ? "" : `<meta property="og:image:width" content="1200" />\n<meta property="og:image:height" content="630" />\n<meta property="og:image:type" content="image/png" />\n`;
   const schema = Array.isArray(jsonLd) ? jsonLd : [jsonLd].filter(Boolean);
 
   return `\n<title>${safeTitle}</title>
@@ -215,7 +216,7 @@ function pageHead({ title, description, path, image, type = "website", jsonLd })
 <meta property="og:type" content="${escapeHtml(type)}" />
 <meta property="og:url" content="${escapeHtml(url)}" />
 <meta property="og:image" content="${escapeHtml(imageUrl)}" />
-<meta name="twitter:card" content="summary_large_image" />
+${shareCardDetails}<meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="${safeTitle}" />
 <meta name="twitter:description" content="${safeDescription}" />
 <meta name="twitter:image" content="${escapeHtml(imageUrl)}" />

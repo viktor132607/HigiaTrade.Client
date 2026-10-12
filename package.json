@@ -8,7 +8,9 @@
     "node": "20.19.0"
   },
   "scripts": {
+    "predev": "node scripts/generate-social-card.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/generate-social-card.mjs",
     "build": "next build",
     "postbuild": "node scripts/generate-seo.mjs && node scripts/enhance-seo.mjs && node scripts/clean-product-seo-body.mjs",
     "seo:generate": "node scripts/generate-seo.mjs && node scripts/enhance-seo.mjs && node scripts/clean-product-seo-body.mjs",

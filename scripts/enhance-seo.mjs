@@ -141,7 +141,7 @@ function cleanHead(html) {
     .replace(/<title>[\s\S]*?<\/title>/gi, "")
     .replace(/<meta[^>]+name=["']description["'][^>]*>/gi, "")
     .replace(/<meta[^>]+name=["']robots["'][^>]*>/gi, "")
-    .replace(/<meta[^>]+property=["']og:(?:title|description|type|url|image)["'][^>]*>/gi, "")
+    .replace(/<meta[^>]+property=["']og:(?:title|description|type|url|image(?::(?:width|height|type|alt))?)["'][^>]*>/gi, "")
     .replace(/<meta[^>]+name=["']twitter:(?:card|title|description|image)["'][^>]*>/gi, "")
     .replace(/<link[^>]+rel=["']canonical["'][^>]*>/gi, "");
 }
@@ -165,10 +165,15 @@ function baseHead({ title, description, path, jsonLd = [] }) {
 <meta property="og:description" content="${escapeHtml(truncate(description, 165))}" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="${escapeHtml(url)}" />
-<meta property="og:image" content="${SITE_URL}/higiqlogo.png" />
+<meta property="og:image" content="${SITE_URL}/social-card-2026.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:alt" content="Хигия Трейд ООД — SANO дистрибутор" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="${escapeHtml(title)}" />
 <meta name="twitter:description" content="${escapeHtml(truncate(description, 165))}" />
+<meta name="twitter:image" content="${SITE_URL}/social-card-2026.png" />
 ${verificationMeta()}
 ${schemas.filter(Boolean).map((schema) => `<script type="application/ld+json" data-generated-seo="true" data-seo-enhancer="schema">${JSON.stringify(schema).replace(/</g, "\\u003c")}</script>`).join("\n")}`;
 }
