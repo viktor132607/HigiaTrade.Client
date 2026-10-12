@@ -82,14 +82,14 @@ export default function HomeProductCarousel({ products, label, className = "" }:
   const arrowStyle = { top: arrowCenter === null ? "50%" : `${arrowCenter}px` };
 
   return (
-    <div ref={wrapperRef} className={`relative ${className}`}>
+    <div ref={wrapperRef} className={`home-product-carousel relative ${className}`}>
       <button
         type="button"
         aria-label={isBg ? `Предишни продукти: ${label}` : `Previous products: ${label}`}
         disabled={!hasOverflow}
         onClick={() => move(-1)}
         style={arrowStyle}
-        className={`left-0 ${arrowClasses}`}
+        className={`home-product-carousel__arrow home-product-carousel__arrow--previous left-0 ${arrowClasses}`}
       >
         <ChevronLeftIcon className="h-5 w-5" aria-hidden="true" />
       </button>
@@ -98,7 +98,7 @@ export default function HomeProductCarousel({ products, label, className = "" }:
         role="region"
         aria-roledescription="carousel"
         aria-label={label}
-        className="home-product-carousel__track mx-10 sm:mx-12"
+        className="home-product-carousel__track mx-0 sm:mx-12"
       >
         {products.map((product) => (
           <div key={product.id} className="home-product-carousel__item">
@@ -112,7 +112,7 @@ export default function HomeProductCarousel({ products, label, className = "" }:
         disabled={!hasOverflow}
         onClick={() => move(1)}
         style={arrowStyle}
-        className={`right-0 ${arrowClasses}`}
+        className={`home-product-carousel__arrow home-product-carousel__arrow--next right-0 ${arrowClasses}`}
       >
         <ChevronRightIcon className="h-5 w-5" aria-hidden="true" />
       </button>

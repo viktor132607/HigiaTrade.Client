@@ -153,6 +153,41 @@
 html.dark .home-product-carousel__item > article {
   box-shadow: 0 6px 18px -10px rgba(0, 0, 0, 0.5) !important;
 }
+/* Phones: give both product cards the viewport width instead of wasting it
+   on the carousel arrows. Place the arrows below, outside the cards. */
+@media (max-width: 639px) {
+  .home-product-carousel {
+    padding-bottom: 3rem;
+  }
+  .home-product-carousel__track {
+    gap: 0.5rem;
+    padding: 1rem 0.125rem 1rem;
+    margin-top: -0.5rem;
+    margin-bottom: 0;
+    scroll-padding-inline: 0.125rem;
+  }
+  .home-product-carousel__item {
+    flex-basis: calc((100% - 0.5rem) / 2);
+  }
+  .home-product-carousel__item > article {
+    transform: none;
+  }
+  .home-product-carousel__item > article > div:last-child {
+    padding: 0.5rem;
+  }
+  .home-product-carousel__arrow {
+    top: auto !important;
+    bottom: 0;
+    transform: none;
+  }
+  .home-product-carousel__arrow--previous {
+    left: calc(50% - 3rem);
+  }
+  .home-product-carousel__arrow--next {
+    right: calc(50% - 3rem);
+  }
+}
+
 @media (min-width: 640px) {
   .home-product-carousel__track { gap: 1rem; }
   .home-product-carousel__item { flex-basis: calc((100% - 1rem) / 2); }
