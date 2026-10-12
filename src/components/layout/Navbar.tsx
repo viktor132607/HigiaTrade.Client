@@ -31,7 +31,7 @@ const menuItems = [
   { key: "promotions", to: "/promotions", labelBg: "Промоции", labelEn: "Promotions", badgeBg: "Акция", badgeEn: "Sale", icon: TagIcon },
   { key: "new", to: "/new-products", labelBg: "Нови стоки", labelEn: "New products", badgeBg: "Ново", badgeEn: "New", icon: SparklesIcon },
   { key: "top", to: "/best-sellers", labelBg: "Най-продавани", labelEn: "Best sellers", badgeBg: "ТОП", badgeEn: "TOP", icon: SparklesIcon },
-  { key: "brands", to: "/brands", labelBg: "По марка", labelEn: "By brand", badgeBg: null, badgeEn: null, icon: null },
+  { key: "brands", to: "/brands", labelBg: "Брандове", labelEn: "By brand", badgeBg: null, badgeEn: null, icon: null },
   { key: "contact", to: "/contact", labelBg: "Контакти", labelEn: "Contact", badgeBg: null, badgeEn: null, icon: PhoneIcon },
 ] as const;
 
