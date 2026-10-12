@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { CONTACT_PHONE_LINK, CONTACT_SECONDARY_PHONE_LINK } from "../../config/contact";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://higiatrade.com").replace(/\/$/, "");
@@ -178,7 +179,7 @@ const SeoManager = () => {
             "@type": "Organization",
             name: "Хигия Трейд ООД",
             alternateName: "HygiaTrade",
-            telephone: "+359888822861",
+            telephone: [CONTACT_PHONE_LINK, CONTACT_SECONDARY_PHONE_LINK],
             email: "higiatrade@abv.bg",
             areaServed: { "@type": "City", name: region.bg },
             brand: { "@type": "Brand", name: "SANO" },
@@ -204,14 +205,20 @@ const SeoManager = () => {
               "@type": "Organization",
               name: "Хигия Трейд ООД",
               alternateName: "HygiaTrade",
-              telephone: "+359888822861",
+              telephone: [CONTACT_PHONE_LINK, CONTACT_SECONDARY_PHONE_LINK],
               email: "higiatrade@abv.bg",
               address: {
                 "@type": "PostalAddress",
-                streetAddress: "ул. Акад. Михаил Арнаудов №3",
+                streetAddress: "ул. Потсдам №1",
                 addressLocality: "Русе",
                 addressCountry: "BG",
               },
+              openingHoursSpecification: [{
+                "@type": "OpeningHoursSpecification",
+                dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                opens: "08:00",
+                closes: "17:00",
+              }],
               areaServed: SERVICE_AREAS,
               brand: { "@type": "Brand", name: "SANO" },
               subjectOf: {
