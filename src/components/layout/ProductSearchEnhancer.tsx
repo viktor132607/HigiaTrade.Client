@@ -320,7 +320,7 @@ const ProductSearchEnhancer = () => {
       {matchingBrands.length > 0 && (
         <section>
           <div className="border-y border-slate-100 bg-slate-50 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400">
-            {isBg ? "Марки" : "Brands"}
+            {isBg ? "Брандове" : "Brands"}
           </div>
           {matchingBrands.map((brand) => (
             <button
