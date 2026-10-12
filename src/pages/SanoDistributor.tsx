@@ -106,7 +106,7 @@ const SanoDistributor = () => {
               </Link>
             ) : (
               <Link to="/brands" className="inline-flex min-h-12 items-center justify-center border border-white/50 px-6 py-3 text-sm font-bold text-white hover:bg-white/10">
-                {isBg ? "Всички марки" : "All brands"}
+                {isBg ? "Всички брандове" : "All brands"}
               </Link>
             )}
           </div>
