@@ -6,7 +6,8 @@ import {
   CONTACT_AREA_BG,
   CONTACT_AREA_EN,
   CONTACT_EMAILS,
-  CONTACT_PHONE_COMPACT,
+  CONTACT_PHONES,
+  CONTACT_WORKING_HOURS,
 } from "../../config/contact";
 
 const Footer = () => {
@@ -54,9 +55,10 @@ const Footer = () => {
         <div>
           <h4 className="text-lg font-bold">{isBg ? "За контакти" : "Contacts"}</h4>
           <div className="mt-3 space-y-1.5 break-words text-white/70">
-            <p>{isBg ? "Телефон" : "Phone"}: {CONTACT_PHONE_COMPACT}</p>
+            <div>{isBg ? "Телефони" : "Phones"}: {CONTACT_PHONES.map(phone => <a key={phone.link} href={`tel:${phone.link}`} className="ml-2 inline-block hover:text-orange-400">{phone.display}</a>)}</div>
             {CONTACT_EMAILS.map((email) => <p key={email}>Email: <a href={`mailto:${email}`} className="hover:text-orange-400">{email}</a></p>)}
             <p>{isBg ? "Адрес" : "Address"}: {isBg ? CONTACT_ADDRESS_BG : CONTACT_ADDRESS_EN}</p>
+            <p>{isBg ? "Работно време" : "Working hours"}: {isBg ? "Понеделник – Петък" : "Monday – Friday"}, {CONTACT_WORKING_HOURS}</p>
             <p>{isBg ? CONTACT_AREA_BG : CONTACT_AREA_EN}</p>
           </div>
           <h4 className="mt-7 text-lg font-bold">{isBg ? "За магазин Хигия" : "About HigiaTrade"}</h4>
