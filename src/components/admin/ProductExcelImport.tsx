@@ -17,6 +17,7 @@ type ImportResult = {
   updated: number;
   skipped: number;
   failed: number;
+  brandsSynced?: number;
   rows: ImportRowResult[];
 };
 
@@ -67,7 +68,7 @@ const ProductExcelImport = ({ onImported }: Props) => {
       const nextResult = payload as ImportResult;
       setResult(nextResult);
 
-      if ((nextResult.created ?? 0) + (nextResult.updated ?? 0) > 0) {
+      if ((nextResult.created ?? 0) + (nextResult.updated ?? 0) + (nextResult.brandsSynced ?? 0) > 0) {
         onImported?.();
       }
     } catch (reason) {
@@ -106,6 +107,11 @@ const ProductExcelImport = ({ onImported }: Props) => {
             Допълнителни колони: Description, Brand, DiscountPercentage,
             DiscountedPrice, WholesalePrice, WholesaleMinQuantity, VatRate,
             Quantity, MainImageUrl, IsActive.
+          </p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            Новите марки се създават автоматично. За лога добави лист
+            <strong> BrandLogos</strong> с колони <strong>Brand</strong> и <strong>BrandLogoURL</strong>.
+            Съществуващите лога се запазват.
           </p>
         </div>
 
@@ -185,12 +191,13 @@ const ProductExcelImport = ({ onImported }: Props) => {
 
       {result && (
         <div className="mt-5">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
             <Summary label="Редове" value={result.totalRows} />
             <Summary label="Създадени" value={result.created} />
             <Summary label="Обновени" value={result.updated} />
             <Summary label="Пропуснати" value={result.skipped} />
             <Summary label="Грешки" value={result.failed} />
+            <Summary label="Марки/лога" value={result.brandsSynced ?? 0} />
           </div>
 
           {result.rows.length > 0 && (
