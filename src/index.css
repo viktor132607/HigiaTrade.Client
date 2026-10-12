@@ -362,3 +362,16 @@ html.dark .ql-toolbar .ql-stroke { stroke: var(--dark-muted-strong) !important; 
 html.dark .ql-toolbar .ql-fill { fill: var(--dark-muted-strong) !important; }
 
 html.dark ::selection { background: rgba(20,184,166,.38); color: #fff; }
+
+/* Simulate a narrow mobile viewport inside the desktop slideshow editor. */
+.home-hero-mobile-preview .home-hero-frame { aspect-ratio: auto !important; height: auto !important; min-height: 390px; }
+.home-hero-mobile-preview .home-hero-frame > img,
+.home-hero-mobile-preview .home-hero-frame > div[class*="from-white/55"] { display: none !important; }
+.home-hero-mobile-preview .home-hero-content {
+  position: relative !important; inset: auto !important; width: auto !important;
+  height: auto !important; min-height: 390px;
+  padding: 48px 56px 96px !important; align-items: start !important;
+}
+.home-hero-mobile-preview .home-hero-content h1 { font-size: 30px !important; }
+.home-hero-mobile-preview .home-hero-content p { font-size: 14px !important; }
+.home-hero-mobile-preview .home-hero-content a { font-size: 13px !important; }

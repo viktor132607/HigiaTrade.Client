@@ -11,7 +11,7 @@ import { useSelector } from "react-redux";
 import { API_BASE_URL, readApiJson } from "../../config/api";
 import { RootState } from "../../store";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
-import type { HomeSlide, HomeSlideshowPayload } from "../../components/home/HomeHeroSlider";
+import HomeHeroSlider, {type HomeSlide, type HomeSlideshowPayload, type SlideField, type SlidePosition} from "../../components/home/HomeHeroSlider";
 
 const gradientOptions = [
   { value: "from-teal-100 via-cyan-50 to-white", bg: "Тюркоаз", en: "Teal" },
@@ -51,141 +51,43 @@ const newSlide = (order: number): HomeSlide => ({
   image: "",
   imagePositionY: 50,
   imageLightening: 100,
+  positions: {},
   accent: gradientOptions[0].value,
 });
 
-const SlidePreview = ({
-  slide,
-  mode,
-  isBg,
-  index,
-  total,
-}: {
-  slide: HomeSlide;
-  mode: PreviewMode;
-  isBg: boolean;
-  index: number;
-  total: number;
+const SlidePreview = ({slide, mode, index, total, onMove}: {
+  slide: HomeSlide; mode: PreviewMode; index: number; total: number;
+  onMove: (field: SlideField, position: SlidePosition) => void;
 }) => {
-  const desktop = mode === "desktop";
-  const eyebrow = isBg ? slide.eyebrowBg : slide.eyebrowEn;
-  const title = isBg ? slide.titleBg : slide.titleEn;
-  const badge = isBg ? slide.badgeBg : slide.badgeEn;
-  const note = isBg ? slide.noteBg : slide.noteEn;
-  const cta = isBg ? slide.ctaBg : slide.ctaEn;
+  const hostRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  const [height, setHeight] = useState(0);
+  const width = mode === "desktop" ? (typeof window !== "undefined" ? window.innerWidth : 1920) : 390;
 
-  return (
-    <div className={`mx-auto overflow-hidden border border-slate-300 bg-white shadow-sm ${desktop ? "w-full" : "w-[320px] max-w-full"}`}>
-      <div className={`relative overflow-hidden bg-gradient-to-r ${slide.accent || gradientOptions[0].value} ${desktop ? "aspect-[256/45]" : "aspect-[256/45]"}`}>
-        {desktop && (
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(255,255,255,0.85),transparent_25%),radial-gradient(circle_at_65%_30%,rgba(255,255,255,0.55),transparent_28%)]" />
-        )}
+  useEffect(() => {
+    const host = hostRef.current, scene = sceneRef.current;
+    if (!host || !scene) return;
+    const measure = () => {
+      const factor = Math.min(1, host.clientWidth / width);
+      setScale(factor);
+      setHeight(scene.scrollHeight * factor);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(host); observer.observe(scene);
+    window.addEventListener("resize", measure);
+    return () => { observer.disconnect(); window.removeEventListener("resize", measure); };
+  }, [width, mode]);
 
-        {slide.image && desktop && (
-          <img
-            src={slide.image}
-            alt={title}
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{ objectPosition: `center ${slide.imagePositionY ?? 50}%` }}
-          />
-        )}
-
-        {desktop && (
-          <div
-            className="absolute inset-0 bg-gradient-to-r from-white/55 via-white/10 to-transparent"
-            style={{ opacity: Math.min(100, Math.max(0, slide.imageLightening ?? 100)) / 100 }}
-          />
-        )}
-
-        <div className={desktop
-          ? "relative z-10 mx-auto flex w-full px-14 py-12 sm:px-16 sm:py-16 lg:px-8"
-          : "relative z-10 flex px-14 py-12"}
-          style={desktop ? { maxWidth: "80rem" } : undefined}
-        >
-          <div className={desktop
-            ? "grid w-full max-w-xl grid-cols-1 grid-rows-[auto_auto_auto_auto_auto]"
-            : "grid w-full grid-cols-1 grid-rows-[auto_auto_auto_auto_auto]"
-          }>
-            <div className="col-start-1 row-start-1">
-              {Boolean(eyebrow) && (
-                <p className={desktop ? "text-xl font-semibold text-teal-700" : "text-sm font-semibold text-teal-700"}>
-                  {eyebrow}
-                </p>
-              )}
-            </div>
-
-            <div className="col-start-1 row-start-2 pt-3">
-              <h1 className={`font-display font-extrabold uppercase leading-[1.05] tracking-tight text-slate-950 ${desktop ? "text-6xl" : "text-3xl"}`}>
-                {title}
-              </h1>
-            </div>
-
-            <div className="col-start-1 row-start-3 pt-5">
-              {Boolean(badge) && (
-                <span className="inline-flex rounded-full bg-slate-950 px-4 py-2 text-xs font-black tracking-wide text-white">
-                  {badge}
-                </span>
-              )}
-            </div>
-
-            <div className={`col-start-1 row-start-4 pt-6 ${desktop ? "pt-8" : ""}`}>
-              {Boolean(note) && (
-                <p className={`max-w-lg font-semibold text-slate-700 ${desktop ? "text-lg leading-6" : "text-sm leading-6"}`}>
-                  {note}
-                </p>
-              )}
-            </div>
-
-            <div className={`col-start-1 row-start-5 pt-6 ${desktop ? "pt-8" : ""}`}>
-              {Boolean(cta) && (
-                <div className={`inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-950 py-3 text-sm font-bold uppercase tracking-wide text-white ${desktop ? "px-8" : "px-6"}`}>
-                  {cta}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {desktop && total > 1 && (
-          <>
-            <div className="absolute left-4 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-slate-700 shadow">
-              <span className="text-xl leading-none">‹</span>
-            </div>
-            <div className="absolute right-4 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/85 text-slate-700 shadow">
-              <span className="text-xl leading-none">›</span>
-            </div>
-            <div className="absolute bottom-16 left-1/2 z-20 flex -translate-x-1/2 gap-2">
-              {Array.from({ length: total }, (_, dotIndex) => (
-                <span
-                  key={dotIndex}
-                  className={`h-2.5 rounded-full ${dotIndex === index ? "w-10 bg-slate-950" : "w-2.5 bg-slate-500/40"}`}
-                />
-              ))}
-            </div>
-          </>
-        )}
-
-        {desktop && (
-          <div className="absolute inset-x-0 bottom-3 z-30">
-            <div className="mx-auto flex w-full justify-center gap-2 px-3 sm:px-6 lg:px-8" style={{ maxWidth: "80rem" }}>
-              {[
-                isBg ? "Най-продавани" : "Best sellers",
-                isBg ? "Последно добавени" : "Recently added",
-                isBg ? "Най-висок рейтинг" : "Highest rated",
-              ].map((label, tabIndex) => (
-                <span
-                  key={label}
-                  className={`inline-flex min-h-10 items-center rounded-full px-6 py-2 text-xs font-bold uppercase tracking-wide shadow-sm ${tabIndex === 0 ? "bg-orange-500 text-white" : "bg-slate-800 text-white"}`}
-                >
-                  {label}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+  return <div ref={hostRef} className="w-full overflow-hidden border border-slate-300 bg-white">
+    <div style={{ height }}>
+      <div ref={sceneRef} className={mode === "mobile" ? "home-hero-mobile-preview" : ""}
+        style={{ width, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+        <HomeHeroSlider preview={{slide, index, total, onMove}} />
       </div>
     </div>
-  );
+  </div>;
 };
 
 const AdminSlideshow = () => {
@@ -417,8 +319,17 @@ const AdminSlideshow = () => {
             </div>
 
             <div className="border-b border-slate-200 bg-slate-100/70 p-4">
-              <div className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">{isBg ? `Преглед — ${previewMode === "desktop" ? "компютър" : "телефон"}` : `Preview — ${previewMode}`}</div>
-              <SlidePreview slide={slide} mode={previewMode} isBg={isBg} index={index} total={slides.length} />
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+                <span>{isBg ? "Преглед — същият банер като Home" : "Preview — same banner as Home"}</span>
+                <span>{isBg ? "Плъзни текста или бутона" : "Drag text or button"}</span>
+                <button type="button" onClick={() => updateSlide(slide.id,"positions",{})} className="rounded border bg-white px-2 py-1 normal-case">{isBg ? "Нулирай позициите" : "Reset positions"}</button>
+              </div>
+              <SlidePreview slide={slide} mode={previewMode} index={index} total={slides.length}
+                onMove={(field, position) => {
+                  setSaved(false);
+                  setSlides(current => current.map(item => item.id === slide.id
+                    ? {...item, positions: {...item.positions, [field]: position}} : item));
+                }} />
             </div>
 
             <div className="grid gap-5 p-4 xl:grid-cols-[minmax(300px,0.75fr)_minmax(0,1.25fr)]">
