@@ -269,13 +269,12 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
     const badge = isBg ? slide.badgeBg : slide.badgeEn;
     const note = isBg ? slide.noteBg : slide.noteEn;
     const cta = isBg ? slide.ctaBg : slide.ctaEn;
-    const slotState = active
-      ? "visible opacity-100 home-hero-copy-enter"
-      : "invisible pointer-events-none opacity-0";
+    const slotState = active ? "visible opacity-100 home-hero-copy-enter" : "hidden invisible pointer-events-none opacity-0";
+    if (!active) return null;
 
     return (
       <div key={slide.id} className="contents" aria-hidden={!active}>
-        <div data-hero-field="eyebrow" className={`justify-self-start w-fit max-w-full col-start-1 row-start-1 transition-opacity duration-300 ${slotState} ${slide.positions?.eyebrow ? "invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
+        <div data-hero-field="eyebrow" className={`w-fit max-w-full transition-opacity duration-300 ${slotState} ${slide.positions?.eyebrow ? "hidden invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
           {Boolean(eyebrow) && (
             <p className="text-sm font-semibold text-teal-700 sm:text-xl dark:text-teal-300">
               {eyebrow}
@@ -283,13 +282,13 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
           )}
         </div>
 
-        <div data-hero-field="title" className={`justify-self-start w-fit max-w-full col-start-1 row-start-2 pt-3 transition-opacity duration-300 ${slotState} ${slide.positions?.title ? "invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
+        <div data-hero-field="title" className={`w-fit max-w-full transition-opacity duration-300 ${slotState} ${slide.positions?.title ? "hidden invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
           <h1 className="font-display text-3xl font-extrabold uppercase leading-[1.05] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl dark:text-white">
             {title}
           </h1>
         </div>
 
-        <div data-hero-field="badge" className={`justify-self-start w-fit max-w-full col-start-1 row-start-3 pt-5 transition-opacity duration-300 ${slotState} ${slide.positions?.badge ? "invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
+        <div data-hero-field="badge" className={`w-fit max-w-full transition-opacity duration-300 ${slotState} ${slide.positions?.badge ? "hidden invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
           {Boolean(badge) && (
             <span className="inline-flex rounded-full bg-slate-950 px-4 py-2 text-xs font-black tracking-wide text-white dark:bg-white dark:text-black">
               {badge}
@@ -297,7 +296,7 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
           )}
         </div>
 
-        <div data-hero-field="note" className={`justify-self-start w-fit max-w-full col-start-1 row-start-4 pt-6 transition-opacity duration-300 sm:pt-8 ${slotState} ${slide.positions?.note ? "invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
+        <div data-hero-field="note" className={`w-fit max-w-full transition-opacity duration-300 ${slotState} ${slide.positions?.note ? "hidden invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
           {Boolean(note) && (
             <p className="max-w-lg text-sm font-semibold leading-6 text-slate-700 sm:text-lg dark:text-slate-200">
               {note}
@@ -305,7 +304,7 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
           )}
         </div>
 
-        <div data-hero-field="cta" className={`justify-self-start w-fit max-w-full col-start-1 row-start-5 pt-6 transition-opacity duration-300 sm:pt-8 ${slotState} ${slide.positions?.cta ? "invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
+        <div data-hero-field="cta" className={`w-fit max-w-full transition-opacity duration-300 ${slotState} ${slide.positions?.cta ? "hidden invisible pointer-events-none" : ""} ${preview ? "cursor-grab touch-none hover:outline hover:outline-2 hover:outline-teal-500" : ""}`}>
           {Boolean(cta) && (
             <Link
               to={slide.ctaUrl || "/products"}
@@ -373,7 +372,7 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
         )}
 
         <div className="home-hero-content relative z-10 mx-auto flex max-w-7xl px-14 py-12 sm:px-16 sm:py-16 lg:px-8">
-          <div className="home-hero-copy grid w-full max-w-xl grid-cols-1 grid-rows-[auto_auto_auto_auto_auto]">
+          <div className="home-hero-copy flex w-full max-w-xl flex-col items-start gap-3 sm:gap-4">
             {(preview ? [preview.slide] : slides).map(renderSlideContent)}
           </div>
         </div>
@@ -408,10 +407,7 @@ const HomeHeroSlider = ({ preview }: { preview?: PreviewConfig } = {}) => {
             )}
           </div>
         )}
-        {preview && !preview.fullPage && <div className="pointer-events-none absolute inset-x-0 bottom-3 z-30 flex justify-center gap-2 px-3">
-          {[isBg ? "Най-продавани" : "Best sellers", isBg ? "Последно добавени" : "Recently added", isBg ? "Най-висок рейтинг" : "Highest rating"].map((label, i) =>
-            <span key={label} className={`min-h-10 rounded-full px-4 py-2 text-xs font-bold uppercase sm:px-6 ${i === 0 ? "bg-orange-500 text-white" : "bg-slate-800 text-white"}`}>{label}</span>)}
-        </div>}
+        
         {canNavigate && (
           <div className="absolute bottom-16 left-1/2 z-20 flex -translate-x-1/2 gap-2">
             {(preview ? Array.from({ length: preview.total }, (_, index) => ({ id: String(index) })) : slides).map((slide, index) => (

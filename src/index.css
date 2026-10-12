@@ -65,6 +65,9 @@
 }
 @media (min-width: 768px) { .fixed.inset-0.bg-black.bg-opacity-50 { z-index: 60; } }
 
+/* Hero layout: width 1366 => 293.5px height; 1920 => 312.5px; 2560 => 450px.
+   The same media queries apply inside the iframe preview at selected device width.
+   Empty text fields no longer reserve grid rows; CTA follows visible copy. */
 /* On wide screens shorten the slideshow by exactly 100px at its bottom.
    Keep the original 2560x550 image canvas so the image is clipped, not stretched. */
 @media (min-width: 1920px) {
@@ -84,16 +87,7 @@
     height: 100%;
     padding-top: 3rem;
     padding-bottom: 3rem;
-  }
-
-  /* Keep the standard CTA at the same relative height on 24-inch and
-     27-inch displays instead of pushing it around with fixed grid gaps.
-     Manually positioned buttons use the separate absolute overlay. */
-  .home-hero-copy > [data-hero-field="cta"]:not(.invisible) {
-    position: absolute;
-    top: 80%;
-    left: 2rem;
-    padding-top: 0;
+    align-items: center;
   }
 }
 
@@ -376,74 +370,3 @@ html.dark .ql-toolbar .ql-stroke { stroke: var(--dark-muted-strong) !important; 
 html.dark .ql-toolbar .ql-fill { fill: var(--dark-muted-strong) !important; }
 
 html.dark ::selection { background: rgba(20,184,166,.38); color: #fff; }
-
-/* Device presets in the slideshow editor emulate the real Home hero dimensions,
-   even if the admin browser is using a different viewport breakpoint. */
-.home-hero-laptop-preview .home-hero-frame {
-  aspect-ratio: 256 / 55 !important;
-  height: auto !important;
-}
-.home-hero-laptop-preview .home-hero-frame > img {
-  height: 100% !important;
-}
-.home-hero-laptop-preview .home-hero-content {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  padding-top: 2rem !important;
-  padding-bottom: 2rem !important;
-  align-items: center !important;
-}
-.home-hero-laptop-preview .home-hero-copy { transform: none !important; }
-
-.home-hero-monitor24-preview .home-hero-frame,
-.home-hero-monitor27-preview .home-hero-frame {
-  aspect-ratio: auto !important;
-}
-.home-hero-monitor24-preview .home-hero-frame { height: 312.5px !important; }
-.home-hero-monitor27-preview .home-hero-frame { height: 450px !important; }
-.home-hero-monitor24-preview .home-hero-frame > img { height: 412.5px !important; }
-.home-hero-monitor27-preview .home-hero-frame > img { height: 550px !important; }
-.home-hero-monitor24-preview .home-hero-content,
-.home-hero-monitor27-preview .home-hero-content {
-  position: relative !important;
-  inset: auto !important;
-  width: auto !important;
-  height: auto !important;
-  padding-top: 3rem !important;
-  padding-bottom: 3rem !important;
-  align-items: stretch !important;
-}
-
-/* Widths 768–1023px use the live tablet layout even if the admin is opened on desktop. */
-.home-hero-tablet-preview .home-hero-frame {
-  aspect-ratio: 256 / 55 !important;
-  height: auto !important;
-  min-height: 0 !important;
-}
-.home-hero-tablet-preview .home-hero-frame > img { height: 100% !important; }
-.home-hero-tablet-preview .home-hero-content {
-  position: relative !important;
-  inset: auto !important;
-  width: auto !important;
-  height: auto !important;
-  padding: 4rem !important;
-  align-items: stretch !important;
-}
-.home-hero-tablet-preview .home-hero-copy { transform: none !important; }
-.home-hero-tablet-preview .home-hero-content h1 { font-size: 3rem !important; }
-.home-hero-tablet-preview .home-hero-content p { font-size: 1.125rem !important; }
-
-/* Simulate a narrow mobile viewport inside the desktop slideshow editor. */
-.home-hero-mobile-preview .home-hero-frame { aspect-ratio: auto !important; height: auto !important; min-height: 390px; }
-.home-hero-mobile-preview .home-hero-frame > img,
-.home-hero-mobile-preview .home-hero-frame > div[class*="from-white/55"] { display: none !important; }
-.home-hero-mobile-preview .home-hero-content {
-  position: relative !important; inset: auto !important; width: auto !important;
-  height: auto !important; min-height: 390px;
-  padding: 48px 56px 96px !important; align-items: start !important;
-}
-.home-hero-mobile-preview .home-hero-content h1 { font-size: 30px !important; }
-.home-hero-mobile-preview .home-hero-content p { font-size: 14px !important; }
-.home-hero-mobile-preview .home-hero-content a { font-size: 13px !important; }

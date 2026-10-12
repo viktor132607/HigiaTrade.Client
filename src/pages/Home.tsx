@@ -42,7 +42,6 @@ const Home = ({ heroPreview }: { heroPreview?: PreviewConfig } = {}) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [bestSellers, setBestSellers] = useState<Product[]>([]);
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
-  const [activeProductTab, setActiveProductTab] = useState<"best" | "popular" | "rating">("best");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -114,19 +113,13 @@ const Home = ({ heroPreview }: { heroPreview?: PreviewConfig } = {}) => {
       .sort((a, b) => (b.discountPercentage ?? 0) - (a.discountPercentage ?? 0)),
   [catalogProducts]);
 
-  const tabProducts = useMemo(() => {
-    if (activeProductTab === "rating") {
-      return [...catalogProducts].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
-    }
-    if (activeProductTab === "popular") return catalogProducts;
+  const featuredProducts = useMemo(() => {
     const priority = new Set(bestSellers.map((product) => product.id));
     return [...bestSellers, ...catalogProducts.filter((product) => !priority.has(product.id))];
-  }, [activeProductTab, bestSellers, catalogProducts]);
+  }, [bestSellers, catalogProducts]);
 
   const text = {
     best: isBg ? "Най-продавани" : "Best sellers",
-    popular: isBg ? "Последно добавени" : "Latest added",
-    rating: isBg ? "Най-висок рейтинг" : "Highest rating",
     products: isBg ? "Продукти" : "Products",
     latest: isBg ? "Нови продукти" : "New products",
     promotions: isBg ? "Промоции" : "Promotions",
@@ -149,17 +142,6 @@ const Home = ({ heroPreview }: { heroPreview?: PreviewConfig } = {}) => {
       <div className="relative">
         <HomeHeroSlider preview={heroPreview} />
 
-        <div className="absolute inset-x-0 bottom-3 z-30">
-          <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-3 sm:flex-wrap sm:justify-center sm:px-6 lg:px-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {[
-              { key: "best" as const, label: text.best },
-              { key: "popular" as const, label: text.popular },
-              { key: "rating" as const, label: text.rating },
-            ].map((tab) => (
-              <button key={tab.key} type="button" onClick={() => setActiveProductTab(tab.key)} className={`min-h-10 shrink-0 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wide shadow-sm transition sm:px-6 ${activeProductTab === tab.key ? "bg-orange-500 text-white" : "bg-slate-800 text-white hover:bg-slate-700 dark:bg-white dark:text-black"}`}>{tab.label}</button>
-            ))}
-          </div>
-        </div>
       </div>
 
       <section className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-black">
@@ -176,9 +158,9 @@ const Home = ({ heroPreview }: { heroPreview?: PreviewConfig } = {}) => {
         </div>
       </section>
 
-      {tabProducts.length > 0 && (
+      {featuredProducts.length > 0 && (
         <section className="site-container pt-3.5 pb-7 sm:pt-4 sm:pb-8">
-          <HomeProductCarousel key={activeProductTab} products={tabProducts} label={activeProductTab === "best" ? text.best : activeProductTab === "popular" ? text.popular : text.rating} />
+          <HomeProductCarousel products={featuredProducts} label={text.best} />
         </section>
       )}
 
