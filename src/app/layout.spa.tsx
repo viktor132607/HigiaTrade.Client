@@ -13,6 +13,13 @@ export const metadata: Metadata = {
   },
   description:
     "Хигия Трейд ООД е дистрибутор на SANO за Русе, Силистра, Разград, Свищов, Бяла и Търговище. Перилни и почистващи препарати, консумативи и доставки за дома и бизнеса.",
+  // Transparent favicon uploaded in commit b16ce226; retain the site's
+  // existing logo for organization and social-sharing metadata.
+  icons: {
+    icon: [{ url: "/cleaning-icon-transparent-original.png", type: "image/png" }],
+    shortcut: "/cleaning-icon-transparent-original.png",
+    apple: [{ url: "/cleaning-icon-transparent-original.png", type: "image/png" }],
+  },
   keywords: [
     "SANO",
     "SANO дистрибутор Русе",
