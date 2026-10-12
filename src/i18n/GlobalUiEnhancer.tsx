@@ -23,7 +23,7 @@ const extraPairs: TextPair[] = [
   { bg: "Управление на брандове", en: "Manage brands" },
   { bg: "Без бранд", en: "No brand" },
   { bg: "Всички брандове", en: "All brands" },
-  { bg: "+ Добави нова бранд", en: "+ Add new brand" },
+  { bg: "+ Добави нов бранд", en: "+ Add new brand" },
   { bg: "Име на новия бранд", en: "New brand name" },
   { bg: "Създай", en: "Create" },
   { bg: "Създаване...", en: "Creating..." },
