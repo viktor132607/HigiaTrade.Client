@@ -414,6 +414,21 @@ const AdminSlideshow = () => {
     }));
   };
 
+  const updateDeviceImage = (slideId: string, field: "imagePositionY" | "imageLightening", value: number) => {
+    setSaved(false);
+    setSlides(current => current.map(slide => {
+      if (slide.id !== slideId) return slide;
+      const prior = slide.layouts?.[previewMode];
+      return {
+        ...slide,
+        layouts: {
+          ...slide.layouts,
+          [previewMode]: { ...prior, positions: prior?.positions ?? {}, hidden: prior?.hidden ?? [], [field]: value },
+        },
+      };
+    }));
+  };
+
   const setDeviceVisibility = (slideId: string, field: SlideField, visible: boolean) => {
     setSaved(false);
     setSlides(current => current.map(slide => {
@@ -456,6 +471,8 @@ const AdminSlideshow = () => {
           [previewMode]: {
             positions: { ...slide.positions, ...from?.positions },
             hidden: [...(from?.hidden ?? [])],
+            imagePositionY: from?.imagePositionY ?? slide.imagePositionY ?? 50,
+            imageLightening: from?.imageLightening ?? slide.imageLightening ?? 100,
           },
         },
       };
@@ -673,10 +690,10 @@ const AdminSlideshow = () => {
                 </label>
                 <label className="flex min-w-0 items-center gap-2 text-[11px] font-semibold text-slate-600">
                   <span className="shrink-0">{isBg ? "Позиция" : "Image Y"}</span>
-                  <input type="range" min="0" max="100" step="1" value={slide.imagePositionY ?? 50}
-                    onChange={event => updateSlide(slide.id, "imagePositionY", Number(event.target.value))}
+                  <input type="range" min="0" max="100" step="1" value={slide.layouts?.[previewMode]?.imagePositionY ?? slide.imagePositionY ?? 50}
+                    onChange={event => updateDeviceImage(slide.id, "imagePositionY", Number(event.target.value))}
                     className="h-1.5 min-w-0 flex-1 cursor-pointer accent-[#18b99f]" />
-                  <span className="w-9 shrink-0 text-right tabular-nums">{Math.round(slide.imagePositionY ?? 50)}%</span>
+                  <span className="w-9 shrink-0 text-right tabular-nums">{Math.round(slide.layouts?.[previewMode]?.imagePositionY ?? slide.imagePositionY ?? 50)}%</span>
                 </label>
                 <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                   <button type="button" onClick={() => addOverlay(slide.id, "text")} disabled={(slide.elements ?? []).length >= 30}
@@ -717,10 +734,10 @@ const AdminSlideshow = () => {
                 </label>
                 <label className="flex min-w-0 items-center gap-2 text-[11px] font-semibold text-slate-600">
                   <span className="shrink-0">{isBg ? "Изсветляване" : "Lightening"}</span>
-                  <input type="range" min="0" max="100" step="1" value={slide.imageLightening ?? 100}
-                    onChange={event => updateSlide(slide.id, "imageLightening", Number(event.target.value))}
+                  <input type="range" min="0" max="100" step="1" value={slide.layouts?.[previewMode]?.imageLightening ?? slide.imageLightening ?? 100}
+                    onChange={event => updateDeviceImage(slide.id, "imageLightening", Number(event.target.value))}
                     className="h-1.5 min-w-0 flex-1 cursor-pointer accent-[#18b99f]" />
-                  <span className="w-9 shrink-0 text-right tabular-nums">{Math.round(slide.imageLightening ?? 100)}%</span>
+                  <span className="w-9 shrink-0 text-right tabular-nums">{Math.round(slide.layouts?.[previewMode]?.imageLightening ?? slide.imageLightening ?? 100)}%</span>
                 </label>
                 <div className="flex flex-wrap items-center gap-1.5 lg:justify-end" aria-label={isBg ? "Редактирай елементи" : "Edit elements"}>
                   {([
