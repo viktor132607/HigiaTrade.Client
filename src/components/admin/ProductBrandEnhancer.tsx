@@ -57,7 +57,7 @@ const ProductBrandEnhancer = () => {
     const name = newBrandName.trim();
     if (creatingBrand) return;
     if (name.length < 2) {
-      setBrandCreateError(isBg ? "Името на марката трябва да е поне 2 символа." : "Brand name must be at least 2 characters.");
+      setBrandCreateError(isBg ? "Името на бранда трябва да е поне 2 символа." : "Brand name must be at least 2 characters.");
       return;
     }
 
@@ -79,7 +79,7 @@ const ProductBrandEnhancer = () => {
         body: JSON.stringify({ name, thumbnailImageUrl: null, description: null }),
       });
       const data = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(data?.message || (isBg ? "Марката не можа да бъде създадена." : "The brand could not be created."));
+      if (!response.ok) throw new Error(data?.message || (isBg ? "Брандът не можа да бъде създадена." : "The brand could not be created."));
 
       const created: BrandOption = {
         id: data?.id ? String(data.id) : undefined,
@@ -95,7 +95,7 @@ const ProductBrandEnhancer = () => {
       setNewBrandName("");
       setIsCreatingBrand(false);
     } catch (error) {
-      setBrandCreateError(error instanceof Error ? error.message : isBg ? "Марката не можа да бъде създадена." : "The brand could not be created.");
+      setBrandCreateError(error instanceof Error ? error.message : isBg ? "Брандът не можа да бъде създадена." : "The brand could not be created.");
     } finally {
       setCreatingBrand(false);
     }
@@ -182,26 +182,26 @@ const ProductBrandEnhancer = () => {
   return createPortal(
     <div>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <label className="block text-sm font-semibold text-gray-800">{isBg ? "Марка" : "Brand"}</label>
-        <a href="/admin/brands" className="text-xs font-semibold text-[#18b99f] hover:underline">{isBg ? "Управление на марки" : "Manage brands"}</a>
+        <label className="block text-sm font-semibold text-gray-800">{isBg ? "Бранд" : "Brand"}</label>
+        <a href="/admin/brands" className="text-xs font-semibold text-[#18b99f] hover:underline">{isBg ? "Управление на брандове" : "Manage brands"}</a>
       </div>
       <select value={brand} onChange={(event) => setBrand(event.target.value)} className="block min-h-11 w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-gray-900 shadow-sm outline-none focus:border-[#18b99f] focus:ring-2 focus:ring-[#18b99f]/20">
-        <option value="">{isBg ? "Без марка" : "No brand"}</option>
+        <option value="">{isBg ? "Без бранд" : "No brand"}</option>
         {brands.map((item) => <option key={item.id ?? item.name} value={item.name}>{item.name}</option>)}
       </select>
 
       <div className="mt-2">
         {!isCreatingBrand ? (
-          <button type="button" onClick={() => { setIsCreatingBrand(true); setNewBrandName(""); setBrandCreateError(""); }} className="min-h-10 text-sm font-semibold text-[#138b78] hover:underline">{isBg ? "+ Добави нова марка" : "+ Add new brand"}</button>
+          <button type="button" onClick={() => { setIsCreatingBrand(true); setNewBrandName(""); setBrandCreateError(""); }} className="min-h-10 text-sm font-semibold text-[#138b78] hover:underline">{isBg ? "+ Добави нова бранд" : "+ Add new brand"}</button>
         ) : (
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3">
             <div className="flex flex-col gap-2 sm:flex-row">
-              <input type="text" value={newBrandName} onChange={(event) => { setNewBrandName(event.target.value); setBrandCreateError(""); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void createBrand(); } }} placeholder={isBg ? "Име на новата марка" : "New brand name"} maxLength={80} autoFocus className="min-h-11 flex-1 rounded-md border border-slate-400 bg-white px-3 py-2 text-sm outline-none focus:border-[#18b99f]" />
+              <input type="text" value={newBrandName} onChange={(event) => { setNewBrandName(event.target.value); setBrandCreateError(""); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void createBrand(); } }} placeholder={isBg ? "Име на новия бранд" : "New brand name"} maxLength={80} autoFocus className="min-h-11 flex-1 rounded-md border border-slate-400 bg-white px-3 py-2 text-sm outline-none focus:border-[#18b99f]" />
               <button type="button" onClick={() => void createBrand()} disabled={creatingBrand} className="min-h-11 rounded-md bg-[#18b99f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#149f8a] disabled:opacity-50">{creatingBrand ? (isBg ? "Създаване..." : "Creating...") : (isBg ? "Създай" : "Create")}</button>
               <button type="button" onClick={() => { setIsCreatingBrand(false); setNewBrandName(""); setBrandCreateError(""); }} disabled={creatingBrand} className="min-h-11 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50">{isBg ? "Отказ" : "Cancel"}</button>
             </div>
             {brandCreateError && <p className="mt-2 text-sm text-red-600">{brandCreateError}</p>}
-            <p className="mt-2 text-xs text-slate-500">{isBg ? "Новата марка се записва веднага и се избира за текущия продукт." : "The new brand is saved immediately and selected for the current product."}</p>
+            <p className="mt-2 text-xs text-slate-500">{isBg ? "Новият бранд се записва веднага и се избира за текущия продукт." : "The new brand is saved immediately and selected for the current product."}</p>
           </div>
         )}
       </div>
