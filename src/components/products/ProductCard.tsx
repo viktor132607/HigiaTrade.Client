@@ -127,9 +127,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
           {product.quantity===0?<span className="mb-1 hidden shrink-0 text-right text-xs font-semibold text-rose-600 sm:block">{stockLabel}</span>:null}
         </div>
 
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 sm:mt-3 sm:flex-nowrap sm:gap-2" onClick={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()}>
+        <div className="product-card-actions mt-2 flex flex-wrap items-center gap-1.5 sm:mt-3 sm:flex-nowrap sm:gap-2" onClick={event=>event.stopPropagation()} onKeyDown={event=>event.stopPropagation()}>
           <ProductActions productId={product.id} compact />
-          <button type="button" onClick={(event)=>void handleCartAction(event)} disabled={busy||product.quantity===0} className={`inline-flex h-9 min-w-0 flex-1 basis-full items-center justify-center whitespace-nowrap rounded-md px-2 text-xs font-semibold transition sm:h-10 sm:basis-auto sm:px-4 ${product.quantity===0?"cursor-not-allowed bg-slate-100 text-slate-400":"bg-[#18b99f] text-white hover:bg-[#149f8a]"}`} aria-label={product.quantity===0?(isBg?"Изчерпан":"Out of stock"):(isBg?"Добави в количка":"Add to cart")}>{product.quantity===0?(isBg?"Изчерпан":"Out of stock"):<><span className="sm:hidden">{isBg?"Добави":"Add"}</span><span className="hidden sm:inline">{isBg?"Добави в количка":"Add to cart"}</span></>}</button>
+          <button type="button" onClick={(event)=>void handleCartAction(event)} disabled={busy||product.quantity===0} className={`product-card-add inline-flex h-9 min-w-0 flex-1 basis-full items-center justify-center whitespace-nowrap rounded-md px-2 text-xs font-semibold transition sm:h-10 sm:basis-auto sm:px-4 ${product.quantity===0?"cursor-not-allowed bg-slate-100 text-slate-400":"bg-[#18b99f] text-white hover:bg-[#149f8a]"}`} aria-label={product.quantity===0?(isBg?"Изчерпан":"Out of stock"):(isBg?"Добави в количка":"Add to cart")}>{product.quantity===0?(isBg?"Изчерпан":"Out of stock"):<><span className="sm:hidden">{isBg?"Добави":"Add"}</span><span className="hidden sm:inline">{isBg?"Добави в количка":"Add to cart"}</span></>}</button>
         </div>
       </div>
     </div>
