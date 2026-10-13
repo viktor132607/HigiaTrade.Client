@@ -7,6 +7,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { addItem } from "../store/slices/cartSlice";
 import { formatCurrency } from "../utils/currency";
 import ProductActions from "../components/products/ProductActions";
+import ProductRating from "../components/products/ProductRating";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
 import { toast } from "react-toastify";
 
@@ -20,6 +21,7 @@ interface Product {
   categoryId: string;
   discountPercentage?: number;
   discountedPrice?: number;
+  rating?: number;
 }
 
 const Wishlist = () => {
@@ -127,6 +129,7 @@ const Wishlist = () => {
 
                 <div className="p-4">
                   <h2 className="mb-2 line-clamp-2 text-base font-semibold text-gray-900 sm:text-lg"><Link to={`/products/${product.id}`} className="hover:text-primary-500">{product.title}</Link></h2>
+                  <ProductRating rating={product.rating} className="mb-2" />
                   <div className="mb-4 space-y-1"><p className="text-lg font-bold text-gray-900">{formatCurrency(displayPrice)}</p>{product.discountedPrice && product.discountedPrice > 0 ? <p className="text-sm text-gray-500 line-through">{formatCurrency(product.regularPrice)}</p> : null}</div>
                   <div className="mb-3"><ProductActions productId={product.id} showLabels compact /></div>
                   <div className="grid grid-cols-2 gap-2">
