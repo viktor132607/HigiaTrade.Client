@@ -316,3 +316,42 @@ iframe {
     min-height: 532px;
   }
 }
+
+/* Related and recently viewed products follow the detail panel's actual
+   available width, including when the browser occupies half a desktop screen. */
+.product-details-suggestions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@container product-details (min-width: 840px) {
+  .product-details-suggestions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container product-details (min-width: 1100px) {
+  .product-details-suggestions {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@container product-details (max-width: 1099px) {
+  .product-details-suggestions .product-card-actions {
+    flex-wrap: wrap;
+  }
+
+  .product-details-suggestions .product-card-add {
+    flex: 1 0 100%;
+    min-width: 0;
+  }
+}
+
+@container product-details (max-width: 519px) {
+  .product-details-suggestions {
+    gap: 0.5rem;
+  }
+
+  .product-details-suggestions article > div:last-child {
+    padding: 0.5rem;
+  }
+}
