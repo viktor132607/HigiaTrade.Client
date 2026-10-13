@@ -105,7 +105,7 @@ const ProductBreadcrumb = () => {
 
   return (
     <nav aria-label={isBg ? "Път" : "Breadcrumb"} className="border-b border-slate-200 bg-white/95">
-      <div className="site-container flex min-h-12 items-center gap-1.5 overflow-x-auto whitespace-nowrap py-2 text-sm text-slate-500">
+      <div className="mx-auto flex min-h-12 w-full max-w-[1304px] items-center gap-1.5 overflow-x-auto whitespace-nowrap px-4 py-2 text-sm text-slate-500 sm:px-6 lg:px-8">
         {path.map((category, index) => (
           <span key={category.id} className="contents">
             {index > 0 && <ChevronRightIcon className="h-4 w-4 shrink-0 text-slate-300" />}
