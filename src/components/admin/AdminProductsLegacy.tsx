@@ -162,6 +162,7 @@ const AdminProducts = () => {
   const [formData, setFormData] = useState<FormData>(emptyForm);
   const [packagingOptions, setPackagingOptions] = useState<ProductPackagingOption[]>(newPackagingOptions());
   const [packagingLoading, setPackagingLoading] = useState(false);
+  const [packagingLoadError, setPackagingLoadError] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [categorySearch, setCategorySearch] = useState("");
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
@@ -376,6 +377,7 @@ const fetchBrands = async () => {
   const resetForm = () => {
     setFormData(emptyForm());
     setPackagingOptions(newPackagingOptions());
+    setPackagingLoadError(false);
     setCategorySearch("");
     setValidationErrors({});
     setEditingProduct(null);
@@ -394,6 +396,7 @@ const fetchBrands = async () => {
   };
 
   const handleEditProduct = (product: Product) => {
+    setPackagingLoadError(false);
     setPackagingLoading(true);
     setPackagingOptions(newPackagingOptions(product.title));
     void fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products/${product.id}/packaging`, {
@@ -404,7 +407,7 @@ const fetchBrands = async () => {
         return (await response.json()) as ProductPackagingOption[];
       })
       .then(options => setPackagingOptions(options.length ? options : newPackagingOptions(product.title)))
-      .catch(() => toast.error("Разфасовките не могат да се заредят. Проверете преди запис."))
+      .catch(() => { setPackagingLoadError(true); toast.error("Разфасовките не могат да се заредят. Записът е блокиран, за да се запазят съществуващите данни."); })
       .finally(() => setPackagingLoading(false));
     const categoryById = categories.find((item) => item.id === product.categoryId);
     const categoryByName = product.categoryName
@@ -607,8 +610,8 @@ const fetchBrands = async () => {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!validateForm()) return;
-    if (packagingLoading) {
-      toast.error("Изчакайте разфасовките да се заредят.");
+    if (packagingLoading || packagingLoadError) {
+      toast.error(packagingLoadError ? "Разфасовките не са заредени. Отворете продукта отново." : "Изчакайте разфасовките да се заредят.");
       return;
     }
     if (packagingOptions.length === 0 || packagingOptions.filter(option => option.isDefault).length !== 1 ||
