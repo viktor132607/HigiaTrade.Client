@@ -31,17 +31,28 @@ export async function ensureResponse(response: Response, bg: boolean) {
   if (!response.ok) throw new Error(checkoutErrorMessage(await response.text(), response.status, bg));
 }
 
-export interface CheckoutItem { productId: string; quantity: number; title: string; totalPrice: number; singlePrice?: number; primaryImageUri?: string; }
+export interface CheckoutItem { productId: string; packagingOptionId?: string; quantity: number; title: string; totalPrice: number; singlePrice?: number; primaryImageUri?: string; }
 export async function refreshCheckoutItems(items: CheckoutItem[], bg: boolean): Promise<CheckoutItem[]> {
   return Promise.all(items.map(async item => {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products/${item.productId}`).catch(() => { throw new Error(checkoutErrorMessage("", 500, bg)); });
     await ensureResponse(response, bg);
     const product = await response.json();
-    if (product.isActive === false || !Number.isInteger(item.quantity) || item.quantity < 1 || product.quantity < item.quantity) {
-      throw new Error(bg ? `„${item.title}“: налични ${product.isActive === false ? 0 : product.quantity} бр., заявени ${item.quantity} бр. Коригирайте количката.` : `${item.title}: ${product.isActive === false ? 0 : product.quantity} available, ${item.quantity} requested. Update your cart.`);
+    let packaging: { id: string; isDefault: boolean; stockQuantity: number; priceInclVat: number } | undefined;
+    if (item.packagingOptionId) {
+      const packagingResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products/${item.productId}/packaging`);
+      await ensureResponse(packagingResponse, bg);
+      const options = await packagingResponse.json() as Array<{ id: string; isDefault: boolean; stockQuantity: number; priceInclVat: number }>;
+      packaging = options.find(option => option.id === item.packagingOptionId);
+      if (!packaging) throw new Error(bg ? "Избраната разфасовка вече не е налична." : "Selected packaging is no longer available.");
     }
-    let price = product.discountedPrice > 0 ? product.discountedPrice : product.regularPrice;
-    if (product.wholesalePriceInclVat > 0 && product.wholesaleMinQuantity > 0 && item.quantity >= product.wholesaleMinQuantity) {
+    const availableStock = packaging ? packaging.stockQuantity : product.quantity;
+    if (product.isActive === false || !Number.isInteger(item.quantity) || item.quantity < 1 || availableStock < item.quantity) {
+      throw new Error(bg ? `„${item.title}“: налични ${product.isActive === false ? 0 : availableStock} бр., заявени ${item.quantity} бр. Коригирайте количката.` : `${item.title}: ${product.isActive === false ? 0 : availableStock} available, ${item.quantity} requested. Update your cart.`);
+    }
+    let price = packaging && !packaging.isDefault
+      ? packaging.priceInclVat
+      : product.discountedPrice > 0 ? product.discountedPrice : product.regularPrice;
+    if ((!packaging || packaging.isDefault) && product.wholesalePriceInclVat > 0 && product.wholesaleMinQuantity > 0 && item.quantity >= product.wholesaleMinQuantity) {
       price = product.wholesalePriceInclVat * (1 - (product.discountPercentage || 0) / 100);
     }
     if (!Number.isFinite(price) || price < 0) throw new Error(checkoutErrorMessage('', 500, bg));
