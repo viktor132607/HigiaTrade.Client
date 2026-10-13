@@ -311,12 +311,6 @@ iframe {
   }
 }
 
-@container product-details (min-width: 1080px) {
-  .product-details-info {
-    min-height: 532px;
-  }
-}
-
 /* Related and recently viewed products follow the detail panel's actual
    available width, including when the browser occupies half a desktop screen. */
 .product-details-suggestions {
