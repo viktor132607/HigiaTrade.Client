@@ -214,8 +214,8 @@ const Home = ({ heroPreview }: { heroPreview?: PreviewConfig } = {}) => {
                 icon: ChatBubbleLeftRightIcon,
                 to: "/contact",
               },
-            ].map((item, index) => (
-              <Link key={item.title} to={item.to} className={`rounded-2xl bg-white/95 p-5 text-slate-950 shadow-xl backdrop-blur transition hover:-translate-y-1 hover:shadow-2xl sm:p-7 ${index === 1 ? "md:-translate-y-2 md:hover:-translate-y-3" : ""}`}>
+            ].map((item) => (
+              <Link key={item.title} to={item.to} className="rounded-2xl bg-white/95 p-5 text-slate-950 shadow-xl backdrop-blur transition hover:-translate-y-1 hover:shadow-2xl sm:p-7">
                 <item.icon className="mx-auto h-9 w-9 text-orange-500" />
                 <h3 className="mt-4 text-base font-bold">{item.title}</h3>
                 <p className="mt-2 text-xs leading-5 text-slate-500">{item.description}</p>
