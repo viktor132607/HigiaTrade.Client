@@ -11,6 +11,7 @@ import { useLanguageTheme } from "../i18n/LanguageThemeContext";
 
 interface CartItem {
   productId: string;
+  packagingOptionId?: string;
   quantity: number;
   totalPrice: number;
   singlePrice?: number;
@@ -29,6 +30,8 @@ interface ProfileResponse {
   names: string;
   phone: string;
 }
+
+const packageKey = (id: string, option?: string) => `${id}:${option || ""}`;
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -120,6 +123,7 @@ const Checkout = () => {
 
       return {
         productId: item.id,
+        packagingOptionId: item.packagingOptionId,
         quantity: item.quantity,
         title: item.title,
         singlePrice: unitPrice,
@@ -176,10 +180,10 @@ const Checkout = () => {
       : undefined;
 
     const enrichServerCart = (serverCart: CartResponse): CartResponse => {
-      const localById = new Map(localItems.map((item) => [item.id, item]));
+      const localById = new Map(localItems.map((item) => [packageKey(item.id, item.packagingOptionId), item]));
       const items = Array.isArray(serverCart.items)
         ? serverCart.items.map((item) => {
-            const localItem = localById.get(item.productId);
+            const localItem = localById.get(packageKey(item.productId, item.packagingOptionId));
             const quantity = Math.max(1, Number(item.quantity) || 1);
             const totalPrice = Number(item.totalPrice) || 0;
             return {
@@ -229,14 +233,14 @@ const Checkout = () => {
 
       const serverQuantityByProduct = new Map(
         (currentServerCart?.items ?? []).map((item) => [
-          item.productId,
+          packageKey(item.productId, item.packagingOptionId),
           Number(item.quantity) || 0,
         ])
       );
 
       let changed = false;
       for (const item of localItems) {
-        const serverQuantity = serverQuantityByProduct.get(item.id) ?? 0;
+        const serverQuantity = serverQuantityByProduct.get(packageKey(item.id, item.packagingOptionId)) ?? 0;
         const missingQuantity = Math.max(0, item.quantity - serverQuantity);
         if (missingQuantity === 0) continue;
 
@@ -248,6 +252,7 @@ const Checkout = () => {
           },
           body: JSON.stringify({
             productId: item.id,
+            packagingOptionId: item.packagingOptionId,
             quantity: missingQuantity,
           }),
         });
@@ -380,9 +385,9 @@ const Checkout = () => {
       if (total < MINIMUM_ORDER) { setError(minimumOrderMessage(total, isBg)); return; }
       if (formData.paymentMethod === "online-card") {
         if (!stripe.enabled) throw new Error(isBg ? "Плащането с карта не е налично." : "Card payment is unavailable.");
-        const payload = { ...formData, expectedTotal: total, items: cart.items.map(item => ({ productId: item.productId, quantity: item.quantity })) };
+        const payload = { ...formData, expectedTotal: total, items: cart.items.map(item => ({ productId: item.productId, packagingOptionId: item.packagingOptionId, quantity: item.quantity })) };
         const checkoutAttemptId = checkoutAttempt(payload);
-        const savedItems = cart.items.map(item => ({ id: item.productId, title: item.title, quantity: item.quantity, regularPrice: item.singlePrice || item.totalPrice / item.quantity, imageUrl: item.primaryImageUri || "", mainImageUrl: item.primaryImageUri }));
+        const savedItems = cart.items.map(item => ({ id: item.productId, packagingOptionId: item.packagingOptionId, title: item.title, quantity: item.quantity, regularPrice: item.singlePrice || item.totalPrice / item.quantity, imageUrl: item.primaryImageUri || "", mainImageUrl: item.primaryImageUri }));
         sessionStorage.setItem(STRIPE_DRAFT_KEY, JSON.stringify({ form: formData, items: savedItems, savedAt: Date.now() }));
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/stripe/checkout`, {
           method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -405,6 +410,7 @@ const Checkout = () => {
             ...formData,
             items: cart.items.map((item) => ({
               productId: item.productId,
+              packagingOptionId: item.packagingOptionId,
               quantity: item.quantity,
             })),
           }
