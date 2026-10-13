@@ -15,6 +15,7 @@ import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_LINK } from "../config/contact";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
 import ProductActions from "../components/products/ProductActions";
 import ProductCard from "../components/products/ProductCard";
+import ProductRating from "../components/products/ProductRating";
 
 type ProductImage = { id: string | null; uri: string };
 type Product = {
@@ -284,7 +285,6 @@ const ProductDetails = () => {
     : promoActive && product.regularPrice > 0
       ? (1 - displayPrice / product.regularPrice) * 100
       : 0;
-  const rating = Number(product.rating ?? 0);
   const packageSize = extractPackageSize(product);
   const previousImage = () => setSelectedImage((index) => (index === 0 ? images.length - 1 : index - 1));
   const nextImage = () => setSelectedImage((index) => (index === images.length - 1 ? 0 : index + 1));
@@ -348,7 +348,7 @@ const ProductDetails = () => {
             </div>
 
             <h1 className="mt-2 text-3xl font-bold leading-tight">{product.title}</h1>
-            <div className="mt-2 flex">{[1, 2, 3, 4, 5].map((star) => <StarIcon key={star} className={`h-4 w-4 ${star <= Math.round(rating) ? "text-yellow-400" : "text-slate-200"}`} />)}</div>
+            <ProductRating rating={product.rating} className="mt-2" />
 
             <div className="mt-4 border-b border-slate-200 pb-3">
               <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
