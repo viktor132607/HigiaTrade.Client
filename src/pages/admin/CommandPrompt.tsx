@@ -12,7 +12,7 @@ const commands = [
 ];
 
 type Output = { command: string; message: string; error?: boolean };
-type Result = { affectedProducts: number; price: number | null; quantity: number | null };
+type Result = { affectedProducts: number; affectedPackagingOptions: number; price: number | null; quantity: number | null };
 
 export default function CommandPrompt() {
   const { token } = useSelector((state: RootState) => state.auth);
@@ -26,8 +26,8 @@ export default function CommandPrompt() {
   const running = useRef(false);
   const input = useRef<HTMLInputElement>(null);
   const help = bg
-    ? "Всички неизтрити продукти, включително неактивните и всички категории. Цената е в EUR с ДДС; премахва отстъпките и изравнява активните цени на едро. Количеството се заменя, не се добавя."
-    : "All non-deleted products, including inactive products and every category. Prices are in EUR including VAT; discounts are removed and enabled wholesale prices are aligned. Quantity is replaced, not added.";
+    ? "Всички неизтрити продукти, включително неактивните и всички категории. Цената е в EUR с ДДС; премахва отстъпките и изравнява активните цени на едро. Количеството се заменя, не се добавя, за всички разфасовки и кашони на всеки продукт."
+    : "All non-deleted products, including inactive products and every category. Prices are in EUR including VAT; discounts are removed and enabled wholesale prices are aligned. Quantity is replaced, not added, for every product packaging option and carton.";
 
   async function execute(event: FormEvent) {
     event.preventDefault();
@@ -57,7 +57,7 @@ export default function CommandPrompt() {
         result.price !== null ? `${bg ? "Цена" : "Price"}: ${result.price} EUR` : "",
         result.quantity !== null ? `${bg ? "Количество" : "Quantity"}: ${result.quantity}` : "",
       ].filter(Boolean).join(" · ");
-      setOutput(previous => [...previous, { command: value, message: `${bg ? "Обновени продукти" : "Updated products"}: ${result.affectedProducts}. ${details}` }]);
+      setOutput(previous => [...previous, { command: value, message: `${bg ? "Обновени продукти" : "Updated products"}: ${result.affectedProducts}. ${result.quantity !== null ? `${bg ? "Обновени разфасовки" : "Updated packaging options"}: ${result.affectedPackagingOptions ?? 0}. ` : ""}${details}` }]);
     } catch (error) {
       setOutput(previous => [...previous, { command: value, message: error instanceof Error ? error.message : String(error), error: true }]);
     } finally {
