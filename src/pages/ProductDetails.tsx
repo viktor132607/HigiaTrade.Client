@@ -421,7 +421,7 @@ const ProductDetails = () => {
                   >
                     {packagingOptions.map(option => (
                       <option key={option.id} value={option.id}>
-                        {option.label} — {formatCurrency(option.isDefault ? product.regularPrice : option.priceInclVat)}
+                        {option.label} — {formatCurrency(option.isDefault ? displayPrice : option.priceInclVat)}
                         {option.stockQuantity <= 0 ? tr(" (няма наличност)", " (out of stock)") : ""}
                       </option>
                     ))}
