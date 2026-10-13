@@ -374,7 +374,7 @@ const ProductDetails = () => {
             <div className="mt-4 border-b border-slate-200 pb-3">
               <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
                 {promoActive && !selectedIsAlternative && <span className="text-sm font-semibold text-slate-400 line-through">{formatCurrency(product.regularPrice)}</span>}
-                <span className={`text-2xl font-black leading-none ${promoActive ? "text-rose-600" : "text-slate-950"}`}>{formatCurrency(selectedDisplayPrice)}</span>
+                <span className={`text-2xl font-black leading-none ${promoActive && !selectedIsAlternative ? "text-rose-600" : "text-slate-950"}`}>{formatCurrency(selectedDisplayPrice)}</span>
                 {promoActive && !selectedIsAlternative && <span className="text-[10px] font-bold uppercase tracking-wide text-rose-600">{tr(`Промоция -${Math.round(discountPercent)}%`, `Promotion -${Math.round(discountPercent)}%`)}</span>}
               </div>
               <p className="mt-2 text-xs leading-5 text-slate-600">
@@ -420,7 +420,7 @@ const ProductDetails = () => {
                     onChange={event => { setSelectedPackagingId(event.target.value); setQuantity(1); }}
                   >
                     {packagingOptions.map(option => (
-                      <option key={option.id} value={option.id} disabled={option.stockQuantity <= 0}>
+                      <option key={option.id} value={option.id}>
                         {option.label} — {formatCurrency(option.isDefault ? product.regularPrice : option.priceInclVat)}
                         {option.stockQuantity <= 0 ? tr(" (няма наличност)", " (out of stock)") : ""}
                       </option>
