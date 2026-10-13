@@ -303,9 +303,9 @@ const ProductDetails = () => {
 
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-slate-50 px-3 py-5 sm:px-6 sm:py-7 lg:px-8">
-      <div className="mx-auto max-w-[1020px]">
-        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,460px)_minmax(0,520px)] lg:gap-6">
-          <section className="w-full max-w-[460px]">
+      <div className="mx-auto w-full max-w-[1240px]">
+        <div className="grid items-start gap-5 lg:grid-cols-2 lg:gap-6">
+          <section className="w-full min-w-0">
             <div className="flex items-start gap-3">
               {images.length > 1 && (
                 <div className="flex max-h-[380px] w-16 shrink-0 flex-col gap-2 overflow-y-auto pr-1 sm:w-[68px]">
