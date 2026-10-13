@@ -8,6 +8,8 @@ import "react-toastify/dist/ReactToastify.css";
 import { RootState } from "../../store";
 import { formatCurrency } from "../../utils/currency";
 import ProductPricingAndUploadFields from "../../components/admin/ProductPricingAndUploadFields";
+import ProductPackagingEditor from "./ProductPackagingEditor";
+import { newPackagingOptions, type ProductPackagingOption } from "../../types/packaging";
 
 interface Category {
   id: string;
@@ -158,6 +160,8 @@ const AdminProducts = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<FormData>(emptyForm);
+  const [packagingOptions, setPackagingOptions] = useState<ProductPackagingOption[]>(newPackagingOptions());
+  const [packagingLoading, setPackagingLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [categorySearch, setCategorySearch] = useState("");
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
@@ -371,6 +375,7 @@ const fetchBrands = async () => {
 
   const resetForm = () => {
     setFormData(emptyForm());
+    setPackagingOptions(newPackagingOptions());
     setCategorySearch("");
     setValidationErrors({});
     setEditingProduct(null);
@@ -389,6 +394,18 @@ const fetchBrands = async () => {
   };
 
   const handleEditProduct = (product: Product) => {
+    setPackagingLoading(true);
+    setPackagingOptions(newPackagingOptions(product.title));
+    void fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products/${product.id}/packaging`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    })
+      .then(async response => {
+        if (!response.ok) throw new Error("Неуспешно зареждане на разфасовките.");
+        return (await response.json()) as ProductPackagingOption[];
+      })
+      .then(options => setPackagingOptions(options.length ? options : newPackagingOptions(product.title)))
+      .catch(() => toast.error("Разфасовките не могат да се заредят. Проверете преди запис."))
+      .finally(() => setPackagingLoading(false));
     const categoryById = categories.find((item) => item.id === product.categoryId);
     const categoryByName = product.categoryName
       ? categories.find(
@@ -590,6 +607,19 @@ const fetchBrands = async () => {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!validateForm()) return;
+    if (packagingLoading) {
+      toast.error("Изчакайте разфасовките да се заредят.");
+      return;
+    }
+    if (packagingOptions.length === 0 || packagingOptions.filter(option => option.isDefault).length !== 1 ||
+        packagingOptions.some(option => !option.label.trim() || !Number.isInteger(option.unitsPerPackage) ||
+            option.unitsPerPackage < 1 || option.unitsPerPackage > 10000 ||
+            !Number.isFinite(option.priceInclVat) || option.priceInclVat < 0 ||
+            !Number.isInteger(option.stockQuantity) || option.stockQuantity < 0) ||
+        new Set(packagingOptions.map(option => option.label.trim().toLowerCase())).size !== packagingOptions.length) {
+      toast.error("Проверете разфасовките: име, цена, наличност и само една основна опаковка.");
+      return;
+    }
 
     const submittedFields = new window.FormData(event.currentTarget);
     const retailPriceRaw = String(submittedFields.get("retailPrice") ?? "").trim();
@@ -639,6 +669,21 @@ const fetchBrands = async () => {
         throw new Error(getApiErrorMessage(errorData, response.status));
       }
 
+      const saved = await response.json();
+      const savedId = String(saved?.id || editingProduct?.id || "");
+      if (!savedId) throw new Error("Не е получен идентификатор на продукта.");
+      const packagingResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products/${encodeURIComponent(savedId)}/packaging`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(packagingOptions),
+      });
+      if (!packagingResponse.ok) {
+        const detail = await packagingResponse.text();
+        throw new Error(`Продуктът е записан, но разфасовките не са: ${detail.slice(0, 250)}`);
+      }
       await fetchProducts();
       await fetchBrands();
       closeEditModal();
@@ -1178,6 +1223,12 @@ const fetchBrands = async () => {
                 )}
               </div>
 
+              <ProductPackagingEditor
+                value={packagingOptions}
+                onChange={setPackagingOptions}
+                retailPrice={Number(formData.regularPrice) || 0}
+                baseStock={Number(formData.stock) || 0}
+              />
               <div className="sticky bottom-0 -mx-4 mt-6 flex flex-col-reverse gap-3 border-t border-gray-200 bg-white px-4 py-4 sm:-mx-7 sm:flex-row sm:justify-end sm:px-7">
                 <button type="button" onClick={closeEditModal} className="rounded-md border border-slate-400 px-4 py-2 text-gray-700 hover:bg-gray-50">Отказ</button>
                 <button type="submit" className="rounded-md bg-[#18b99f] px-5 py-2 font-semibold text-white hover:bg-[#149f8a]">{editingProduct ? "Запази" : "Добави"}</button>
