@@ -186,7 +186,7 @@ const CartHoverPreview = () => {
 
             return (
               <Link
-                key={item.id}
+                key={`${item.id}:${item.packagingOptionId || ""}`}
                 to={`/products/${item.id}`}
                 onClick={() => setIsOpen(false)}
                 className="flex gap-3 rounded-lg p-2 transition hover:bg-slate-50 dark:hover:bg-white/5"
