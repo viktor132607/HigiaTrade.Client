@@ -325,7 +325,7 @@ const ProductDetails = () => {
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-slate-50 px-3 py-5 sm:px-6 sm:py-7 lg:px-8">
       <div className="product-details-layout mx-auto w-full max-w-[1240px]">
-        <div className="product-details-top grid grid-cols-1 items-start gap-5 lg:gap-6">
+        <div className="product-details-top grid grid-cols-1 items-stretch gap-5 lg:gap-6">
           <section className="product-details-image w-full min-w-0">
             <div className="flex items-start gap-3">
               {images.length > 1 && (
@@ -345,7 +345,7 @@ const ProductDetails = () => {
             </div>
           </section>
 
-          <section className="product-details-info flex h-fit min-w-0 flex-col rounded-none border border-slate-200 bg-white p-4 lg:p-5">
+          <section className="product-details-info flex h-full min-w-0 flex-col rounded-none border border-slate-200 bg-white p-4 lg:p-5">
             <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-slate-500">
               {product.categoryName && (
                 <span>
