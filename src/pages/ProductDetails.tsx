@@ -16,6 +16,7 @@ import { useLanguageTheme } from "../i18n/LanguageThemeContext";
 import ProductActions from "../components/products/ProductActions";
 import ProductCard from "../components/products/ProductCard";
 import ProductRating from "../components/products/ProductRating";
+import type { ProductPackagingOption } from "../types/packaging";
 
 type ProductImage = { id: string | null; uri: string };
 type Product = {
@@ -83,6 +84,10 @@ const ProductDetails = () => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [packagingOptions, setPackagingOptions] = useState<ProductPackagingOption[]>([]);
+  const [selectedPackagingId, setSelectedPackagingId] = useState<string>("");
+  const selectedPackaging = packagingOptions.find(option => option.id === selectedPackagingId) ?? packagingOptions.find(option => option.isDefault);
+  const availableQuantity = selectedPackaging ? selectedPackaging.stockQuantity : product?.quantity ?? 0;
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
   const [recentlyViewed, setRecentlyViewed] = useState<Product[]>([]);
@@ -114,7 +119,13 @@ const ProductDetails = () => {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products/${realId}`);
         if (!response.ok) throw new Error(tr("Продуктът не можа да бъде зареден.", "We could not load this product."));
         const data = (await response.json()) as Product;
+        const packagingResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Products/${realId}/packaging`).catch(() => null);
+        const availableOptions = packagingResponse?.ok
+          ? await packagingResponse.json() as ProductPackagingOption[]
+          : [];
         if (!cancelled) {
+          setPackagingOptions(availableOptions);
+          setSelectedPackagingId(availableOptions.find(option => option.isDefault)?.id || availableOptions[0]?.id || "");
           setProduct(data);
           setQuantity(1);
           setSelectedImage(0);
@@ -216,30 +227,38 @@ const ProductDetails = () => {
     if (!product) return null;
     return {
       id: product.id,
-      title: product.title,
-      regularPrice: product.regularPrice,
+      title: selectedPackaging ? `${product.title} (${selectedPackaging.label})` : product.title,
+      regularPrice: selectedPackaging && !selectedPackaging.isDefault ? selectedPackaging.priceInclVat : product.regularPrice,
+      packagingOptionId: selectedPackaging?.id,
+      packagingLabel: selectedPackaging?.label,
       quantity,
       imageUrl: product.mainImageUrl,
       mainImageUrl: product.mainImageUrl,
-      discountPercentage: product.discountPercentage,
-      discountedPrice: product.discountedPrice,
+      discountPercentage: selectedPackaging && !selectedPackaging.isDefault ? 0 : product.discountPercentage,
+      discountedPrice: selectedPackaging && !selectedPackaging.isDefault ? 0 : product.discountedPrice,
     };
   };
 
   const [addingToCart, setAddingToCart] = useState(false);
   const cartItems = useSelector((state: RootState) => state.cart.items);
   const handleCart = async (buy: boolean) => {
-    if (!product || product.quantity <= 0 || addingToCart) return;
+    if (!product || availableQuantity < quantity || addingToCart) return;
     setAddingToCart(true);
     try {
       if (token) {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/Orders`, {
           method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ productId: product.id, quantity }),
+          body: JSON.stringify({ productId: product.id, packagingOptionId: selectedPackaging?.id, quantity }),
         });
         await ensureResponse(response, language === "bg");
       } else {
-        await refreshCheckoutItems([{ productId: product.id, title: product.title, totalPrice: 0, quantity: (cartItems.find(item => item.id === product.id)?.quantity || 0) + quantity }], language === "bg");
+        await refreshCheckoutItems([{
+          productId: product.id,
+          packagingOptionId: selectedPackaging?.id,
+          title: product.title,
+          totalPrice: 0,
+          quantity: (cartItems.find(item => item.id === product.id && item.packagingOptionId === selectedPackaging?.id)?.quantity || 0) + quantity,
+        }], language === "bg");
       }
       const item = cartItem(); if (!item) return;
       dispatch(addItem(item));
@@ -285,7 +304,9 @@ const ProductDetails = () => {
     : promoActive && product.regularPrice > 0
       ? (1 - displayPrice / product.regularPrice) * 100
       : 0;
-  const packageSize = extractPackageSize(product);
+  const packageSize = selectedPackaging?.label || extractPackageSize(product);
+  const selectedIsAlternative = selectedPackaging != null && !selectedPackaging.isDefault;
+  const selectedDisplayPrice = selectedIsAlternative ? selectedPackaging.priceInclVat : displayPrice;
   const previousImage = () => setSelectedImage((index) => (index === 0 ? images.length - 1 : index - 1));
   const nextImage = () => setSelectedImage((index) => (index === images.length - 1 ? 0 : index + 1));
   const openWholesaleInquiry = () => {
@@ -352,9 +373,9 @@ const ProductDetails = () => {
 
             <div className="mt-4 border-b border-slate-200 pb-3">
               <div className="flex flex-wrap items-end gap-x-2 gap-y-1">
-                {promoActive && <span className="text-sm font-semibold text-slate-400 line-through">{formatCurrency(product.regularPrice)}</span>}
-                <span className={`text-2xl font-black leading-none ${promoActive ? "text-rose-600" : "text-slate-950"}`}>{formatCurrency(displayPrice)}</span>
-                {promoActive && <span className="text-[10px] font-bold uppercase tracking-wide text-rose-600">{tr(`Промоция -${Math.round(discountPercent)}%`, `Promotion -${Math.round(discountPercent)}%`)}</span>}
+                {promoActive && !selectedIsAlternative && <span className="text-sm font-semibold text-slate-400 line-through">{formatCurrency(product.regularPrice)}</span>}
+                <span className={`text-2xl font-black leading-none ${promoActive ? "text-rose-600" : "text-slate-950"}`}>{formatCurrency(selectedDisplayPrice)}</span>
+                {promoActive && !selectedIsAlternative && <span className="text-[10px] font-bold uppercase tracking-wide text-rose-600">{tr(`Промоция -${Math.round(discountPercent)}%`, `Promotion -${Math.round(discountPercent)}%`)}</span>}
               </div>
               <p className="mt-2 text-xs leading-5 text-slate-600">
                 {tr("Минималната стойност на поръчката е 50 €. За цени на едро, моля използвайте ", "The minimum order value is €50. For wholesale pricing, please use the ")}
@@ -370,8 +391,8 @@ const ProductDetails = () => {
             </div>
 
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-2.5">
-              <strong className={`inline-flex items-center gap-2 text-sm ${product.quantity > 0 ? "text-emerald-700" : "text-rose-600"}`}>
-                {product.quantity > 0 ? <><CheckCircleIcon className="h-5 w-5" />{tr("В наличност", "In stock")}</> : tr("Изчерпан продукт", "Out of stock")}
+              <strong className={`inline-flex items-center gap-2 text-sm ${availableQuantity > 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                {availableQuantity > 0 ? <><CheckCircleIcon className="h-5 w-5" />{tr("В наличност", "In stock")}</> : tr("Изчерпан продукт", "Out of stock")}
               </strong>
               {packageSize && (
                 <span className="text-xs font-semibold text-slate-500">
@@ -380,21 +401,39 @@ const ProductDetails = () => {
               )}
             </div>
 
-            {product.quantity > 0 && (
+            {availableQuantity > 0 && (
               <div className="mt-4 flex items-center gap-2.5">
                 <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-300 bg-white text-lg">−</button>
-                <input type="number" min={1} max={product.quantity} value={quantity} onChange={(event) => setQuantity(Math.min(product.quantity, Math.max(1, Number(event.target.value) || 1)))} className="h-9 w-20 rounded-md border border-slate-300 p-2 text-center" />
-                <button type="button" onClick={() => setQuantity(Math.min(product.quantity, quantity + 1))} className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-300 bg-white text-lg">+</button>
+                <input type="number" min={1} max={availableQuantity} value={quantity} onChange={(event) => setQuantity(Math.min(availableQuantity, Math.max(1, Number(event.target.value) || 1)))} className="h-9 w-20 rounded-md border border-slate-300 p-2 text-center" />
+                <button type="button" onClick={() => setQuantity(Math.min(availableQuantity, quantity + 1))} className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-300 bg-white text-lg">+</button>
               </div>
             )}
 
             <div className="mt-auto pt-4">
+              {packagingOptions.length > 0 && (
+                <label className="mb-4 block text-sm font-semibold text-slate-800">
+                  {tr("Избор на разфасовка", "Choose pack size")}
+                  <select
+                    aria-label={tr("Избор на разфасовка", "Choose pack size")}
+                    className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm text-slate-900"
+                    value={selectedPackaging?.id || ""}
+                    onChange={event => { setSelectedPackagingId(event.target.value); setQuantity(1); }}
+                  >
+                    {packagingOptions.map(option => (
+                      <option key={option.id} value={option.id} disabled={option.stockQuantity <= 0}>
+                        {option.label} — {formatCurrency(option.isDefault ? product.regularPrice : option.priceInclVat)}
+                        {option.stockQuantity <= 0 ? tr(" (няма наличност)", " (out of stock)") : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                <button onClick={() => void buyNow()} disabled={addingToCart || product.quantity <= 0} className="rounded-xl bg-[#18b99f] px-3 py-3 text-sm font-bold text-white transition hover:bg-[#149f8a] disabled:opacity-40 xl:text-base">
-                  {product.quantity > 0 ? tr("Купи", "Buy") : tr("Изчерпан", "Unavailable")}
+                <button onClick={() => void buyNow()} disabled={addingToCart || availableQuantity <= 0} className="rounded-xl bg-[#18b99f] px-3 py-3 text-sm font-bold text-white transition hover:bg-[#149f8a] disabled:opacity-40 xl:text-base">
+                  {availableQuantity > 0 ? tr("Купи", "Buy") : tr("Изчерпан", "Unavailable")}
                 </button>
-                <button onClick={() => void addToCart()} disabled={addingToCart || product.quantity <= 0} className="rounded-xl bg-slate-950 px-3 py-3 text-sm font-bold text-white disabled:opacity-40 xl:text-base">
-                  {product.quantity > 0 ? tr("Добави в количка", "Add to cart") : tr("Изчерпан продукт", "Unavailable")}
+                <button onClick={() => void addToCart()} disabled={addingToCart || availableQuantity <= 0} className="rounded-xl bg-slate-950 px-3 py-3 text-sm font-bold text-white disabled:opacity-40 xl:text-base">
+                  {availableQuantity > 0 ? tr("Добави в количка", "Add to cart") : tr("Изчерпан продукт", "Unavailable")}
                 </button>
               </div>
               <ProductActions productId={product.id} showLabels />
