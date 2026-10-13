@@ -261,13 +261,13 @@ const Home = ({ heroPreview }: { heroPreview?: PreviewConfig } = {}) => {
       {mainCategories.length > 0 && (
         <section className="site-container py-8 sm:py-10">
           <div className="text-center"><h2 className="font-display text-2xl font-bold text-slate-950 sm:text-3xl dark:text-white">{text.categories}</h2></div>
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5 xl:grid-cols-8 xl:gap-3">
             {mainCategories.slice(0, 10).map((category) => {
               const image = category.imageUri ?? category.imageURI ?? "";
               return (
                 <Link key={category.id} to={categorySeoPath(category)} className="group overflow-hidden rounded-xl bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:bg-black">
                   <div className="aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-900">{image ? <img src={image} alt={category.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center p-2 text-center text-xs text-slate-400">{text.noCategoryImage}</div>}</div>
-                  <div className="p-3 sm:p-4"><p className="line-clamp-2 text-sm font-bold text-slate-950 dark:text-white sm:text-base">{category.name}</p><p className="mt-1 text-xs text-slate-500 dark:text-slate-300">{text.viewProducts}</p></div>
+                  <div className="p-2.5 sm:p-3"><p className="line-clamp-2 text-xs font-bold text-slate-950 dark:text-white sm:text-sm">{category.name}</p><p className="mt-1 text-[11px] text-slate-500 dark:text-slate-300">{text.viewProducts}</p></div>
                 </Link>
               );
             })}
