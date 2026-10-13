@@ -303,9 +303,9 @@ const ProductDetails = () => {
 
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-slate-50 px-3 py-5 sm:px-6 sm:py-7 lg:px-8">
-      <div className="mx-auto w-full max-w-[1240px]">
-        <div className="grid items-start gap-5 lg:grid-cols-2 lg:gap-6">
-          <section className="w-full min-w-0">
+      <div className="product-details-layout mx-auto w-full max-w-[1240px]">
+        <div className="product-details-top grid grid-cols-1 items-start gap-5 lg:gap-6">
+          <section className="product-details-image w-full min-w-0">
             <div className="flex items-start gap-3">
               {images.length > 1 && (
                 <div className="flex max-h-[380px] w-16 shrink-0 flex-col gap-2 overflow-y-auto pr-1 sm:w-[68px]">
@@ -324,7 +324,7 @@ const ProductDetails = () => {
             </div>
           </section>
 
-          <section className="flex h-fit min-h-[532px] flex-col rounded-none border border-slate-200 bg-white p-4 lg:p-5">
+          <section className="product-details-info flex h-fit min-w-0 flex-col rounded-none border border-slate-200 bg-white p-4 lg:p-5">
             <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-slate-500">
               {product.categoryName && (
                 <span>
@@ -347,7 +347,7 @@ const ProductDetails = () => {
               </button>
             </div>
 
-            <h1 className="mt-2 text-3xl font-bold leading-tight">{product.title}</h1>
+            <h1 className="mt-2 text-xl font-bold leading-snug sm:text-2xl xl:text-3xl">{product.title}</h1>
             <ProductRating rating={product.rating} className="mt-2" />
 
             <div className="mt-4 border-b border-slate-200 pb-3">
@@ -389,11 +389,11 @@ const ProductDetails = () => {
             )}
 
             <div className="mt-auto pt-4">
-              <div className="grid grid-cols-2 gap-2.5">
-                <button onClick={() => void buyNow()} disabled={addingToCart || product.quantity <= 0} className="rounded-xl bg-[#18b99f] px-4 py-3 font-bold text-white transition hover:bg-[#149f8a] disabled:opacity-40">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                <button onClick={() => void buyNow()} disabled={addingToCart || product.quantity <= 0} className="rounded-xl bg-[#18b99f] px-3 py-3 text-sm font-bold text-white transition hover:bg-[#149f8a] disabled:opacity-40 xl:text-base">
                   {product.quantity > 0 ? tr("Купи", "Buy") : tr("Изчерпан", "Unavailable")}
                 </button>
-                <button onClick={() => void addToCart()} disabled={addingToCart || product.quantity <= 0} className="rounded-xl bg-slate-950 px-4 py-3 font-bold text-white disabled:opacity-40">
+                <button onClick={() => void addToCart()} disabled={addingToCart || product.quantity <= 0} className="rounded-xl bg-slate-950 px-3 py-3 text-sm font-bold text-white disabled:opacity-40 xl:text-base">
                   {product.quantity > 0 ? tr("Добави в количка", "Add to cart") : tr("Изчерпан продукт", "Unavailable")}
                 </button>
               </div>
