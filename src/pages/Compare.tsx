@@ -11,6 +11,7 @@ import { Product } from "../types";
 import { formatCurrency } from "../utils/currency";
 import { useLanguageTheme } from "../i18n/LanguageThemeContext";
 import ProductActions from "../components/products/ProductActions";
+import ProductRating from "../components/products/ProductRating";
 
 const Compare = () => {
   const dispatch = useDispatch();
@@ -112,7 +113,7 @@ const Compare = () => {
     { labelBg: "Отстъпка", labelEn: "Discount", render: (p: Product) => p.discountPercentage ? `${p.discountPercentage}%` : "—" },
     { labelBg: "Бранд", labelEn: "Brand", render: (p: Product) => p.brand || "—" },
     { labelBg: "Категория", labelEn: "Category", render: (p: Product) => p.categoryName || "—" },
-    { labelBg: "Рейтинг", labelEn: "Rating", render: (p: Product) => `${(p.rating ?? 0).toFixed(1)} / 5` },
+    { labelBg: "Рейтинг", labelEn: "Rating", render: (p: Product) => p.rating != null && Number.isFinite(p.rating) && p.rating > 0 ? `${p.rating.toFixed(1)} / 5` : "—" },
     { labelBg: "Наличност", labelEn: "Stock", render: (p: Product) => p.quantity > 0 ? (isBg ? `${p.quantity} бр.` : `${p.quantity} pcs`) : (isBg ? "Няма наличност" : "Out of stock") },
     { labelBg: "ДДС", labelEn: "VAT", render: (p: Product) => p.vatRate != null ? `${p.vatRate}%` : "—" },
     { labelBg: "Описание", labelEn: "Description", render: (p: Product) => p.description?.replace(/<[^>]+>/g, " ").trim() || "—" },
@@ -172,6 +173,7 @@ const Compare = () => {
                     <img src={seoImageUrl(product.mainImageUrl, product.title, product.usesDefaultImage === true)} alt={product.title} className="mx-auto h-44 w-full object-contain" />
                     <h2 className="mt-3 text-base font-semibold text-slate-950">{product.title}</h2>
                   </Link>
+                  <ProductRating rating={product.rating} className="mt-2" />
                   <div className="mt-3"><ProductActions productId={product.id} showLabels compact /></div>
                   {purchaseButtons(product)}
                 </div>
@@ -197,6 +199,7 @@ const Compare = () => {
                       <div className="relative">
                         <button type="button" onClick={() => dispatch(removeFromCompare(product.id))} className="absolute right-0 top-0 rounded-full border border-slate-200 bg-white p-1.5 text-slate-500 hover:text-rose-600" title={isBg ? "Премахни" : "Remove"}><XMarkIcon className="h-4 w-4" /></button>
                         <Link to={productSeoPath(product)}><img src={seoImageUrl(product.mainImageUrl, product.title, product.usesDefaultImage === true)} alt={product.title} className="mx-auto h-36 w-36 object-contain" /><div className="mt-3 pr-7 font-semibold text-slate-950 hover:text-[#18b99f]">{product.title}</div></Link>
+                        <ProductRating rating={product.rating} className="mt-2" />
                         <div className="mt-3"><ProductActions productId={product.id} showLabels compact /></div>
                         {purchaseButtons(product)}
                       </div>
