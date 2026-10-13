@@ -299,7 +299,7 @@ iframe {
 }
 
 @container product-details (min-width: 720px) {
-  .product-details-top {
+  .product-details-layout .product-details-top {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
