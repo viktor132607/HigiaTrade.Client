@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { StarIcon } from "@heroicons/react/24/solid";
 import { toast } from "react-toastify";
 import { addItem } from "../../store/slices/cartSlice";
 import { setToken } from "../../store/slices/authSlice";
@@ -10,6 +9,7 @@ import { formatCurrency } from "../../utils/currency";
 import { productSeoPath, seoImageUrl } from "../../utils/seo";
 import { useLanguageTheme } from "../../i18n/LanguageThemeContext";
 import ProductActions from "./ProductActions";
+import ProductRating from "./ProductRating";
 
 interface Product { id:string; title:string; description:string; mainImageUrl:string; usesDefaultImage?:boolean; isRepresentativeImage?:boolean; regularPrice:number; quantity:number; categoryId:string; rating?:number; discountPercentage?:number; discountedPrice?:number; isNewProduct?:boolean; }
 interface ProductCardProps { product: Product; }
@@ -114,7 +114,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   >
     <Link to={productPath} onClick={event=>event.stopPropagation()} className="relative block aspect-square w-full overflow-hidden bg-white"><img src={productImage} alt={product.title} width={640} height={640} loading="lazy" decoding="async" onError={handleImageError} className="absolute inset-0 h-full w-full object-contain"/><div className="absolute left-2 top-2 flex flex-col items-start gap-1.5 sm:left-4 sm:top-4 sm:gap-2">{product.isNewProduct&&<span className="rounded-full bg-[#18b99f] px-2 py-0.5 text-[10px] font-bold uppercase text-white sm:px-3 sm:py-1 sm:text-xs">{isBg?"Ново":"New"}</span>}{discountPercent>0?<span className="rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white sm:px-3 sm:py-1 sm:text-xs">-{discountPercent}%</span>:null}</div>{product.isRepresentativeImage && <span className="absolute bottom-2 left-2 rounded-sm bg-white/95 px-2 py-1 text-[10px] font-semibold text-slate-700 shadow-sm">{isBg ? "Примерна снимка" : "Illustrative photo"}</span>}{product.quantity===0?<span className="absolute right-2 top-2 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700 sm:right-4 sm:top-4 sm:px-3 sm:py-1 sm:text-xs"><span className="sm:hidden">{isBg?"Изчерпан":"Out"}</span><span className="hidden sm:inline">{stockLabel}</span></span>:null}</Link>
     <div className="flex flex-1 flex-col p-3 sm:p-5">
-      <div className="flex items-center justify-end gap-2"><div className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 sm:px-2.5 sm:py-1 sm:text-xs"><span className="tracking-[0.08em] text-amber-500">{"★".repeat(Math.max(0, Math.min(5, Math.round(product.rating ?? 0))))}</span><span>{(product.rating??0).toFixed(1)}</span></div></div>
+      <div className="flex items-center justify-end"><ProductRating rating={product.rating} /></div>
       <Link to={productPath} onClick={event=>event.stopPropagation()} className="mt-2 min-h-[2.5rem] line-clamp-2 font-display text-sm font-semibold leading-5 text-slate-950 hover:text-[#18b99f] sm:mt-4 sm:min-h-[3.25rem] sm:text-xl sm:leading-tight">{product.title}</Link>
 
       <div className="mt-auto pt-4 sm:pt-6">
