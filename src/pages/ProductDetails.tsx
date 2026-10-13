@@ -410,14 +410,14 @@ const ProductDetails = () => {
         {similarProducts.length > 0 && (
           <section className="mt-8 rounded-none border border-slate-200 bg-white p-5 sm:p-7">
             <h2 className="text-2xl font-black text-slate-950">{tr("Подобни продукти", "Similar products")}</h2>
-            <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{similarProducts.map((item) => <ProductCard key={item.id} product={item} />)}</div>
+            <div className="product-details-suggestions mt-5 grid gap-3 sm:gap-5">{similarProducts.map((item) => <ProductCard key={item.id} product={item} />)}</div>
           </section>
         )}
 
         {recentlyViewed.length > 0 && (
           <section className="mt-8 rounded-none border border-slate-200 bg-white p-5 sm:p-7">
             <h2 className="text-2xl font-black text-slate-950">{tr("Последно разглеждани", "Recently viewed")}</h2>
-            <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{recentlyViewed.map((item) => <ProductCard key={item.id} product={item} />)}</div>
+            <div className="product-details-suggestions mt-5 grid gap-3 sm:gap-5">{recentlyViewed.map((item) => <ProductCard key={item.id} product={item} />)}</div>
           </section>
         )}
 
