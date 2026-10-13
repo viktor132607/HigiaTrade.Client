@@ -291,3 +291,28 @@ iframe {
     justify-self: stretch;
   }
 }
+
+/* Product detail columns respond to the actual content width, not merely the
+   viewport breakpoint. This keeps a half-screen desktop window usable. */
+.product-details-layout {
+  container: product-details / inline-size;
+}
+
+@container product-details (min-width: 720px) {
+  .product-details-top {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container product-details (max-width: 719px) {
+  .product-details-image {
+    max-width: 540px;
+    margin-inline: auto;
+  }
+}
+
+@container product-details (min-width: 1080px) {
+  .product-details-info {
+    min-height: 532px;
+  }
+}
